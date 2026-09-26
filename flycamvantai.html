@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Flycam Đánh Cá</title>
+<title>Flycam vận tải</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body { background:#060a18; color:#fff; font-family: sans-serif; text-align:center; min-height:100%; overflow:hidden; }
@@ -68,7 +68,7 @@ html, body { background:#060a18; color:#fff; font-family: sans-serif; text-align
 <div class="abtn" id="btnTakeoff">🛫</div>
 </div>
 <div id="overlay">
-<h2>🎣 FLYCAM ĐÁNH CÁ</h2>
+<h2>🎣 FLYCAM VẬN TẢI</h2>
 <p>Từ <span class="hl">Bến Tàu</span> (góc phải) → ra biển tìm <span class="hl">tàu cá</span> → thu hoạch cá → về bến giao cá + sạc pin.</p>
 <p>5 tàu cá trôi lênh đênh, liên tục đánh bắt thêm cá!</p>
 <p><b>W</b>:Tăng · <b>S</b>:Giảm · <b>A/D</b>:Quay · <b>Space</b>:Cất/Hạ</p>
@@ -291,8 +291,19 @@ if(e.key==="d"||e.key==="ArrowRight"){input.right=false;}
 function bindBtn(id,on){var el=document.getElementById(id);el.ontouchstart=function(e){e.preventDefault();on();};el.onmousedown=on;}
 bindBtn("up",function(){if(drone&&!drone.landed){var maxSp=hasCargo?0.6:1;drone.speed=Math.min(maxSp,drone.speed+maxSp*0.25);}});
 bindBtn("down",function(){if(drone&&!drone.landed){var maxSp=hasCargo?0.6:1;drone.speed=Math.max(-maxSp*0.3,drone.speed-maxSp*0.25);}});
-bindBtn("left",function(){input.left=true;setTimeout(function(){input.left=false;},100);});
-bindBtn("right",function(){input.right=true;setTimeout(function(){input.right=false;},100);});
+var leftBtn=document.getElementById("left");
+leftBtn.ontouchstart=function(e){e.preventDefault();input.left=true;};
+leftBtn.ontouchend=function(e){e.preventDefault();input.left=false;};
+leftBtn.onmousedown=function(){input.left=true;};
+leftBtn.onmouseup=function(){input.left=false;};
+leftBtn.onmouseleave=function(){input.left=false;};
+
+var rightBtn=document.getElementById("right");
+rightBtn.ontouchstart=function(e){e.preventDefault();input.right=true;};
+rightBtn.ontouchend=function(e){e.preventDefault();input.right=false;};
+rightBtn.onmousedown=function(){input.right=true;};
+rightBtn.onmouseup=function(){input.right=false;};
+rightBtn.onmouseleave=function(){input.right=false;};
 bindBtn("btnTakeoff",function(){if(drone&&drone.landed){drone.landed=false;drone.speed=0.3;}});
 bindBtn("btnLand",function(){if(drone&&!drone.landed){drone.landed=true;drone.speed=0;}});
 function toggleTL(){if(!drone){return;}if(drone.landed){drone.landed=false;drone.speed=0.3;}else{drone.landed=true;drone.speed=0;}}
