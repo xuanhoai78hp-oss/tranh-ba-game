@@ -212,9 +212,10 @@ HFRAME_W: 12.2, HFRAME_D: 3.4, HFRAME_ARM_LEN: 0.6,
 XE1_LEN: 6, XE1_W: 3.4,
 XE1_SPRITE: { sx:2, sy:2, sw:58, sh:32 },
 
-// Xe 2 — rơ-mooc 12m x 3.2m, sprite (2,72)-(32,190)
+// Xe 2 — rơ-mooc 12m x 3.2m, sprite (2,72)-(190.32)
 XE2_LEN: 12, XE2_W: 3.2,
-XE2_SPRITE: { sx:2, sy:72, sw:32, sh:190 },
+XE2_SPRITE: { sx:2, sy:33, sw:190, sh:66 },
+
 XE2_WHEELS_FROM_TAIL: [2, 3.2],
 XE2_WHEEL_DIA: 0.9,
 
@@ -287,7 +288,7 @@ const cam = { x:0, y:0, shakeT:0 };
 LOAD ẢNH
 ============================================================ */
 const img = new Image();
-img.src = 'tranhba.jpg';
+img.src = '1.PNG';
 let imgReady = false;
 img.onload = () => { imgReady = true; console.log('✅ tranhba.jpg OK:', img.naturalWidth+'x'+img.naturalHeight); };
 img.onerror = () => { imgReady = false; console.warn('⚠️ Không load được tranhba.jpg'); };
