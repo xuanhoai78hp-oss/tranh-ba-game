@@ -202,38 +202,38 @@ PX_PER_M: 12,
 // Xe nâng (xe 3)
 XE3_LEN: 6, XE3_W: 3.4,
 XE3_AXLE_STATIC: 1, XE3_AXLE_STEER: 5, XE3_WHEELBASE: 4,
-XE3_SPRITE: { sx:0, sy:202, sw:34, sh:34 },
-XE3_RADIUS: 3.2,
+XE3_SPRITE: { sx:0, sy:202, sw:34, sh:202 },
+_RADIUS: 3.2,
 
 // Khung H
-HFRAME_W: 12.2, HFRAME_D: 3.4, HFRAME_ARM_LEN: 0.6,
+HFRAME_W: 12.2, HFRAME_D: 1.4, HFRAME_ARM_LEN: 0.6,
 
-// Xe 1 — đầu kéo 6m x 3.4m, sprite (2,2)-(58,32)
+// Xe 1 — đầu kéo 6m x 3.4m
 XE1_LEN: 6, XE1_W: 3.4,
 XE1_SPRITE: { sx:2, sy:2, sw:58, sh:32 },
 
-// Xe 2 — rơ-mooc 12m x 3.2m, sprite (2,72)-(190.32)
+// Xe 2 — rơ-mooc 12m x 3.2m
 XE2_LEN: 12, XE2_W: 3.2,
 XE2_SPRITE: { sx:2, sy:33, sw:190, sh:66 },
 
 XE2_WHEELS_FROM_TAIL: [2, 3.2],
 XE2_WHEEL_DIA: 0.9,
 
-// Cont — sprite (1,71)-(191,33)
+// Cont
 CONT_SPRITE: { sx:1, sy:71, sw:190, sh:33 },
 CONT_LEN: 12, CONT_W: 3.0,
 
-// Xe 1 gác đuôi lên xen kẽ — xe 2 che 2m đuôi xe 1
+// Xe 1 & xe 2
 XE1_XE2_OVERLAP: 2,
-XE1_XE2_GAP: 5, // khoảng cách tâm xe 1 → tâm xe 2 trước khi trừ overlap
+XE1_XE2_GAP: 5,
 
-// Vị trí sân
+// Sân
 FIELD_W: 500, FIELD_H: 120,
 
-// Vị trí khởi đầu (m, từ trái sang phải)
-START_XE2_X: 40, // tâm xe 2
-START_XE3_OFFSET: 15, // xe 3 cách xe 1 bao nhiêu
-START_CONT2_OFFSET: 45, // cont 2 cách xe 1 bao nhiêu
+// Vị trí khởi đầu
+START_XE2_X: 40,
+START_XE3_OFFSET: 15,
+START_CONT2_OFFSET: 45,
 
 // Động cơ
 GEAR_KMH: {'-2':-15,'-1':-8,'0':0,'1':5,'2':10,'3':20,'4':30},
@@ -243,26 +243,27 @@ ACCEL: 6, BRAKE: 12,
 
 // Gắp / nhả
 PICK_DIST: 3.0,
-PICK_ANGLE_TOL: 45, // độ lệch cho phép so với vuông góc
+PICK_ANGLE_TOL: 45,
 CONT_CARRIED_OFFSET: 0.2,
+CONT_HOLD_FORWARD: 4.0, // ✅ MỚI: cont nhô về phía trước khung H khi gắp
 
-// Cửa / đích
-DROP_ZONE_W: 14, DROP_ZONE_H: 14, // vùng xanh màn 1 (14x14)
-DROP_ZONE_OFFSET_X: 55, // cách xe 1 bao xa
+// Đích
+DROP_ZONE_W: 14, DROP_ZONE_H: 14,
+DROP_ZONE_OFFSET_X: 55,
 
 // Thời gian
 LEVEL_TIME: {1: Infinity, 2: 300, 3: 180, 4: 60, 5: 30},
 TOTAL_LEVELS: 5,
 
 // Chuyển màn 2+
-MOVE_AWAY_DIST: 15, // lùi xa xe 2 15m để qua màn
+MOVE_AWAY_DIST: 15,
 
 // Tường & cây
-WALL_Y_TOP: 15, WALL_Y_BOT: 105, // tường trên/dưới
+WALL_Y_TOP: 15, WALL_Y_BOT: 105,
 WALL_THICKNESS: 1.0,
-TREE_OFFSET_WALL: 2, // cây cách tường 2m
-TREE_MIN_GAP: 20, // 2 cây cách nhau >20m
-TREE_MIN_FROM_XE1: 20, // cây cách xe 1 >20m
+TREE_OFFSET_WALL: 2,
+TREE_MIN_GAP: 20,
+TREE_MIN_FROM_XE1: 20,
 TREE_RADIUS: 2.5,
 };
 
@@ -282,17 +283,16 @@ ctx.imageSmoothingEnabled = true;
 window.addEventListener('resize', resize);
 resize();
 
-const cam = { x:0, y:0, shakeT:0 };
+const cam = { x:0, y:0, shakeT:0, shakeOffsetX:0, shakeOffsetY:0 };
 
 /* ============================================================
 LOAD ẢNH
 ============================================================ */
 const img = new Image();
 img.src = '1.png';
-
 let imgReady = false;
-img.onload = () => { imgReady = true; console.log('✅ tranhba.jpg OK:', img.naturalWidth+'x'+img.naturalHeight); };
-img.onerror = () => { imgReady = false; console.warn('⚠️ Không load được tranhba.jpg'); };
+img.onload = () => { imgReady = true; console.log('✅ 1.png OK:', img.naturalWidth+'x'+img.naturalHeight); };
+img.onerror = () => { imgReady = false; console.warn('⚠️ Không load được 1.png'); };
 
 /* ============================================================
 ÂM THANH
@@ -374,8 +374,6 @@ const xe1 = { x:0, y:0, angle:90 };
 const cont = {
 x:0, y:0, angle:90,
 hitched:false, onXe2:true, delivered:false,
-// onXe2 = đang nằm trên xe 2 (chưa gắp)
-// delivered = đã nhả vào vùng xanh (màn 1) hoặc đã ở ngoài
 startX: null,
 };
 
@@ -394,7 +392,6 @@ let walls=[], trees=[];
 let dropZone = { x:0, y:0, w:0, h:0 };
 
 let hintTimer=null;
-let lastBumpTime=0;
 
 /* ============================================================
 INPUT
@@ -415,8 +412,8 @@ window.addEventListener('keydown', e => {
 const k = e.key.toLowerCase();
 if(k === 'w') changeGear(1);
 if(k === 's') changeGear(-1);
-if(k === 'a') keys.a = true;
-if(k === 'd') keys.d = true;
+if(k === 'a' && gameState === 'playing') keys.a = true;
+if(k === 'd' && gameState === 'playing') keys.d = true;
 if(k === ' ') { keys.gas = true; e.preventDefault(); }
 if(k === 'shift') keys.brake = true;
 if(k === 'q') doPick();
@@ -437,7 +434,7 @@ el.addEventListener('touchcancel',e=>{e.preventDefault();off();},{passive:false}
 el.addEventListener('mousedown', on);
 el.addEventListener('mouseup', off);
 el.addEventListener('mouseleave', off);
-el.addEventListener('blur', off); // mất focus → nhả
+el.addEventListener('blur', off);
 }
 document.querySelectorAll('#padKeys .pbtn').forEach(btn=>{
 const key = btn.dataset.key;
@@ -454,7 +451,6 @@ if(key==='d') keys.d=false; }
 });
 bindHold(document.getElementById('btnGas'), ()=>keys.gas=true, ()=>keys.gas=false);
 bindHold(document.getElementById('btnBrake'), ()=>keys.brake=true, ()=>keys.brake=false);
-
 
 /* ============================================================
 TRỤC XE 3
@@ -473,6 +469,16 @@ y: nose.y + d.y*(CFG.HFRAME_D/2 + CFG.CONT_CARRIED_OFFSET),
 angle: xe3.angle,
 };
 }
+// ✅ MỚI: vị trí gắp thực tế của cont (đã đẩy ra trước khung H)
+function getContHoldPos(){
+const hf = getHFrameCenter();
+const d = dir(hf.angle);
+return {
+x: hf.x + d.x * CFG.CONT_HOLD_FORWARD,
+y: hf.y + d.y * CFG.CONT_HOLD_FORWARD,
+angle: hf.angle + 90,
+};
+}
 
 /* ============================================================
 GẮP / NHẢ
@@ -481,14 +487,12 @@ function doPick(){
 if(gameState !== 'playing') return;
 if(xe3.gear !== 0){ showHint('warn','⚠️ Phải về SỐ 0 mới GẮP được!'); return; }
 
-// Ưu tiên: nếu có cont đang chờ gắp (cont chính hoặc cont2)
 const targets = [];
 if(currentLevel === 1){
-if(cont.onXe2){ targets.push({ c:cont, tag:'cont' }); }
+if(cont.onXe2) targets.push({ c:cont, tag:'cont' });
 } else {
-// Màn 2+: cont1 còn trên xe 2, cont2 đang chờ ngoài sân
-if(cont.onXe2 && !cont.hitched) targets.push({ c:cont, tag:'cont' });
-if(cont2.active && !cont2.hitched && !cont2.onXe2) targets.push({ c:cont2, tag:'cont2' });
+if(cont.onXe2 && !cont.hitched && !cont.delivered) targets.push({ c:cont, tag:'cont' });
+if(cont2.active && !cont2.hitched && !cont2.onXe2 && !cont2.delivered) targets.push({ c:cont2, tag:'cont2' });
 }
 
 if(targets.length === 0){ showHint('warn','⚠️ Không có cont nào để gắp gần đây!'); return; }
@@ -501,10 +505,8 @@ const perp = Math.abs(dAng - 90);
 
 if(dd <= CFG.PICK_DIST && perp <= CFG.PICK_ANGLE_TOL){
 t.c.hitched = true;
-t.c.angle = t.c.angle; // giữ nguyên hướng cont
 t.c.startX = xe3.x;
 
-// Nếu là cont trên xe 2 → bỏ khỏi xe 2
 if(t.tag === 'cont') cont.onXe2 = false;
 
 showHint('success','🔗 ĐÃ GẮP CONT!');
@@ -521,29 +523,23 @@ function doRelease(){
 if(gameState !== 'playing') return;
 if(xe3.gear !== 0){ showHint('warn','⚠️ Phải về SỐ 0 mới NHẢ được!'); return; }
 
-if(cont.hitched){
-releaseCont(cont, 'cont');
-return;
-}
-if(cont2.hitched){
-releaseCont(cont2, 'cont2');
-return;
-}
+if(cont.hitched){ releaseCont(cont, 'cont'); return; }
+if(cont2.hitched){ releaseCont(cont2, 'cont2'); return; }
 showHint('warn','⚠️ Chưa gắp cont nào!');
 }
 
 function releaseCont(c, tag){
-const hf = getHFrameCenter();
+const hold = getContHoldPos(); // ✅ dùng vị trí gắp thực tế
 
-// Xác định đích: vùng xanh (cont1) hoặc vị trí xe 2 (cont2)
 if(tag === 'cont'){
-// Cont 1 → thả tự do tại vị trí khung H
 c.hitched = false;
-c.delivered = true;
-c.x = hf.x;
-c.y = hf.y;
-// Chek vùng xanh?
+c.x = hold.x;
+c.y = hold.y;
+c.angle = hold.angle;
+
 if(pointInRect(c.x, c.y, dropZone)){
+// ✅ Chỉ đánh dấu delivered khi thực sự nằm trong vùng xanh
+c.delivered = true;
 showHint('success','✅ ĐÃ NHẢ VÀO VÙNG XANH!');
 playBeep(990,0.1);
 setTimeout(()=>playBeep(660,0.1),100);
@@ -551,26 +547,30 @@ setTimeout(()=>playBeep(440,0.2),200);
 if(currentLevel === 1){
 setTimeout(()=>levelClear(), 900);
 } else {
-// Màn 2+: cont 1 xong → nhiệm vụ cont 2
 setTaskTextForLevel();
 }
 } else {
+// Chưa vào vùng xanh → chưa tính delivered
 showHint('info','📦 Đã nhả cont 1 — hãy nhả ĐÚNG vùng XANH nhé!');
 }
 } else {
-// cont 2 → phải nhả gần xe 2
+// cont 2 → gắn lên xe 2
 const nearXe2 = dist(xe3.x, xe3.y, xe2.x, xe2.y) < 10;
 c.hitched = false;
-c.x = hf.x;
-c.y = hf.y;
+c.x = hold.x;
+c.y = hold.y;
+c.angle = hold.angle;
+
 if(nearXe2){
 c.onXe2 = true;
 c.delivered = true;
+c.x = xe2.x;
+c.y = xe2.y;
+c.angle = xe2.angle;
 showHint('success','✅ ĐÃ GẮN CONT 2 LÊN XE 2!');
 playBeep(990,0.1);
 setTimeout(()=>playBeep(660,0.1),100);
 setTimeout(()=>playBeep(440,0.2),200);
-// Bắt đầu pha 2: lùi xa xe 2 15m
 showHint('info',`🏁 Giờ lùi xa xe 2 ${CFG.MOVE_AWAY_DIST}m để qua màn!`);
 } else {
 showHint('warn','⚠️ Chưa đúng chỗ! Hãy nhả gần xe 2!');
@@ -584,6 +584,50 @@ return px >= r.x - r.w/2 && px <= r.x + r.w/2
 && py >= r.y - r.h/2 && py <= r.y + r.h/2;
 }
 
+/* ============================================================
+OBB — VA CHẠM XE 3 ↔ XE 2
+============================================================ */
+function getOBB(cx, cy, angleDeg, len, wid){
+const rad = d2r(angleDeg);
+const s = Math.sin(rad), c = Math.cos(rad);
+const hx = wid/2, hy = len/2;
+const ax = s, ay = -c;
+const bx = c, by = s;
+return [
+{ x: cx + ax*hy + bx*hx, y: cy + ay*hy + by*hx },
+{ x: cx - ax*hy + bx*hx, y: cy - ay*hy + by*hx },
+{ x: cx - ax*hy - bx*hx, y: cy - ay*hy - by*hx },
+{ x: cx + ax*hy - bx*hx, y: cy + ay*hy - by*hx },
+];
+}
+function obbOverlap(A, B){
+const polys = [A, B];
+for(const poly of polys){
+for(let i = 0; i < 2; i++){
+const p1 = poly[i], p2 = poly[i+1];
+const axis = { x: -(p2.y - p1.y), y: (p2.x - p1.x) };
+const len = Math.hypot(axis.x, axis.y);
+if(len < 1e-6) continue;
+axis.x /= len; axis.y /= len;
+
+let minA = Infinity, maxA = -Infinity;
+for(const p of A){
+const d = p.x*axis.x + p.y*axis.y;
+if(d < minA) minA = d;
+if(d > maxA) maxA = d;
+}
+let minB = Infinity, maxB = -Infinity;
+for(const p of B){
+const d = p.x*axis.x + p.y*axis.y;
+if(d < minB) minB = d;
+if(d > maxB) maxB = d;
+}
+if(maxA < minB || maxB < minA) return false;
+}
+}
+return true;
+}
+
 function updateActionButtons(){
 const row = document.getElementById('actionRow');
 const bPick = document.getElementById('btnPick');
@@ -595,18 +639,16 @@ if(!showRow) return;
 
 const atZero = (xe3.gear === 0);
 
-// GẮP: có cont để gắp + số 0
 let canPick = false;
 if(atZero){
 if(currentLevel === 1 && cont.onXe2) canPick = true;
 if(currentLevel > 1){
-if(cont.onXe2) canPick = true;
+if(cont.onXe2 && !cont.delivered) canPick = true;
 if(cont2.active && !cont2.onXe2 && !cont2.delivered) canPick = true;
 }
 }
 bPick.classList.toggle('disabled', !canPick || cont.hitched || cont2.hitched);
 
-// NHẢ: đang gắp cont + số 0
 const canRelease = atZero && (cont.hitched || cont2.hitched);
 bRel.classList.toggle('disabled', !canRelease);
 }
@@ -642,8 +684,11 @@ const d = dir(xe3.angle);
 xe3.x += d.x * xe3.speed * dt;
 xe3.y += d.y * xe3.speed * dt;
 
-// Va chạm
+// Va chạm tường & cây (có thể trigger thua)
 checkCollisions(pxPrev, pyPrev);
+
+// ✅ MỚI: va chạm thân xe 3 ↔ xe 2 — chỉ chặn, không thua
+checkXe2Collision(pxPrev, pyPrev);
 
 if(xe3.bumpFlash > 0) xe3.bumpFlash -= dt*2;
 }
@@ -652,26 +697,35 @@ if(xe3.bumpFlash > 0) xe3.bumpFlash -= dt*2;
 VA CHẠM TƯỜNG & CÂY
 ============================================================ */
 function checkCollisions(pxPrev, pyPrev){
-// Tường
 for(const wall of walls){
-// AABB vs circle
 const closestX = Math.max(wall.x, Math.min(xe3.x, wall.x + wall.w));
 const closestY = Math.max(wall.y, Math.min(xe3.y, wall.y + wall.h));
 const d = Math.hypot(xe3.x - closestX, xe3.y - closestY);
 if(d < CFG.XE3_RADIUS){
-// Đâm tường → thua
 triggerLose('wall');
 return;
 }
 }
-// Cây
 for(const t of trees){
 const d = Math.hypot(xe3.x - t.x, xe3.y - t.y);
 if(d < CFG.XE3_RADIUS + t.r){
-// Đâm cây → thua
 triggerLose('tree');
 return;
 }
+}
+}
+
+/* ✅ MỚI: chặn xe 3 xuyên xe 2 */
+function checkXe2Collision(pxPrev, pyPrev){
+const obb3 = getOBB(xe3.x, xe3.y, xe3.angle, CFG.XE3_LEN, CFG.XE3_W);
+const obb2 = getOBB(xe2.x, xe2.y, xe2.angle, CFG.XE2_LEN, CFG.XE2_W);
+
+if(obbOverlap(obb3, obb2)){
+xe3.x = pxPrev;
+xe3.y = pyPrev;
+xe3.speed = 0;
+xe3.bumpFlash = 0.6;
+shakeCamera(0.12);
 }
 }
 
@@ -698,9 +752,7 @@ document.getElementById('overlayLose').classList.remove('hidden');
 updateActionButtons();
 }
 
-function shakeCamera(dur){
-cam.shakeT = dur;
-}
+function shakeCamera(dur){ cam.shakeT = dur; }
 
 /* ============================================================
 HINT
@@ -724,21 +776,19 @@ const FT = CFG.FIELD_W;
 const yTop = CFG.WALL_Y_TOP;
 const yBot = CFG.WALL_Y_BOT;
 
-// Tường trên & dưới (dài cố định hết sân)
 walls.push({ x: 0, y: yTop, w: FT, h: CFG.WALL_THICKNESS });
 walls.push({ x: 0, y: yBot, w: FT, h: CFG.WALL_THICKNESS });
 
-// Cây: cách tường 2m, cách xe 1 >20m, 2 cây cách nhau >20m
-const treeY = yTop + CFG.TREE_OFFSET_WALL; // cây trên
-const treeY2 = yBot - CFG.TREE_OFFSET_WALL; // cây dưới
-const xe1X = CFG.START_XE2_X - CFG.XE1_XE2_GAP; // tâm xe 1
+const treeY = yTop + CFG.TREE_OFFSET_WALL;
+const treeY2 = yBot - CFG.TREE_OFFSET_WALL;
+const xe1X = CFG.START_XE2_X - CFG.XE1_XE2_GAP;
 
 const treeXs = [];
 let x = xe1X + CFG.TREE_MIN_FROM_XE1 + 8;
 const maxX = FT - 20;
 while(x < maxX){
 treeXs.push(x);
-x += CFG.TREE_MIN_GAP + 5 + Math.random()*15; // >20m
+x += CFG.TREE_MIN_GAP + 5 + Math.random()*15;
 }
 
 for(const tx of treeXs){
@@ -751,21 +801,17 @@ function buildLevel(level){
 currentLevel = level;
 stopTimer();
 
-// Xây chướng ngại
 buildObstacles();
 
-// Đặt xe 2 (tâm)
 xe2.x = CFG.START_XE2_X;
 xe2.y = CFG.FIELD_H/2;
 xe2.angle = 90;
 xe2.wheelSpin = 0;
 
-// Xe 1: đứng SAU xe 2 (bên trái), mũi hướng Đông
 xe1.x = CFG.START_XE2_X - CFG.XE1_XE2_GAP;
 xe1.y = CFG.FIELD_H/2;
 xe1.angle = 90;
 
-// Cont 1: nằm trên xe 2
 cont.x = xe2.x;
 cont.y = xe2.y;
 cont.angle = 90;
@@ -774,7 +820,6 @@ cont.onXe2 = true;
 cont.delivered = false;
 cont.startX = null;
 
-// Cont 2: chỉ có ở màn 2+
 cont2.active = (level >= 2);
 cont2.x = xe1.x + CFG.START_CONT2_OFFSET;
 cont2.homeX = cont2.x;
@@ -786,13 +831,11 @@ cont2.delivered = false;
 cont2.picked = false;
 cont2.startX = null;
 
-// Vùng xanh (màn 1) — cách xe 1 CFG.DROP_ZONE_OFFSET_X
 dropZone.w = CFG.DROP_ZONE_W;
 dropZone.h = CFG.DROP_ZONE_H;
 dropZone.x = xe1.x + CFG.DROP_ZONE_OFFSET_X;
 dropZone.y = CFG.FIELD_H/2;
 
-// Xe nâng: cách xe 1 START_XE3_OFFSET
 xe3.x = xe1.x + CFG.START_XE3_OFFSET;
 xe3.y = CFG.FIELD_H/2;
 xe3.angle = 90;
@@ -801,16 +844,13 @@ xe3.bumpFlash = 0;
 document.getElementById('gearVal').textContent = '0';
 document.getElementById('gearVal').classList.remove('neg');
 
-// Camera bám xe 3
 cam.x = xe3.x * CFG.PX_PER_M;
 cam.y = xe3.y * CFG.PX_PER_M;
 
-// HUD
 document.getElementById('chipLevel').textContent = `🏗️ MÀN ${level}`;
 setTaskTextForLevel();
 updateTimerHUD();
 
-// Trạng thái
 gameState = 'cutscene';
 cutsceneT = 0;
 
@@ -850,10 +890,7 @@ if(gameState !== 'playing') return;
 const t = CFG.LEVEL_TIME[currentLevel];
 if(t === Infinity) return;
 timeLeft -= dt;
-if(timeLeft <= 0){
-timeLeft = 0;
-triggerLose('timeout');
-}
+if(timeLeft <= 0){ timeLeft = 0; triggerLose('timeout'); }
 updateTimerHUD();
 }
 
@@ -873,7 +910,7 @@ el.classList.toggle('warn', total <= 10);
 }
 
 /* ============================================================
-CUTSCENE (2 xe đứng yên, chờ go)
+CUTSCENE
 ============================================================ */
 function updateCutscene(dt){
 cutsceneT += dt;
@@ -906,7 +943,7 @@ else xe3.steer *= 0.85;
 
 updateXe3(dt);
 
-// Cont đang gắp đi theo xe
+// ✅ Cont đang gắp → dùng vị trí gắp (đã đẩy ra trước khung H)
 if(cont.hitched){
 const hf = getHFrameCenter();
 cont.x = hf.x; cont.y = hf.y;
@@ -917,19 +954,21 @@ const hf = getHFrameCenter();
 cont2.x = hf.x; cont2.y = hf.y;
 cont2.angle = hf.angle + 90;
 }
+// ✅ cont2 đã gắn xe2 → bám theo xe2
+if(cont2.onXe2 && cont2.delivered){
+cont2.x = xe2.x;
+cont2.y = xe2.y;
+cont2.angle = xe2.angle;
+}
 
-// Kiểm tra qua màn 2+ : đã gắn cont2 lên xe2 và lùi xa xe2 >= 15m
+// Kiểm tra qua màn 2+
 if(currentLevel >= 2 && cont.delivered && cont2.delivered){
 const awayDist = dist(xe3.x, xe3.y, xe2.x, xe2.y);
 if(awayDist >= CFG.MOVE_AWAY_DIST){
 levelClear();
 }
 }
-if(cont2.onXe2){
-cont2.x = xe2.x;
-cont2.y = xe2.y;
-cont2.angle = xe2.angle;
-}
+
 updateEngineSound();
 updateActionButtons();
 }
@@ -946,8 +985,8 @@ playBeep(880,0.1);
 setTimeout(()=>playBeep(1100,0.12),100);
 setTimeout(()=>playBeep(1320,0.15),220);
 
-if(currentLevel === 5 || currentLevel === 4){
-// Qua màn 4 hoặc 5 → ĐƯỢC TUYỂN
+// ✅ Chỉ màn 5 mới là thắng chung cuộc
+if(currentLevel === 5){
 setTimeout(()=>showWin(), 1200);
 } else {
 const title = `✅ QUA MÀN ${currentLevel}!`;
@@ -978,7 +1017,7 @@ buildLevel(currentLevel + 1);
 }
 
 /* ============================================================
-VẼ — helper vẽ sprite với kiểm tra biên
+VẼ SPRITE
 ============================================================ */
 function drawSprite(sp, dstX, dstY, dstW, dstH){
 if(!imgReady
@@ -1002,7 +1041,6 @@ ctx.save();
 ctx.translate(cx, cy);
 ctx.rotate(d2r(xe1.angle));
 
-// Sprite gốc 58x32 (ngang) → xoay -90 để thành dọc
 ctx.save();
 ctx.rotate(-Math.PI/2);
 const ok = drawSprite(CFG.XE1_SPRITE, -lenPx/2, -widPx/2, lenPx, widPx);
@@ -1015,7 +1053,6 @@ ctx.strokeStyle = '#1a1410'; ctx.lineWidth = 2;
 ctx.strokeRect(-widPx/2, -lenPx/2, widPx, lenPx);
 }
 
-// Đèn pha mũi xe 1 (hướng Đông)
 ctx.fillStyle = '#fff8c0';
 ctx.beginPath();
 ctx.arc(-widPx*0.3, -lenPx/2 - 2, 2.5, 0, 7);
@@ -1026,7 +1063,7 @@ ctx.restore();
 }
 
 /* ============================================================
-VẼ XE 2 (chassis + cont 1 mặc định) + đèn đuôi
+VẼ XE 2
 ============================================================ */
 function drawXe2(){
 const PX = CFG.PX_PER_M;
@@ -1037,7 +1074,6 @@ ctx.save();
 ctx.translate(cx, cy);
 ctx.rotate(d2r(xe2.angle));
 
-// Sprite 32x190 (dọc) → xoay +90 để thành ngang
 ctx.save();
 ctx.rotate(Math.PI/2);
 const ok = drawSprite(CFG.XE2_SPRITE, -lenPx/2, -widPx/2, lenPx, widPx);
@@ -1050,7 +1086,6 @@ ctx.strokeStyle = '#1a1a1c'; ctx.lineWidth = 2;
 ctx.strokeRect(-widPx/2, -lenPx/2, widPx, lenPx);
 }
 
-// Đèn đỏ đuôi xe 2 (phía Tây, tức -lenPx/2 trong hệ xoay)
 ctx.fillStyle = '#ff3030';
 ctx.shadowColor = '#ff6060'; ctx.shadowBlur = 8;
 ctx.beginPath();
@@ -1063,36 +1098,31 @@ ctx.restore();
 }
 
 /* ============================================================
-VẼ XE 3 (xe nâng) + đèn nháy
+VẼ XE 3
 ============================================================ */
 function drawXe3(){
 const PX = CFG.PX_PER_M;
 const cx = xe3.x * PX, cy = xe3.y * PX;
 const lenPx = CFG.XE3_LEN * PX, widPx = CFG.XE3_W * PX;
 
-// Bump flash (nhấp nháy đỏ khi va chạm)
 const flash = xe3.bumpFlash > 0;
 
 ctx.save();
 ctx.translate(cx, cy);
 ctx.rotate(d2r(xe3.angle));
 
-// Nền
 ctx.fillStyle = flash ? '#ff6060' : '#d0a020';
 ctx.fillRect(-widPx/2, -lenPx/2, widPx, lenPx);
 
-// Sprite
 drawSprite(CFG.XE3_SPRITE, -widPx/2, -lenPx/2, widPx, lenPx);
 
 ctx.strokeStyle = '#1a1410'; ctx.lineWidth = 2;
 ctx.strokeRect(-widPx/2, -lenPx/2, widPx, lenPx);
 
-// Đèn nháy 4 góc
 drawBlinkLights(lenPx, widPx);
 
 ctx.restore();
 
-// Nhãn bánh lái
 const tailOff = CFG.XE3_LEN/2 - CFG.XE3_AXLE_STEER;
 const d = dir(xe3.angle);
 const tx = (xe3.x + d.x*tailOff) * PX;
@@ -1138,33 +1168,7 @@ ctx.restore();
 }
 
 /* ============================================================
-VẼ CONT (sprite ngang 190x33)
-============================================================ */
-function drawCont(c){
-const PX = CFG.PX_PER_M;
-const cx = c.x * PX, cy = c.y * PX;
-const lenPx = CFG.CONT_LEN * PX, widPx = CFG.CONT_W * PX;
-
-ctx.save();
-ctx.translate(cx, cy);
-ctx.rotate(d2r(c.angle));
-// Sprite 190x33 (ngang) → xoay -90 để thành dọc theo trục Y cục bộ
-ctx.save();
-ctx.rotate(-Math.PI/2);
-const ok = drawSprite(CFG.CONT_SPRITE, -lenPx/2, -widPx/2, lenPx, widPx);
-ctx.restore();
-
-if(!ok){
-ctx.fillStyle = c.hitched ? '#3a8040' : '#808088';
-ctx.fillRect(-widPx/2, -lenPx/2, widPx, lenPx);
-ctx.strokeStyle = '#1a1410'; ctx.lineWidth = 2;
-ctx.strokeRect(-widPx/2, -lenPx/2, widPx, lenPx);
-}
-ctx.restore();
-}
-
-/* ============================================================
-VẼ KHUNG CHỮ H
+VẼ KHUNG H
 ============================================================ */
 function drawHFrame(){
 const hf = getHFrameCenter();
@@ -1207,17 +1211,41 @@ ctx.restore();
 }
 
 /* ============================================================
-VẼ SÂN, TƯỜNG, CÂY, VÙNG XANH
+VẼ CONT
+============================================================ */
+function drawCont(c){
+const PX = CFG.PX_PER_M;
+const cx = c.x * PX, cy = c.y * PX;
+const lenPx = CFG.CONT_LEN * PX, widPx = CFG.CONT_W * PX;
+
+ctx.save();
+ctx.translate(cx, cy);
+ctx.rotate(d2r(c.angle));
+ctx.save();
+ctx.rotate(-Math.PI/2);
+const ok = drawSprite(CFG.CONT_SPRITE, -lenPx/2, -widPx/2, lenPx, widPx);
+ctx.restore();
+
+if(!ok){
+ctx.fillStyle = c.hitched ? '#3a8040' : '#808088';
+ctx.fillRect(-widPx/2, -lenPx/2, widPx, lenPx);
+ctx.strokeStyle = '#1a1410'; ctx.lineWidth = 2;
+ctx.strokeRect(-widPx/2, -lenPx/2, widPx, lenPx);
+}
+ctx.restore();
+}
+
+/* ============================================================
+
+VẼ SÂN
 ============================================================ */
 function drawField(){
 const PX = CFG.PX_PER_M;
 const W_m = CFG.FIELD_W, H_m = CFG.FIELD_H;
 
-// Nền
 ctx.fillStyle = '#4a4a48';
 ctx.fillRect(0, 0, W_m*PX, H_m*PX);
 
-// Lưới
 ctx.strokeStyle = 'rgba(255,255,255,0.04)';
 ctx.lineWidth = 1;
 for(let i = 0; i <= W_m; i += 5){
@@ -1227,7 +1255,6 @@ for(let j = 0; j <= H_m; j += 5){
 ctx.beginPath(); ctx.moveTo(0, j*PX); ctx.lineTo(W_m*PX, j*PX); ctx.stroke();
 }
 
-// Vạch vàng giữa sân
 ctx.strokeStyle = 'rgba(255,220,64,0.35)';
 ctx.lineWidth = 2;
 ctx.setLineDash([15, 10]);
@@ -1237,7 +1264,6 @@ ctx.lineTo(W_m*PX, (CFG.FIELD_H/2)*PX);
 ctx.stroke();
 ctx.setLineDash([]);
 
-// Vùng XANH (đích thả cont 1)
 if(dropZone.w > 0){
 const dx = (dropZone.x - dropZone.w/2) * PX;
 const dy = (dropZone.y - dropZone.h/2) * PX;
@@ -1253,7 +1279,6 @@ ctx.lineWidth = 2;
 ctx.setLineDash([6, 4]);
 ctx.strokeRect(dx, dy, dw, dh);
 ctx.setLineDash([]);
-// Chữ "XANH"
 ctx.fillStyle = 'rgba(180,255,200,0.7)';
 ctx.font = 'bold 12px sans-serif';
 ctx.textAlign = 'center';
@@ -1261,11 +1286,9 @@ ctx.textBaseline = 'middle';
 ctx.fillText('VÙNG XANH', dropZone.x*PX, dy - 8);
 }
 
-// Tường
 for(const wal of walls){
 ctx.fillStyle = '#6a4830';
 ctx.fillRect(wal.x*PX, wal.y*PX, wal.w*PX, wal.h*PX);
-// gạch
 ctx.strokeStyle = '#3a2818';
 ctx.lineWidth = 1;
 const cell = 2*PX;
@@ -1280,36 +1303,41 @@ ctx.lineWidth = 2;
 ctx.strokeRect(wal.x*PX, wal.y*PX, wal.w*PX, wal.h*PX);
 }
 
-// Cây
 for(const t of trees){
 const tx = t.x*PX, ty = t.y*PX, tr = t.r*PX;
-// tán cây
 const g = ctx.createRadialGradient(tx - tr*0.3, ty - tr*0.3, tr*0.1, tx, ty, tr*1.2);
 g.addColorStop(0, '#7ec860');
 g.addColorStop(1, '#2a6018');
 ctx.fillStyle = g;
 ctx.beginPath(); ctx.arc(tx, ty, tr, 0, 7); ctx.fill();
-// thân
 ctx.fillStyle = '#3a2010';
 ctx.beginPath(); ctx.arc(tx, ty, tr*0.25, 0, 7); ctx.fill();
-// viền
 ctx.strokeStyle = '#1a3808'; ctx.lineWidth = 1.5;
 ctx.beginPath(); ctx.arc(tx, ty, tr, 0, 7); ctx.stroke();
 }
 
-// Biên sân
 ctx.strokeStyle = '#2a1a08'; ctx.lineWidth = 4;
 ctx.strokeRect(0, 0, W_m*PX, H_m*PX);
 }
 
 /* ============================================================
-DRAW
+CAMERA
 ============================================================ */
 function updateCam(dt){
 const tx = xe3.x * CFG.PX_PER_M;
 const ty = xe3.y * CFG.PX_PER_M;
 cam.x += (tx - cam.x) * Math.min(1, dt*4);
 cam.y += (ty - cam.y) * Math.min(1, dt*4);
+
+// ✅ clamp trong biên sân
+const halfW = W/2, halfH = H/2;
+const fieldWpx = CFG.FIELD_W * CFG.PX_PER_M;
+const fieldHpx = CFG.FIELD_H * CFG.PX_PER_M;
+if(cam.x < halfW) cam.x = halfW;
+if(cam.x > fieldWpx - halfW) cam.x = fieldWpx - halfW;
+if(cam.y < halfH) cam.y = halfH;
+if(cam.y > fieldHpx - halfH) cam.y = fieldHpx - halfH;
+
 if(cam.shakeT > 0){
 cam.shakeT -= dt;
 cam.shakeOffsetX = (Math.random()-0.5) * 20;
@@ -1319,6 +1347,9 @@ cam.shakeOffsetX = 0; cam.shakeOffsetY = 0;
 }
 }
 
+/* ============================================================
+DRAW
+============================================================ */
 function draw(){
 ctx.fillStyle = '#1a1a18';
 ctx.fillRect(0, 0, W, H);
@@ -1329,22 +1360,12 @@ ctx.translate(-cam.x, -cam.y);
 
 drawField();
 
-// Vẽ theo thứ tự từ xa → gần
 drawXe1();
 drawXe2();
 
-// Cont 1: nếu không gắp → vẽ ở vị trí cont (trên xe 2 nếu onXe2)
-if(!cont.hitched && !cont.delivered) drawCont(cont);
-if(cont.delivered && !cont.hitched) drawCont(cont); // đã nhả, nằm tại chỗ nhả
+if(!cont.hitched) drawCont(cont);
 
-// Cont 2
-if(cont2.active && !cont2.hitched){
-if(cont2.onXe2){
-// Nếu đã gắn lên xe 2 → vẽ cùng xe 2 (kéo theo xe 2)
-// Đơn giản: đặt cont2.x/y = xe2.x/y khi onXe2 → ở đây vẽ
-}
-drawCont(cont2);
-}
+if(cont2.active && !cont2.hitched) drawCont(cont2);
 
 drawHFrame();
 drawXe3();
