@@ -2,117 +2,238 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>Tu Tiên Săn Côn Trùng</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🌲 Rừng Săn Côn Trùng</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{width:100%;height:100%;overflow:hidden;background:#0a1810;font-family:system-ui,sans-serif;user-select:none;touch-action:none}
-#cv{display:block;width:100%;height:100%;image-rendering:pixelated}
+html,body{width:100%;height:100%;overflow:hidden;background:#0a1a0a;font-family:'Segoe UI',sans-serif;color:#e0ffe0;user-select:none;touch-action:none}
+canvas{display:block;width:100%;height:100%}
 
-/* HUD */
-#hud{position:fixed;top:0;left:0;right:0;padding:8px 12px;display:flex;gap:10px;align-items:center;color:#e8f0d0;font-size:13px;background:linear-gradient(to bottom,rgba(0,0,0,.6),transparent);z-index:10;pointer-events:none}
-.stat{display:flex;align-items:center;gap:4px;text-shadow:0 1px 2px #000}
-.stat b{color:#ffe060;font-weight:700}
-#hpWrap{flex:1;min-width:80px;max-width:180px;height:14px;background:#301010;border:1px solid #602020;border-radius:3px;overflow:hidden;position:relative}
-#hpBar{height:100%;background:linear-gradient(to bottom,#e04040,#a02020);transition:width .2s;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
-#hpTxt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;text-shadow:0 1px 2px #000;font-weight:700}
+/* ==== UI OVERLAY ==== */
+#hud{
+position:fixed;top:0;left:0;right:0;
+padding:8px 12px;
+display:flex;justify-content:space-between;align-items:flex-start;
+pointer-events:none;z-index:10;
+}
+.hud-left{display:flex;flex-direction:column;gap:4px;font-size:13px;text-shadow:0 2px 4px #000}
+.hud-left div{background:rgba(0,0,0,.45);padding:3px 8px;border-radius:6px;border:1px solid rgba(120,255,120,.3)}
+.hud-right{display:flex;gap:8px;pointer-events:auto}
+.btn{
+background:rgba(20,60,20,.85);
+color:#c8ffc8;border:1px solid #4caf50;border-radius:8px;
+padding:8px 14px;font-size:14px;font-weight:600;
+cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);
+transition:.15s;backdrop-filter:blur(4px);
+}
+.btn:active{transform:scale(.94);background:rgba(80,180,80,.9);color:#fff}
 
-/* Nút hành động */
-#actions{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:10px;z-index:10}
-.btn{width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#4a6a2a,#2a4010);border:2px solid #8b9a40;color:#e8f0d0;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 0 #1a2008,0 4px 8px rgba(0,0,0,.5);touch-action:manipulation}
-.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #1a2008}
-#throwBtn{width:80px;height:80px;background:radial-gradient(circle at 30% 30%,#a06030,#5a3010);border-color:#c08040}
+/* Nút hành động bên phải (mobile) */
+#actions{
+position:fixed;bottom:20px;right:16px;
+display:flex;flex-direction:column;gap:12px;z-index:10;
+}
+.btn-round{
+width:70px;height:70px;border-radius:50%;
+background:radial-gradient(circle at 30% 30%,rgba(120,220,120,.95),rgba(40,120,40,.9));
+border:2px solid #a0ffa0;color:#fff;font-size:12px;font-weight:700;
+cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.6),inset 0 0 12px rgba(255,255,255,.3);
+display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;
+}
+.btn-round:active{transform:scale(.9)}
+.btn-round.small{width:56px;height:56px;font-size:11px}
 
-/* D-Pad */
-#dpad{position:fixed;bottom:20px;left:20px;width:180px;height:180px;z-index:10}
-.dp{position:absolute;width:56px;height:56px;background:radial-gradient(circle at 30% 30%,#4a6a2a,#2a4010);border:2px solid #8b9a40;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#e8f0d0;font-size:22px;font-weight:700;box-shadow:0 3px 0 #1a2008;touch-action:manipulation}
-.dp:active{transform:translateY(2px);box-shadow:0 1px 0 #1a2008}
-#dpU{top:0;left:62px}
-#dpD{bottom:0;left:62px}
-#dpL{top:62px;left:0}
-#dpR{top:62px;right:0}
+/* Joystick di chuyển bên trái */
+#joystick{
+position:fixed;bottom:20px;left:16px;
+width:120px;height:120px;z-index:10;
+border-radius:50%;
+background:radial-gradient(circle,rgba(20,50,20,.5),rgba(0,0,0,.3));
+border:2px solid rgba(120,200,120,.4);
+touch-action:none;
+}
+#joy-knob{
+position:absolute;top:50%;left:50%;
+width:52px;height:52px;border-radius:50%;
+background:radial-gradient(circle at 30% 30%,#c8ffc8,#3a8a3a);
+border:2px solid #e0ffe0;
+transform:translate(-50%,-50%);
+box-shadow:0 0 12px rgba(120,255,120,.6);
+pointer-events:none;
+}
+#joy-ring{
+position:absolute;top:50%;left:50%;
+width:14px;height:14px;border-radius:50%;
+border:2px dashed rgba(200,255,200,.6);
+transform:translate(-50%,-50%);
+pointer-events:none;
+}
 
-/* Hint */
-#hint{position:fixed;top:54px;left:50%;transform:translateX(-50%);padding:6px 14px;background:rgba(0,0,0,.75);color:#ffe060;border-radius:20px;font-size:13px;opacity:0;transition:opacity .3s;z-index:20;pointer-events:none;max-width:90vw;text-align:center}
-#hint.show{opacity:1}
+/* Bảng thuộc tính */
+#panel{
+position:fixed;inset:0;z-index:50;
+display:none;align-items:center;justify-content:center;
+background:rgba(0,10,0,.75);backdrop-filter:blur(6px);
+}
+#panel.show{display:flex}
+.panel-box{
+width:min(92vw,420px);
+background:linear-gradient(160deg,rgba(15,40,15,.98),rgba(5,20,5,.98));
+border:2px solid #4caf50;border-radius:16px;
+padding:18px;box-shadow:0 0 40px rgba(80,255,80,.4);
+max-height:92vh;overflow-y:auto;
+}
+.panel-box h2{
+color:#a0ffa0;text-align:center;font-size:20px;margin-bottom:12px;
+text-shadow:0 0 10px rgba(120,255,120,.7);
+border-bottom:1px solid rgba(120,255,120,.3);padding-bottom:8px;
+}
+.attr-row{
+display:flex;justify-content:space-between;
+padding:6px 8px;font-size:14px;
+border-bottom:1px dashed rgba(120,255,120,.15);
+}
+.attr-row span:first-child{color:#9fce9f}
+.attr-row span:last-child{color:#fff;font-weight:600}
+.attr-section{
+color:#ffe680;font-size:13px;margin:10px 0 4px;
+text-transform:uppercase;letter-spacing:1px;
+}
+.panel-actions{
+display:flex;gap:10px;margin-top:14px;
+}
+.panel-actions .btn{flex:1;text-align:center;padding:10px}
 
-/* Speech bubble */
-#speech{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);padding:14px 20px;background:rgba(20,30,15,.95);color:#e8f0d0;border:2px solid #8b9a40;border-radius:12px;font-size:15px;max-width:80vw;text-align:center;opacity:0;transition:opacity .4s;z-index:25;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.7)}
-#speech.show{opacity:1}
-#speech .who{color:#ffe060;font-size:12px;display:block;margin-bottom:4px;font-style:italic}
+/* Nút hấp thu */
+#absorb{
+position:fixed;inset:0;z-index:60;
+display:none;align-items:center;justify-content:center;
+background:rgba(0,10,0,.8);
+}
+#absorb.show{display:flex}
+.absorb-box{
+width:min(92vw,380px);
+background:linear-gradient(160deg,rgba(20,50,20,.98),rgba(0,15,0,.98));
+border:2px solid #ffcc44;border-radius:16px;padding:18px;
+box-shadow:0 0 40px rgba(255,200,80,.5);
+}
+.absorb-box h2{color:#ffcc44;text-align:center;margin-bottom:14px;font-size:18px}
+.absorb-item{
+display:flex;align-items:center;gap:12px;
+padding:12px;margin-bottom:8px;
+background:rgba(0,0,0,.4);border:1px solid rgba(255,200,80,.3);
+border-radius:10px;cursor:pointer;transition:.15s;
+}
+.absorb-item:hover{background:rgba(255,200,80,.15)}
+.absorb-item .icon{font-size:28px}
+.absorb-item .info{flex:1}
+.absorb-item .info b{display:block;color:#fff;font-size:14px}
+.absorb-item .info small{color:#aac}
+.absorb-item .qty{color:#ffcc44;font-weight:700;font-size:16px}
 
-/* Overlay chung */
-#overlay{position:fixed;inset:0;background:rgba(8,12,6,.85);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:100;color:#e8f0d0;text-align:center;padding:20px}
-#overlay h1{font-size:28px;color:#ffe060;text-shadow:0 2px 4px #000}
-#overlay p{font-size:14px;line-height:1.6;max-width:340px;opacity:.9}
-#overlay button{padding:12px 28px;font-size:16px;font-weight:700;background:radial-gradient(circle at 30% 30%,#4a6a2a,#2a4010);color:#ffe060;border:2px solid #8b9a40;border-radius:8px;cursor:pointer;box-shadow:0 3px 0 #1a2008}
-#overlay button:active{transform:translateY(2px)}
-.hidden{display:none!important}
-#loading{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#e8f0d0;font-size:12px;background:rgba(0,0,0,.7);padding:6px 12px;border-radius:16px;z-index:150;opacity:0;transition:opacity .3s}
-#loading.show{opacity:1}
+/* Floating text khi nhặt đồ */
+.float-text{
+position:fixed;font-size:14px;font-weight:700;
+pointer-events:none;z-index:20;
+text-shadow:0 0 6px currentColor,0 2px 4px #000;
+animation:floatUp 1.4s ease-out forwards;
+}
+@keyframes floatUp{
+0%{transform:translate(-50%,0);opacity:1}
+100%{transform:translate(-50%,-70px);opacity:0}
+}
+
+/* Toast */
+#toast{
+position:fixed;top:60px;left:50%;transform:translateX(-50%);
+background:rgba(0,0,0,.8);color:#fff;
+padding:10px 20px;border-radius:10px;
+border:1px solid #4caf50;font-size:14px;
+pointer-events:none;opacity:0;transition:.3s;z-index:30;
+}
+#toast.show{opacity:1}
 </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
 
+<!-- HUD -->
 <div id="hud">
-<div class="stat">⚔ <b id="lvl">Luyện Khí T3</b></div>
-<div style="display:flex;align-items:center;gap:4px;flex:1;max-width:200px">
-<span>❤️</span>
-<div id="hpWrap"><div id="hpBar" style="width:100%"></div><div id="hpTxt">100/100</div></div>
+<div class="hud-left">
+<div>❤️ Máu: <b id="hud-hp">10 / 10</b></div>
+<div>👤 Tu vi: <b id="hud-tuvi">Luyện Khí T3</b></div>
+<div>🪨 Đá: <b id="hud-stone">∞</b></div>
 </div>
-<div class="stat">💠 <b id="core">0</b></div>
-<div class="stat">🧪 <b id="pot">0</b></div>
-<div class="stat">🪙 <b id="coin">0</b></div>
+<div class="hud-right">
+<button class="btn" id="btn-panel">📋</button>
+<button class="btn" id="btn-explore">🌐</button>
+<button class="btn" id="btn-sound">🔊</button>
 </div>
-
-<div id="hint"></div>
-<div id="speech"></div>
-<div id="loading">Đang tải tài nguyên...</div>
-
-<div id="dpad">
-<div class="dp" id="dpU">▲</div>
-<div class="dp" id="dpL">◄</div>
-<div class="dp" id="dpR">►</div>
-<div class="dp" id="dpD">▼</div>
 </div>
 
+<!-- Joystick -->
+<div id="joystick"><div id="joy-ring"></div><div id="joy-knob"></div></div>
+
+<!-- Actions -->
 <div id="actions">
-<div class="btn" id="throwBtn">🪨</div>
+<button class="btn-round" id="btn-stone">🪨<br>NÉM ĐÁ</button>
+<button class="btn-round small" id="btn-absorb">✨<br>HẤP THU</button>
 </div>
 
-<div id="overlay">
-<h1>⚔ Tu Tiên Săn Côn Trùng</h1>
-<p>Truyền tống trận đang khởi động...<br>Đạo hữu hãy chuẩn bị.</p>
-<button id="startBtn">Tiến Vào</button>
+<!-- Bảng thuộc tính -->
+<div id="panel">
+<div class="panel-box">
+<h2>📋 BẢNG THUỘC TÍNH</h2>
+<div class="attr-section">⚔️ Kỹ năng</div>
+<div class="attr-row"><span>Ném đá</span><span>15m</span></div>
+<div class="attr-row"><span>Chạy</span><span>15 km/h</span></div>
+<div class="attr-section">🗡️ Vũ khí</div>
+<div class="attr-row"><span>Trang bị</span><span id="attr-weapon">Chưa có</span></div>
+<div class="attr-section">🎒 Túi đồ</div>
+<div class="attr-row"><span>🧪 Bình máu</span><span id="attr-hp-pot">0</span></div>
+<div class="attr-row"><span>💎 Linh hạch</span><span id="attr-hach">0</span></div>
+<div class="attr-row"><span>🔮 Linh thạch</span><span id="attr-thach">0</span></div>
+<div class="attr-row"><span>🪙 Tiền đồng</span><span id="attr-dong">20</span></div>
+<div class="attr-row"><span>🥇 Tiền vàng</span><span id="attr-vang">0</span></div>
+<div class="attr-section">🌟 Tu vi</div>
+<div class="attr-row"><span>Cảnh giới</span><span id="attr-tuvi">Luyện Khí T3</span></div>
+<div class="attr-row"><span>Tu vi tích lũy</span><span id="attr-tuvi-exp">0 / 100</span></div>
+<div class="panel-actions">
+<button class="btn" id="btn-close-panel">✕ ĐÓNG</button>
 </div>
+<div style="margin-top:10px;font-size:11px;color:#6a8;text-align:center;line-height:1.5">
+1 vàng = 1000 đồng · 10 linh thạch = 1 linh hạch
+</div>
+</div>
+</div>
+
+<!-- Hấp thu -->
+<div id="absorb">
+<div class="absorb-box">
+<h2>✨ HẤP THU</h2>
+<div class="absorb-item" id="abs-hp">
+<div class="icon">🧪</div>
+<div class="info"><b>Bình máu</b><small>Hồi +5 máu</small></div>
+<div class="qty" id="abs-hp-qty">0</div>
+</div>
+<div class="absorb-item" id="abs-hach">
+<div class="icon">💎</div>
+<div class="info"><b>Linh hạch</b><small>+50 tu vi</small></div>
+<div class="qty" id="abs-hach-qty">0</div>
+</div>
+<div class="panel-actions">
+<button class="btn" id="btn-close-absorb">✕ ĐÓNG</button>
+</div>
+</div>
+</div>
+
+<div id="toast"></div>
 
 <script>
-// ============ CONFIG ============
-const CFG = {
-SPRITE_SZ: 40,
-PX_PER_M: 20,
-HEX_W: 6,
-FOG_R: 260, // bán kính sương mù
-PLAYER_SPD: 180,
-PLAYER_HP: 100,
-HP_DRAIN: 0.6, // máu tụt mỗi giây (đói bụng)
-STONE_SPD: 550,
-STONE_DMG: 34,
-THROW_CD: 0.35,
-BUSH_R: 14,
-PLAYER_R: 12,
-INTRO_TIME: 2.5,
-};
+/* =========================================================
+RỪNG SĂN CÔN TRÙNG — Phần 1: Setup, State, Portal Scene
+========================================================= */
 
-// ============ SPRITE SHEET ============
-const SHEET = {
-player: {row: 0, name: 'player'},
-spider: {row: 1, name: 'spider'},
-mantis: {row: 2, name: 'mantis'},
-};
-
-// ============ STATE ============
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
 let W, H, DPR;
@@ -120,312 +241,165 @@ function resize(){
 DPR = Math.min(window.devicePixelRatio || 1, 2);
 W = window.innerWidth; H = window.innerHeight;
 cv.width = W*DPR; cv.height = H*DPR;
-cv.style.width = W+'px'; cv.style.height = H+'px';
 ctx.setTransform(DPR,0,0,DPR,0,0);
+ctx.clearRect(0,0,W,H);
+// Cập nhật kích thước map theo màn hình
+if (typeof updateViewport === 'function') updateViewport();
 }
-window.addEventListener('resize', resize); resize();
+window.addEventListener('resize', resize);
 
-let img = new Image();
-let imgReady = false;
-let imgError = false;
-img.onload = () => { imgReady = true; hideLoading(); };
-img.onerror = () => {
-imgReady = false; imgError = true;
-showLoading('⚠️ Không tải được anh.PNG — dùng hình dự phòng');
-setTimeout(hideLoading, 3000);
-};
-img.src = 'anh.PNG';
-showLoading('Đang tải anh.PNG...');
+/* ====== ÂM THANH ====== */
+class Sound {
+constructor(){
+this.ctx = null;
+this.enabled = true;
+}
+ensure(){
+if(!this.ctx){
+try{ this.ctx = new (window.AudioContext||window.webkitAudioContext)(); }
+catch(e){ this.enabled = false; }
+}
+if(this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+}
+beep(freq=400, dur=0.08, type='square', vol=0.15){
+if(!this.enabled) return;
+this.ensure(); if(!this.ctx) return;
+const o = this.ctx.createOscillator();
+const g = this.ctx.createGain();
+o.type = type; o.frequency.value = freq;
+g.gain.setValueAtTime(vol, this.ctx.currentTime);
+g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+o.connect(g); g.connect(this.ctx.destination);
+o.start(); o.stop(this.ctx.currentTime + dur);
+}
+throwStone(){ this.beep(600, 0.06, 'square', 0.12); }
+hit(){ this.beep(180, 0.15, 'sawtooth', 0.2); }
+pick(){ this.beep(880, 0.07, 'sine', 0.15);
+setTimeout(()=>this.beep(1320,0.09,'sine',0.12), 60); }
+portal(){
+for(let i=0;i<12;i++){
+setTimeout(()=>this.beep(200 + i*80, 0.12, 'sine', 0.08), i*60);
+}
+}
+portalDone(){
+[440, 660, 880, 1320].forEach((f,i)=>setTimeout(()=>this.beep(f,0.3,'sine',0.15), i*80));
+}
+hurt(){ this.beep(120, 0.25, 'sawtooth', 0.22); }
+die(){
+[400,300,200,100].forEach((f,i)=>setTimeout(()=>this.beep(f,0.2,'sawtooth',0.15), i*80));
+}
+}
+const SND = new Sound();
 
-// ============ GAME STATE ============
-const game = {
-state: 'intro', // intro, playing, lose
-time: 0,
-introTime: 0,
+/* ====== STATE ====== */
+const ST = {
+scene: 'PORTAL', // PORTAL | FOREST
+paused: false,
+portalT: 0,
+portalProgress: 0,
+portalDone: false,
+
+// Người chơi
 player: {
 x: 0, y: 0,
-lane: 0, // 0=gần, 1=xa
-facing: 1,
-animFrame: 0,
-animTime: 0,
-hp: CFG.PLAYER_HP,
-maxHp: CFG.PLAYER_HP,
-throwCd: 0,
-throwAnimT: 0,
-moving: false,
+speed: 10 * 1000 / 3600, // m/s (10 km/h)
+backSpeed: 15 * 1000 / 3600,
+facing: 'E', // E (đông) | W (tây)
+hp: 10, hpMax: 10,
+animFrame: 0, animT: 0,
+state: 'idle', // idle | walk | attack
+attackT: 0,
+stones: Infinity,
 },
-camera: {x: 0, y: 0},
-bushes: [],
-stones: [],
+
+// Túi đồ
+inv: {
+hpPot: 0,
+hach: 0,
+thach: 0,
+dong: 20,
+vang: 0,
+},
+
+// Tu vi
+tuvi: {
+realm: 'Luyện Khí',
+tier: 3,
+exp: 0,
+expMax: 100,
+},
+
+// Camera
+cam: { x: 0, y: 0 },
+
+// Đối tượng
+trees: [],
 insects: [],
-drops: [],
-particles: [],
-// Đùi quái quanh đầu
-thighSpin: 0,
-thighActive: false,
-thighTimer: 0,
+projectiles: [],
+pickups: [],
+floatTexts: [],
+
+// Input
+joy: { active: false, dx: 0, dy: 0, id: null },
+keys: {},
 };
 
-const keys = {};
-document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
-document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+/* ====== SPRITE SHEET ====== */
+const SHEET = { img: null, loaded: false };
 
-// ============ INIT WORLD ============
-function initWorld(){
-// Player bắt đầu ở giữa
-game.player.x = 0;
-game.player.y = 0;
-game.camera.x = game.player.x - W/2;
-game.camera.y = game.player.y - H/2;
+function loadSheet(){
+    // Tạo đối tượng Image mới
+    const im = new Image();
+    
+    // Đường dẫn tới file ảnh của bạn (đảm bảo file anh.PNG nằm cùng thư mục với file code HTML/JS)
+    im.src = 'anh.PNG'; 
+    
+    // Khi trình duyệt tải xong ảnh thì mới gán dữ liệu vào SHEET
+    im.onload = () => { 
+        SHEET.img = im; 
+        SHEET.loaded = true; 
+        console.log("Đã tải xong Sprite Sheet!");
+    };
 
-// Bụi cây random quanh map
-game.bushes = [];
-for(let i = 0; i < 80; i++){
-const ang = Math.random() * Math.PI * 2;
-const dist = 200 + Math.random() * 3000;
-game.bushes.push({
-x: Math.cos(ang) * dist,
-y: Math.sin(ang) * dist * 0.6,
-r: CFG.BUSH_R + Math.random() * 6,
-// seed cho cánh hoa
-seed: Math.random() * 1000,
-});
+    // Báo lỗi nếu sai tên file hoặc không tìm thấy ảnh
+    im.onerror = () => {
+        console.error("Không tìm thấy file anh.PNG! Hãy kiểm tra lại đường dẫn.");
+    };
 }
+loadSheet();
 
-// Quái ban đầu
-game.insects = [];
-for(let i = 0; i < 12; i++){
-spawnInsect();
-}
-}
-
-function spawnInsect(){
-const ang = Math.random() * Math.PI * 2;
-const dist = 400 + Math.random() * 2500;
-const isSpider = Math.random() < 0.6;
-game.insects.push({
-x: Math.cos(ang) * dist,
-y: Math.sin(ang) * dist * 0.6,
-vx: 0, vy: 0,
-hp: 100,
-maxHp: 100,
-type: isSpider ? 'spider' : 'mantis',
-facing: 1,
-animFrame: 0,
-animTime: 0,
-state: 'idle', // idle, chase, hurt
-stateTime: 0,
-hurtTimer: 0,
-});
-}
-
-// ============ LOADING / HINT ============
-const loadingEl = document.getElementById('loading');
-function showLoading(txt){ loadingEl.textContent = txt; loadingEl.classList.add('show'); }
-function hideLoading(){ loadingEl.classList.remove('show'); }
-
-const hintEl = document.getElementById('hint');
-let hintTimer = 0;
-function showHint(txt, dur=2){
-hintEl.textContent = txt;
-hintEl.classList.add('show');
-hintTimer = dur;
-}
-
-const speechEl = document.getElementById('speech');
-let speechTimer = 0;
-function showSpeech(who, txt, dur=3){
-speechEl.innerHTML = `<span class="who">${who}</span>${txt}`;
-speechEl.classList.add('show');
-speechTimer = dur;
-}
-
-// Câu thoại ngẫu nhiên
-const SPEECHES = [
-['Sư huynh dặn rằng', 'Đi đứng cẩn thận, côn trùng đột biến ban đêm hay núp bụi.'],
-['Sư huynh dặn rằng', 'Máu tụt là đói bụng đó. Kiếm gì ăn đi.'],
-['Nội tâm', 'Mệt quá, nướng con này ăn chắc đỡ mệt.'],
-['Nội tâm', 'Đánh 3 đá là chết. Đừng phí đá.'],
-['Sư huynh dặn rằng', 'Nhặt được đùi thì ăn liền, đừng để lâu.'],
-['Nội tâm', 'Đứng im cũng được, sư huynh nói vậy.'],
-['Sư huynh dặn rằng', 'Hấp thu linh hạch để tăng tu vi.'],
-['Nội tâm', 'Uống bình máu đi, không thì chết đói.'],
-];
-let nextSpeechAt = 8;
-
-// ============ AUDIO ============
-let audioCtx = null;
-function initAudio(){
-if(audioCtx) return;
-try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){}
-}
-function playCricket(pitch=1){
-if(!audioCtx) return;
-const o = audioCtx.createOscillator();
-const g = audioCtx.createGain();
-o.frequency.value = 800 * pitch;
-o.type = 'sine';
-g.gain.setValueAtTime(0.02, audioCtx.currentTime);
-g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-o.connect(g).connect(audioCtx.destination);
-o.start(); o.stop(audioCtx.currentTime + 0.05);
-}
-function playCoin(){
-if(!audioCtx) return;
-const o = audioCtx.createOscillator();
-const g = audioCtx.createGain();
-o.frequency.setValueAtTime(1200, audioCtx.currentTime);
-o.frequency.exponentialRampToValueAtTime(1800, audioCtx.currentTime + 0.08);
-o.type = 'triangle';
-g.gain.setValueAtTime(0.08, audioCtx.currentTime);
-g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-o.connect(g).connect(audioCtx.destination);
-o.start(); o.stop(audioCtx.currentTime + 0.15);
-}
-function playThrow(){
-if(!audioCtx) return;
-const o = audioCtx.createOscillator();
-const g = audioCtx.createGain();
-o.frequency.value = 300;
-o.type = 'square';
-g.gain.setValueAtTime(0.05, audioCtx.currentTime);
-g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
-o.connect(g).connect(audioCtx.destination);
-o.start(); o.stop(audioCtx.currentTime + 0.08);
-}
-function playHurt(){
-if(!audioCtx) return;
-const o = audioCtx.createOscillator();
-const g = audioCtx.createGain();
-o.frequency.value = 150;
-o.type = 'sawtooth';
-g.gain.setValueAtTime(0.08, audioCtx.currentTime);
-g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-o.connect(g).connect(audioCtx.destination);
-o.start(); o.stop(audioCtx.currentTime + 0.2);
-}
-
-// ============ SPRITE DRAWING ============
-function drawSheet(sheet, frame, dx, dy, dw, dh, flipX){
-const sx = frame * CFG.SPRITE_SZ;
-const sy = sheet.row * CFG.SPRITE_SZ;
-const sw = CFG.SPRITE_SZ, sh = CFG.SPRITE_SZ;
-
-// Fallback nếu ảnh chưa sẵn sàng
-if(!imgReady || img.naturalWidth < sx+sw || img.naturalHeight < sy+sh){
+/* Vẽ 1 sprite từ sheet (row: 0 người, 1 nhện, 2 bọ ngựa) */
+function drawSprite(row, frame, x, y, w, h, flip){
+if (SHEET.img){
 ctx.save();
-const cx = dx + dw/2;
-const cy = dy + dh/2;
-
-if(sheet === SHEET.player){
-// Hào quang
-const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, dw*0.9);
-glow.addColorStop(0, 'rgba(255,240,150,0.55)');
-glow.addColorStop(1, 'rgba(255,240,150,0)');
-ctx.fillStyle = glow;
-ctx.beginPath(); ctx.arc(cx, cy, dw*0.9, 0, Math.PI*2); ctx.fill();
-
-// Thân
-ctx.fillStyle = '#ffe060';
-ctx.strokeStyle = '#8b4500';
-ctx.lineWidth = 3;
-ctx.beginPath(); ctx.arc(cx, cy, dw/2, 0, Math.PI*2);
-ctx.fill(); ctx.stroke();
-
-// Đầu
-ctx.fillStyle = '#ffdd00';
-ctx.beginPath(); ctx.arc(cx, cy - 4, 7, 0, Math.PI*2);
-ctx.fill(); ctx.stroke();
-
-// Mắt
+if (flip){
+ctx.translate(x + w, y);
+ctx.scale(-1, 1);
+ctx.drawImage(SHEET.img, frame*40, row*40, 40, 40, 0, 0, w, h);
+} else {
+ctx.drawImage(SHEET.img, frame*40, row*40, 40, 40, x, y, w, h);
+}
+ctx.restore();
+} else {
+// Placeholder
+const colors = ['#c8e080', '#a06060', '#80c060'];
+ctx.save();
+ctx.translate(x + w/2, y + h/2);
+if(flip) ctx.scale(-1,1);
+ctx.fillStyle = colors[row] || '#fff';
+ctx.fillRect(-w/2, -h/2, w, h);
 ctx.fillStyle = '#000';
-ctx.beginPath();
-ctx.arc(cx + (flipX ? -2 : 2), cy - 4, 1.8, 0, Math.PI*2);
-ctx.fill();
-
-// Tay ném
-if(frame >= 4){
-ctx.fillStyle = '#ffffff';
-ctx.beginPath(); ctx.arc(cx + (flipX?-dw/2:dw/2), cy - 4, 4, 0, Math.PI*2);
-ctx.fill();
-}
-} else {
-const isSpider = (sheet === SHEET.spider);
-ctx.fillStyle = isSpider ? '#e040e0' : '#ff4040';
-ctx.strokeStyle = '#000';
-ctx.lineWidth = 2;
-ctx.beginPath(); ctx.arc(cx, cy, dw/2.2, 0, Math.PI*2);
-ctx.fill(); ctx.stroke();
-
-// Mắt quái
-ctx.fillStyle = '#fff';
-ctx.beginPath(); ctx.arc(cx - 4, cy - 3, 2, 0, Math.PI*2); ctx.fill();
-ctx.beginPath(); ctx.arc(cx + 4, cy - 3, 2, 0, Math.PI*2); ctx.fill();
-}
-ctx.restore();
-return;
-}
-
-// Vẽ bình thường
-ctx.save();
-if(flipX){
-ctx.translate(dx+dw, dy);
-ctx.scale(-1,1);
-ctx.drawImage(img, sx, sy, sw, sh, 0, 0, dw, dh);
-} else {
-ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
-}
+ctx.font = `${Math.max(10,w*0.4)}px sans-serif`;
+ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ctx.fillText(frame, 0, 0);
 ctx.restore();
 }
+}
 
-// ============ PORTAL (TRUYỀN TỐNG TRẬN) ============
-// Vẽ 2 vòng xoắn quay NGƯỢC CHIỀU — thu vào = điểm đến
-function drawPortal(spinCW, spinCCW, alpha){
-const x = W/2;
-const y = H/2;
-const scale = Math.min(W, H) / 900;
-const rOuter = 180 * scale;
-const rInner = 110 * scale;
-
+/* ====== SCENE PORTAL ====== */
+function drawSpiralArms(cx, cy, radius, armCount, twist, rotation, color1, color2, width, alpha){
 ctx.save();
 ctx.globalAlpha = alpha;
-
-// Vòng ngoài — quay CW
-drawSpiral(x, y, rOuter, 8, Math.PI*1.5, spinCW, '#00e0ff', '#c060ff', 7*scale, 0.9);
-// Vòng giữa — quay CCW
-drawSpiral(x, y, (rOuter+rInner)/2, 12, -Math.PI*2, spinCCW, '#ff40a0', '#ffe060', 5*scale, 0.85);
-// Vòng trong — quay CW
-drawSpiral(x, y, rInner, 16, Math.PI*2.5, spinCW, '#80ff80', '#00d0ff', 4*scale, 0.9);
-
-// Nền phát sáng
-const glow = ctx.createRadialGradient(x, y, 0, x, y, rOuter*1.4);
-glow.addColorStop(0, 'rgba(160, 220, 255, 0.35)');
-glow.addColorStop(0.5, 'rgba(80, 40, 160, 0.25)');
-glow.addColorStop(1, 'rgba(0,0,0,0)');
-ctx.fillStyle = glow;
-ctx.beginPath(); ctx.arc(x, y, rOuter*1.4, 0, Math.PI*2); ctx.fill();
-
-// Tia lửa bay ngược vào trong (thu vào)
-for(let i = 0; i < 30; i++){
-const baseAng = (i/30) * Math.PI*2;
-const ang = baseAng + spinCW * 2;
-// Bán kính giảm dần theo thời gian → thu vào
-const phase = (game.time * 0.8 + i * 0.2) % 1;
-const rad = rInner + (rOuter - rInner) * (1 - phase);
-const px = x + Math.cos(ang) * rad;
-const py = y + Math.sin(ang) * rad;
-const a = 1 - phase;
-ctx.fillStyle = `rgba(200, 240, 255, ${a*0.9})`;
-ctx.beginPath(); ctx.arc(px, py, 1.5 + a*2, 0, Math.PI*2);
-ctx.fill();
-}
-
-ctx.restore();
-}
-
-function drawSpiral(cx, cy, radius, armCount, twist, rotation, color1, color2, lw, alpha){
-ctx.save();
-ctx.globalAlpha *= alpha;
 ctx.translate(cx, cy);
 ctx.rotate(rotation);
 for(let a = 0; a < armCount; a++){
@@ -436,17 +410,18 @@ const grd = ctx.createLinearGradient(0, 0, radius, 0);
 grd.addColorStop(0, color1);
 grd.addColorStop(1, color2);
 ctx.strokeStyle = grd;
-ctx.lineWidth = lw;
+ctx.lineWidth = width;
 ctx.lineCap = 'round';
 ctx.beginPath();
-const steps = 24;
+const steps = 30;
 for(let i = 0; i <= steps; i++){
 const f = i / steps;
 const r = radius * f;
 const ang = twist * f;
-const px = Math.cos(ang) * r;
-const py = Math.sin(ang) * r;
-if(i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+const x = Math.cos(ang) * r;
+const y = Math.sin(ang) * r;
+if(i === 0) ctx.moveTo(x, y);
+else ctx.lineTo(x, y);
 }
 ctx.stroke();
 ctx.restore();
@@ -454,116 +429,782 @@ ctx.restore();
 ctx.restore();
 }
 
-// ============ UPDATE ============
+function drawPortal(dt, t){
+const x = W/2, y = H/2;
+const scale = Math.min(W, H) / 900;
+const rOuter = 220 * scale;
+const rInner = 140 * scale;
+
+// Rung nhẹ
+const shake = ST.portalProgress < 1 ? (Math.random()-0.5) * 4 : 0;
+ctx.save();
+ctx.translate(shake, shake);
+
+drawSpiralArms(x, y, rOuter, 8, Math.PI*1.5, t*1.2,
+'#00e0ff', '#c060ff', 8*scale, 0.9);
+drawSpiralArms(x, y, (rOuter+rInner)/2, 12, -Math.PI*2, -t*1.8,
+'#ff40a0', '#ffe060', 5*scale, 0.85);
+drawSpiralArms(x, y, rInner, 16, Math.PI*2.5, t*2.5,
+'#80ff80', '#00d0ff', 4*scale, 0.9);
+
+// Glow
+const glow = ctx.createRadialGradient(x, y, 0, x, y, rOuter*1.4);
+glow.addColorStop(0, `rgba(120,200,255,${0.25 + Math.sin(t*4)*0.1})`);
+glow.addColorStop(0.5, 'rgba(80,40,160,0.15)');
+glow.addColorStop(1, 'rgba(0,0,0,0)');
+ctx.fillStyle = glow;
+ctx.beginPath();
+ctx.arc(x, y, rOuter*1.4, 0, Math.PI*2);
+ctx.fill();
+
+// Tia lửa — seed theo i để mượt
+const sparkCount = 40;
+for(let i = 0; i < sparkCount; i++){
+const baseAng = (i / sparkCount) * Math.PI * 2;
+const ang = baseAng + t * 0.5;
+const rad = rInner + Math.sin(t*3 + i) * 30 * scale;
+const px = x + Math.cos(ang) * rad;
+const py = y + Math.sin(ang) * rad - ((t*60 + i*5) % 200) * scale;
+const alpha = 1 - (((t*60 + i*5) % 200) / 200);
+ctx.fillStyle = `rgba(180,240,255,${alpha*0.9})`;
+ctx.beginPath();
+ctx.arc(px, py, 2 + (i%3), 0, Math.PI*2);
+ctx.fill();
+}
+
+// Cột sáng
+if(ST.portalProgress > 0){
+const beamH = 400 * scale * ST.portalProgress;
+const beamW = 30 * scale * ST.portalProgress;
+const beamGrd = ctx.createLinearGradient(x, y - beamH, x, y);
+beamGrd.addColorStop(0, 'rgba(255,255,255,0)');
+beamGrd.addColorStop(0.7, `rgba(180,240,255,${0.7*ST.portalProgress})`);
+beamGrd.addColorStop(1, `rgba(255,255,255,${0.95*ST.portalProgress})`);
+ctx.fillStyle = beamGrd;
+ctx.fillRect(x - beamW/2, y - beamH, beamW, beamH);
+}
+
+// Nhân vật hiện ra
+if(ST.portalProgress > 0){
+const charScale = 0.3 + ST.portalProgress * 0.7;
+const alpha = ST.portalProgress;
+const size = 80 * scale * charScale;
+ctx.save();
+ctx.globalAlpha = alpha;
+ctx.shadowColor = '#ffffff';
+ctx.shadowBlur = 30 * ST.portalProgress;
+drawSprite(0, 0, x - size/2, y - size, size, size, false);
+ctx.restore();
+}
+
+ctx.restore();
+}
+
+function updatePortal(dt){
+ST.portalT += dt;
+ST.portalProgress = Math.min(1, ST.portalT / 3);
+
+if(!ST.portalDone && ST.portalT > 0.1){
+ST.portalDone = true;
+SND.portal();
+}
+if(ST.portalProgress >= 1 && ST.portalT > 4){
+SND.portalDone();
+startForest();
+}
+}
+/* =========================================================
+MAP HEX TỔ ONG DẸT — cạnh chéo 75° và 105°
+- Kéo dài chiều cao, hẹp chiều ngang
+- Nhìn tự nhiên như rừng thật
+- Mobile: 6 hàng cây, người ở hàng thứ 2, map cuộn theo
+========================================================= */
+
+const HEX = {
+r: 6, // khoảng cách tâm 2 cây cạnh nhau (mét)
+treeD: 3, // đường kính cây (mét)
+pxPerM: 40, // pixel / mét — sẽ tùy chỉnh theo màn hình
+rows: 30, // ← GIỮ 30 hàng (map dọc dài)
+cols: 12, // ← GIẢM từ 20 → 12 (map hẹp ngang)
+// Hệ số nén ngang — càng nhỏ càng hẹp
+colStep: 0.35, // ← THÊM MỚI: bước ngang = r * colStep (thay vì 0.5)
+// Nghiêng hàng: hàng lẻ lệch nửa bước để tạo góc 75/105
+skew: 0.5,
+};
+
+
+
+// Tính vị trí 1 cây theo (row, col) — hex dẹt (kéo dọc)
+function hexPos(row, col){
+const stepX = HEX.r * HEX.colStep; // bước ngang (đã nén)
+const stepY = HEX.r * 0.9; // bước dọc (giữ nguyên)
+const gx = col * stepX + (row % 2) * stepX * 0.5;
+const gy = row * stepY;
+return { x: gx, y: gy };
+}
+
+// Ngược lại: từ vị trí world → node gần nhất
+function worldToNode(wx, wy){
+const stepX = HEX.r * HEX.colStep;
+const stepY = HEX.r * 0.9;
+const row = Math.round(wy / stepY);
+const col = Math.round((wx - (row % 2) * stepX * 0.5) / stepX);
+return { row, col };
+}
+
+
+// Ngược lại: từ vị trí world → node gần nhất
+function worldToNode(wx, wy){
+const stepX = HEX.r * HEX.colStep;
+const stepY = HEX.r * 0.9;
+const row = Math.round(wy / stepY);
+const col = Math.round((wx - (row % 2) * stepX * 0.5) / stepX);
+return { row, col };
+}
+
+
+/* ====== TẠO RỪNG ====== */
+function generateForest(){
+ST.trees = [];
+for(let r = 0; r < HEX.rows; r++){
+// Hàng lẻ bắt đầu từ cột 1 để so le (tổ ong đẹp hơn)
+const startCol = (r % 2 === 0) ? 0 : 1;
+for(let c = startCol; c < HEX.cols; c += 2){ // ← đi bước 2: để 1, rút 1
+const p = hexPos(r, c);
+// Tree có kích thước ngẫu nhiên chút để tự nhiên
+const sizeJitter = 0.85 + Math.random() * 0.3;
+ST.trees.push({
+row: r, col: c,
+x: p.x, y: p.y,
+size: HEX.treeD * sizeJitter,
+seed: Math.random() * 1000,
+variant: Math.floor(Math.random() * 3),
+});
+}
+}
+}
+
+/* ====== KHỞI ĐỘNG SCENE FOREST ====== */
+function startForest(){
+ST.scene = 'FOREST';
+// Người chơi ở hàng 2, cột 10 (giữa map)
+const startRow = HEX.rows - 2;
+const startCol = Math.floor(HEX.cols / 2);
+const p = hexPos(startRow, startCol);
+
+ST.player.x = p.x;
+ST.player.y = p.y;
+ST.player.hp = 10;
+ST.player.facing = 'E';
+
+generateForest();
+ST.insects = [];
+ST.projectiles = [];
+ST.pickups = [];
+ST.floatTexts = [];
+
+// Xóa joystick state
+ST.joy.dx = 0; ST.joy.dy = 0;
+
+SND.beep(660, 0.2, 'sine', 0.15);
+setTimeout(()=>SND.beep(880, 0.25, 'sine', 0.15), 150);
+
+updateViewport();
+}
+
+/* ====== CẬP NHẬT VIEWPORT (số hàng hiển thị) ====== */
+let VIEW_ROWS = 6; // mobile: 6 hàng
+let VIEW_ROW_H = 0; // chiều cao 1 hàng (px)
+
+function updateViewport(){
+// Tính px/m sao cho 6 hàng vừa màn hình
+const targetRows = (W < 700) ? 6 : 9; // mobile 6, desktop 9
+VIEW_ROWS = targetRows;
+VIEW_ROW_H = H / targetRows;
+HEX.pxPerM = VIEW_ROW_H / (HEX.r * 0.9);
+}
+
+/* ====== ĐỔI WORLD → SCREEN ====== */
+function worldToScreen(wx, wy){
+return {
+x: (wx - ST.cam.x) * HEX.pxPerM + W/2,
+y: (wy - ST.cam.y) * HEX.pxPerM + H/2,
+};
+}
+
+/* ====== CAMERA FOLLOW ====== */
+function updateCamera(dt){
+const p = ST.player;
+// Đích: giữ người chơi ở 1/3 dưới màn hình một chút (hàng thứ 2)
+const targetY = p.y - (VIEW_ROWS * HEX.r * 0.9) * 0.1;
+// Smooth
+ST.cam.x += (p.x - ST.cam.x) * Math.min(1, dt * 4);
+ST.cam.y += (targetY - ST.cam.y) * Math.min(1, dt * 4);
+}
+
+/* ====== VẼ RỪNG ====== */
+function drawForest(){
+// Nền gradient xanh rừng
+const bg = ctx.createLinearGradient(0, 0, 0, H);
+bg.addColorStop(0, '#0b1a0d');
+bg.addColorStop(0.5, '#0d2412');
+bg.addColorStop(1, '#061207');
+ctx.fillStyle = bg;
+ctx.fillRect(0, 0, W, H);
+
+// Vẽ lối đi mờ giữa các hàng (nhìn như đường mòn)
+ctx.save();
+ctx.globalAlpha = 0.08;
+for(let r = 0; r < HEX.rows; r++){
+const sy = worldToScreen(0, r * HEX.r * 0.9).y;
+if(sy < -50 || sy > H + 50) continue;
+ctx.fillStyle = r % 2 === 0 ? '#3a6a3a' : '#2a5a2a';
+ctx.fillRect(0, sy, W, 2);
+}
+ctx.restore();
+
+// Sắp xếp cây theo y để vẽ đúng lớp (xa trước, gần sau)
+const visible = [];
+for(const t of ST.trees){
+const s = worldToScreen(t.x, t.y);
+const sSize = t.size * HEX.pxPerM;
+if(s.x < -sSize*2 || s.x > W + sSize*2) continue;
+if(s.y < -sSize*3 || s.y > H + sSize*3) continue;
+visible.push({ t, s, sSize });
+}
+visible.sort((a, b) => a.s.y - b.s.y);
+
+for(const { t, s, sSize } of visible){
+// Bóng cây dưới đất
+ctx.save();
+ctx.globalAlpha = 0.35;
+ctx.fillStyle = '#000';
+ctx.beginPath();
+ctx.ellipse(s.x, s.y + sSize*0.15, sSize*0.6, sSize*0.22, 0, 0, Math.PI*2);
+ctx.fill();
+ctx.restore();
+
+drawTree(s.x, s.y, sSize, t);
+}
+}
+
+/* ====== VẼ CÂY (thủ công bằng canvas) ====== */
+function drawTree(x, y, size, tree){
+const variant = tree.variant;
+const sway = Math.sin(performance.now()/1800 + tree.seed) * size * 0.03;
+
+// Thân
+ctx.fillStyle = '#3d2818';
+ctx.beginPath();
+ctx.moveTo(x - size*0.1, y);
+ctx.lineTo(x + size*0.1, y);
+ctx.lineTo(x + size*0.15, y - size*0.4);
+ctx.lineTo(x - size*0.15, y - size*0.4);
+ctx.closePath();
+ctx.fill();
+
+// Tán cây — 3 kiểu khác nhau
+const baseY = y - size*0.4;
+if(variant === 0){
+// Tán tròn xanh đậm
+const g = ctx.createRadialGradient(x + sway, baseY - size*0.3, size*0.05,
+x + sway, baseY - size*0.3, size*0.6);
+g.addColorStop(0, '#4a8a3a');
+g.addColorStop(0.7, '#2a5a2a');
+g.addColorStop(1, '#1a3a1a');
+ctx.fillStyle = g;
+ctx.beginPath();
+ctx.arc(x + sway, baseY - size*0.3, size*0.55, 0, Math.PI*2);
+ctx.fill();
+} else if(variant === 1){
+// Tán tam giác (thông)
+for(let i = 0; i < 3; i++){
+const yy = baseY - i * size*0.25;
+const ww = size * (0.55 - i*0.12);
+const hh = size * 0.45;
+ctx.fillStyle = i === 0 ? '#1a3a1a' : (i === 1 ? '#2a5a2a' : '#3a7a3a');
+ctx.beginPath();
+ctx.moveTo(x + sway, yy - hh);
+ctx.lineTo(x + ww, yy);
+ctx.lineTo(x - ww, yy);
+ctx.closePath();
+ctx.fill();
+}
+} else {
+// Tán bụi thấp nhiều lớp
+for(let i = 0; i < 4; i++){
+const ang = (i / 4) * Math.PI * 2 + tree.seed;
+const ox = Math.cos(ang) * size * 0.18;
+const oy = Math.sin(ang) * size * 0.14;
+ctx.fillStyle = ['#2a5a2a','#3a7a3a','#4a8a3a','#2a6a2a'][i];
+ctx.beginPath();
+ctx.arc(x + sway + ox, baseY - size*0.2 + oy, size*0.32, 0, Math.PI*2);
+ctx.fill();
+}
+}
+
+// Điểm sáng nhỏ (sương/đom đóm)
+if((tree.seed * 7) % 13 < 3){
+ctx.save();
+ctx.globalAlpha = 0.4 + Math.sin(performance.now()/600 + tree.seed) * 0.3;
+ctx.fillStyle = '#aaffaa';
+ctx.beginPath();
+ctx.arc(x + Math.sin(tree.seed)*size*0.4, baseY - size*0.4,
+1.5 + (tree.seed%2), 0, Math.PI*2);
+ctx.fill();
+ctx.restore();
+}
+}
+
+/* ====== VẼ NGƯỜI CHƠI ====== */
+function drawPlayer(){
+const p = ST.player;
+const s = worldToScreen(p.x, p.y);
+const size = 1.2 * HEX.pxPerM; // người to hơn cây chút
+const flip = p.facing === 'W';
+
+// Bóng
+ctx.save();
+ctx.globalAlpha = 0.4;
+ctx.fillStyle = '#000';
+ctx.beginPath();
+ctx.ellipse(s.x, s.y + size*0.3, size*0.35, size*0.13, 0, 0, Math.PI*2);
+ctx.fill();
+ctx.restore();
+
+// Chọn frame
+let frame = 0;
+let row = 0;
+if(p.state === 'attack'){
+// row 0, frame 5..8
+frame = 4 + Math.floor((p.attackT * 12) % 4);
+} else if(p.state === 'walk'){
+frame = Math.floor(p.animFrame) % 4;
+} else {
+frame = 0;
+}
+
+drawSprite(row, frame, s.x - size/2, s.y - size, size, size, flip);
+
+// Highlight khi đang attack
+if(p.state === 'attack'){
+ctx.save();
+ctx.globalAlpha = 0.5 * (1 - p.attackT/0.4);
+ctx.strokeStyle = '#aaffff';
+ctx.lineWidth = 3;
+ctx.beginPath();
+ctx.arc(s.x, s.y - size*0.4, size*0.7, 0, Math.PI*2);
+ctx.stroke();
+ctx.restore();
+}
+}
+
+/* ====== DI CHUYỂN NGƯỜI ====== */
 function updatePlayer(dt){
-const p = game.player;
-let dx = 0, dy = 0;
-if(keys['w'] || keys['arrowup'] || keys['dp_u']) dy -= 1;
-if(keys['s'] || keys['arrowdown'] || keys['dp_d']) dy += 1;
-if(keys['a'] || keys['arrowleft'] || keys['dp_l']) dx -= 1;
-if(keys['d'] || keys['arrowright'] || keys['dp_r']) dx += 1;
-
-const len = Math.hypot(dx, dy);
-p.moving = len > 0;
-if(len > 0){
-dx /= len; dy /= len;
-p.x += dx * CFG.PLAYER_SPD * dt;
-p.y += dy * CFG.PLAYER_SPD * dt;
-if(Math.abs(dx) > 0.1) p.facing = dx > 0 ? 1 : -1;
+const p = ST.player;
+if(p.state === 'attack'){
+p.attackT += dt;
+if(p.attackT >= 0.4){
+p.state = 'idle';
+p.attackT = 0;
+}
+// Không di chuyển khi đang attack
+return;
 }
 
-// Đẩy ra khỏi bụi
-for(const bush of game.bushes){
-const ddx = p.x - bush.x;
-const ddy = p.y - bush.y;
-const d = Math.hypot(ddx, ddy);
-const minD = CFG.BUSH_R + CFG.PLAYER_R;
-if(d < minD && d > 0.01){
-const ang = Math.atan2(ddy, ddx);
-p.x = bush.x + Math.cos(ang) * minD;
-p.y = bush.y + Math.sin(ang) * minD;
+// Input vector: joystick hoặc bàn phím
+let ix = ST.joy.dx;
+let iy = ST.joy.dy;
+if(Math.abs(ix) < 0.05 && Math.abs(iy) < 0.05){
+// Bàn phím
+if(ST.keys['w'] || ST.keys['arrowup']) iy -= 1;
+if(ST.keys['s'] || ST.keys['arrowdown']) iy += 1;
+if(ST.keys['a'] || ST.keys['arrowleft']) ix -= 1;
+if(ST.keys['d'] || ST.keys['arrowright']) ix += 1;
+}
+
+const mag = Math.hypot(ix, iy);
+if(mag < 0.05){
+p.state = 'idle';
+return;
+}
+
+// Chuẩn hóa
+ix /= mag; iy /= mag;
+
+// Hướng đi: ưu tiên ngang để chọn 2h / 10h
+// Nếu ix > 0 → đi 2h (phải-lên), ix < 0 → đi 10h (trái-lên)
+// Nếu chỉ có iy > 0 (xuống) → đi thẳng xuống (không lật)
+if(ix > 0.15) p.facing = 'E';
+else if(ix < -0.15) p.facing = 'W';
+
+// Tốc độ: chạy lùi (đi ngược hướng nhìn) thì nhanh hơn
+const baseSpeed = p.speed; // 10 km/h
+const backSpeed = p.backSpeed; // 15 km/h
+// "Chạy lùi": người chơi đang giữ S hoặc ngược hướng joystick
+const isBacking = (iy > 0.5 && Math.abs(ix) < 0.3);
+const spd = isBacking ? backSpeed : baseSpeed;
+
+p.x += ix * spd * dt;
+p.y += iy * spd * dt;
+// Giới hạn trong map
+const maxX = hexPos(0, HEX.cols - 1).x + HEX.r;
+const maxY = hexPos(HEX.rows - 1, 0).y + HEX.r;
+p.x = Math.max(-HEX.r, Math.min(maxX, p.x));
+p.y = Math.max(-HEX.r, Math.min(maxY, p.y));
+
+// Đi hết map trên → nhảy xuống hàng 2 từ dưới lên
+if(p.y <= 0){
+const startRow = HEX.rows - 2;
+const startCol = Math.floor(HEX.cols / 2);
+const sp = hexPos(startRow, startCol);
+p.x = sp.x;
+p.y = sp.y;
+ST.insects = [];
+toast('🌲 Vào khu rừng mới');
+}
+
+
+
+
+// Animation walk
+p.state = 'walk';
+p.animT += dt;
+p.animFrame = (p.animT * 8) % 4; // 8 fps cho walk
+}
+
+/* ====== VẼ HUD WORLD (nút hướng, mũi tên) ====== */
+function drawWorldHints(){
+// Mũi tên chỉ hướng đi cho người chơi (giúp cảm nhận 2h / 10h)
+const p = ST.player;
+const s = worldToScreen(p.x, p.y);
+const size = 1.2 * HEX.pxPerM;
+if(p.state === 'idle'){
+ctx.save();
+ctx.globalAlpha = 0.3 + Math.sin(performance.now()/300)*0.15;
+ctx.strokeStyle = '#aaffaa';
+ctx.lineWidth = 2;
+// Mũi tên 2h
+ctx.beginPath();
+ctx.moveTo(s.x + size*0.7, s.y - size*0.2);
+ctx.lineTo(s.x + size*1.1, s.y - size*0.6);
+ctx.lineTo(s.x + size*1.05, s.y - size*0.4);
+ctx.stroke();
+// Mũi tên 10h
+ctx.beginPath();
+ctx.moveTo(s.x - size*0.7, s.y - size*0.2);
+ctx.lineTo(s.x - size*1.1, s.y - size*0.6);
+ctx.lineTo(s.x - size*1.05, s.y - size*0.4);
+ctx.stroke();
+ctx.restore();
 }
 }
 
-// Animation
-p.animTime += dt;
-if(p.animTime > 0.2){
-p.animTime = 0;
-p.animFrame = (p.animFrame + 1) % 8;
-}
-if(!p.moving && p.animFrame >= 4){
-p.animFrame = 0;
-}
-
-// Cooldown ném
-if(p.throwCd > 0) p.throwCd -= dt;
-if(p.throwAnimT > 0) p.throwAnimT -= dt;
-
-// Máu tụt theo thời gian (đói bụng)
-p.hp -= CFG.HP_DRAIN * dt;
-if(p.hp <= 0){
-p.hp = 0;
-game.state = 'lose';
-showOverlay('💀 Đạo hữu đã gục ngã...', 'Hãy nghỉ ngơi và thử lại sau.', 'Thử Lại');
-}
+/* ====== LOOP CHÍNH SCENE FOREST ====== */
+function updateForest(dt){
+updatePlayer(dt);
+updateCamera(dt);
+// Côn trùng, đá, đồ rơi sẽ có ở Phần 3
+if(typeof updateInsects === 'function') updateInsects(dt);
+if(typeof updateProjectiles === 'function') updateProjectiles(dt);
+if(typeof updatePickups === 'function') updatePickups(dt);
+updateFloatTexts(dt);
 }
 
-function throwStone(){
-const p = game.player;
-if(p.throwCd > 0) return;
-p.throwCd = CFG.THROW_CD;
-p.throwAnimT = 0.3;
-p.animFrame = 4; // frame ném
-playThrow();
+function renderForest(){
+drawForest();
+// Vẽ đối tượng theo thứ tự y (xa trước, gần sau)
+// Ở đây đơn giản vẽ theo layer
+if(typeof drawInsects === 'function') drawInsects();
+if(typeof drawProjectiles === 'function') drawProjectiles();
+drawPlayer();
+drawWorldHints();
+if(typeof drawPickups === 'function') drawPickups();
+}
 
-// Tính hướng bay — bay theo hướng nhân vật đang đối mặt, hơi chếch lên theo lane
-const dirX = p.facing;
-const dirY = -0.15;
+/* ====== FLOAT TEXT ====== */
+function updateFloatTexts(dt){
+for(let i = ST.floatTexts.length - 1; i >= 0; i--){
+ST.floatTexts[i].life -= dt;
+if(ST.floatTexts[i].life <= 0) ST.floatTexts.splice(i, 1);
+}
+}
 
-game.stones.push({
-x: p.x, y: p.y - 4,
-vx: dirX * CFG.STONE_SPD,
-vy: dirY * CFG.STONE_SPD,
-life: 1.5,
-rot: 0,
+/* ====== TOAST ====== */
+let toastTimer = null;
+function toast(msg){
+const el = document.getElementById('toast');
+el.textContent = msg;
+el.classList.add('show');
+clearTimeout(toastTimer);
+toastTimer = setTimeout(()=>el.classList.remove('show'), 1800);
+}
+/* =========================================================
+CÔN TRÙNG — Nhện (row 1) + Bọ ngựa (row 2)
+- Núp sau bụi, kích hoạt khi người đi qua 3-4 cây
+- Spawn cách 3 cây
+- Khi người cách 2 cây → tấn công 18 km/h
+- KHÔNG di chuyển từ dưới người chơi lên
+- Trúng 3 đá → chết, rơi đồ
+========================================================= */
+
+const INSECT_TYPES = {
+spider: {
+name: 'Nhện',
+row: 1,
+hp: 3,
+patrol: 10 * 1000 / 3600, // m/s
+attack: 18 * 1000 / 3600,
+dmg: 2,
+detectDist: 2 * HEX.r, // 2 cây
+wanderRadius: 1.5 * HEX.r,
+},
+mantis: {
+name: 'Bọ ngựa',
+row: 2,
+hp: 3,
+patrol: 10 * 1000 / 3600,
+attack: 18 * 1000 / 3600,
+dmg: 3,
+detectDist: 2 * HEX.r,
+wanderRadius: 1.5 * HEX.r,
+},
+};
+
+let insectId = 0;
+
+function spawnInsect(type, nearX, nearY){
+const cfg = INSECT_TYPES[type];
+// Spawn cách người chơi 3 cây (theo trục tổ ong)
+// Random 1 trong các hướng: trên-trái, trên-phải, ngang, dưới (nhưng dưới sẽ không tấn công lên)
+const dirs = [
+{ dx: -1, dy: -0.5 }, // trên-trái
+{ dx: 1, dy: -0.5 }, // trên-phải
+{ dx: -1, dy: 0.5 }, // dưới-trái
+{ dx: 1, dy: 0.5 }, // dưới-phải
+{ dx: -1, dy: 0 }, // ngang trái
+{ dx: 1, dy: 0 }, // ngang phải
+];
+const d = dirs[Math.floor(Math.random() * dirs.length)];
+const dist = 3 * HEX.r;
+const ang = Math.atan2(d.dy, d.dx);
+let sx = nearX + Math.cos(ang) * dist;
+let sy = nearY + Math.sin(ang) * dist;
+
+ST.insects.push({
+id: ++insectId,
+type: type,
+cfg: cfg,
+x: sx, y: sy,
+homeX: sx, homeY: sy,
+hp: cfg.hp,
+hpMax: cfg.hp,
+state: 'hide', // hide | appear | patrol | chase | attack | hurt | dead
+stateT: 0,
+facing: 'E', // E | W
+animT: 0,
+animFrame: 0,
+vx: 0, vy: 0,
+wanderT: Math.random() * 3,
+wanderAng: Math.random() * Math.PI * 2,
+hurtT: 0,
+deadT: 0,
+canAttackFromBelow: false,
 });
 }
 
-function updateStones(dt){
-for(let i = game.stones.length - 1; i >= 0; i--){
-const s = game.stones[i];
-s.x += s.vx * dt;
-s.y += s.vy * dt;
-s.rot += dt * 15;
-s.life -= dt;
-if(s.life <= 0){
-game.stones.splice(i, 1);
+/* ====== ĐIỂM ĐÁNH DẤU: Người qua 3-4 cây ====== */
+const pickedNodes = new Set();
+let lastNodeKey = '';
+function checkSpawnTrigger(){
+const p = ST.player;
+const n = worldToNode(p.x, p.y);
+const key = `${n.row},${n.col}`;
+if(key === lastNodeKey) return;
+lastNodeKey = key;
+
+// Nếu node mới → tăng bộ đếm
+if(!pickedNodes.has(key)){
+pickedNodes.add(key);
+// Cứ mỗi 3 node mới → spawn 1 con (chỉ 1 con 1 lúc để không quá tải)
+if(pickedNodes.size % 3 === 0 && ST.insects.length < 3){
+const type = Math.random() < 0.5 ? 'spider' : 'mantis';
+// Spawn ở phía trên người chơi (để không vi phạm "không tấn công từ dưới lên")
+const ang = Math.random() < 0.5
+? Math.PI * (1 + 0.15 + Math.random()*0.3) // trên-trái
+: Math.PI * (1 - 0.15 - Math.random()*0.3); // trên-phải
+const dist = 3 * HEX.r;
+const dx = Math.cos(ang), dy = Math.sin(ang);
+const ins = {
+id: ++insectId,
+type: type,
+cfg: INSECT_TYPES[type],
+x: p.x + dx * dist,
+y: p.y + dy * dist,
+homeX: p.x + dx * dist,
+homeY: p.y + dy * dist,
+hp: 3, hpMax: 3,
+state: 'appear',
+stateT: 0,
+facing: 'E',
+animT: 0,
+animFrame: 0,
+wanderT: Math.random() * 3,
+wanderAng: Math.random() * Math.PI * 2,
+hurtT: 0,
+deadT: 0,
+};
+ST.insects.push(ins);
+}
+}
+}
+
+/* ====== UPDATE CÔN TRÙNG ====== */
+function updateInsects(dt){
+const p = ST.player;
+checkSpawnTrigger();
+
+for(let i = ST.insects.length - 1; i >= 0; i--){
+const ins = ST.insects[i];
+ins.stateT += dt;
+ins.animT += dt;
+ins.animFrame = (ins.animT * 6) % 4;
+
+// Tính khoảng cách
+const dx = p.x - ins.x;
+const dy = p.y - ins.y;
+const dist = Math.hypot(dx, dy);
+const angToPlayer = Math.atan2(dy, dx);
+
+// ===== NHẢY CÓC LÊN TRÊN MÀN HÌNH =====
+// Côn trùng ở NGANG hoặc THẤP HƠN người chơi (không núp, không chết)
+// → teleport lên cạnh trên màn hình
+if(ins.state !== 'hide' && ins.state !== 'dead' && !ins.aggro && ins.y >= p.y - 0.2){
+
+// Đặt cách người chơi ~3.3 hàng về phía trên
+const rowsAbove = VIEW_ROWS * 0.55;
+ins.y = p.y - rowsAbove * HEX.r * 0.9;
+// Đẩy ngang ra khỏi người chơi 2-5m để không xuất hiện ngay trên đầu
+const sideSign = (ins.x >= p.x) ? 1 : -1;
+ins.x = p.x + sideSign * (2 + Math.random() * 3);
+// Reset về patrol
+ins.state = 'patrol';
+ins.stateT = 0;
+ins.homeX = ins.x;
+ins.homeY = ins.y;
 continue;
 }
+// ===== HẾT NHẢY CÓC =====
 
-// Va chạm với quái
-for(const ins of game.insects){
-if(ins.hp <= 0) continue;
-const d = Math.hypot(s.x - ins.x, s.y - ins.y);
-if(d < 20){
-ins.hp -= CFG.STONE_DMG;
-ins.state = 'hurt';
-ins.stateTime = 0.3;
-playHurt();
-// Particle máu
-for(let k = 0; k < 6; k++){
-game.particles.push({
-x: ins.x, y: ins.y,
-vx: (Math.random()-0.5)*100,
-vy: (Math.random()-0.5)*100,
-life: 0.4, maxLife: 0.4,
-color: '#ff4040',
-});
+// Xử lý state
+switch(ins.state){
+case 'appear':
+if(ins.stateT > 0.4){
+ins.state = 'patrol';
+ins.stateT = 0;
 }
-game.stones.splice(i, 1);
-if(ins.hp <= 0){
-// Rơi đồ
-dropFromInsect(ins);
+break;
+
+case 'patrol': {
+if(dist < ins.cfg.detectDist && dy < 0.2 * HEX.r){
+ins.state = 'chase';
+ins.stateT = 0;
+SND.beep(220, 0.15, 'sawtooth', 0.12);
+break;
+}
+ins.wanderT -= dt;
+if(ins.wanderT <= 0){
+ins.wanderT = 1.5 + Math.random() * 2;
+ins.wanderAng = Math.random() * Math.PI * 2;
+if(Math.sin(ins.wanderAng) > 0.3) ins.wanderAng = -ins.wanderAng;
+}
+const wx = Math.cos(ins.wanderAng);
+const wy = Math.sin(ins.wanderAng);
+ins.x += wx * ins.cfg.patrol * dt;
+ins.y += wy * ins.cfg.patrol * dt;
+
+const hdx = ins.homeX - ins.x;
+const hdy = ins.homeY - ins.y;
+const hd = Math.hypot(hdx, hdy);
+if(hd > ins.cfg.wanderRadius){
+ins.x += (hdx / hd) * ins.cfg.patrol * dt * 0.5;
+ins.y += (hdy / hd) * ins.cfg.patrol * dt * 0.5;
+}
+if(wx > 0.15) ins.facing = 'E';
+else if(wx < -0.15) ins.facing = 'W';
+break;
+}
+
+case 'chase': {
+if(dist > ins.cfg.detectDist * 1.8){
+ins.state = 'patrol';
+ins.stateT = 0;
+break;
+}
+const isBelow = ins.y > p.y + 0.2 * HEX.r;
+let mvx = 0, mvy = 0;
+if(isBelow){
+mvx = dx > 0 ? 1 : -1;
+mvy = 0;
+if(Math.abs(dy) < 0.3 * HEX.r) mvy = dy > 0 ? 0.3 : -0.3;
+} else {
+mvx = dx / dist;
+mvy = dy / dist;
+if(mvy > 0.2){
+mvx = dx > 0 ? 1 : -1;
+mvy = 0;
+}
+}
+const m = Math.hypot(mvx, mvy) || 1;
+ins.x += (mvx/m) * ins.cfg.attack * dt;
+ins.y += (mvy/m) * ins.cfg.attack * dt;
+if(mvx > 0.15) ins.facing = 'E';
+else if(mvx < -0.15) ins.facing = 'W';
+
+if(dist < 0.9 * HEX.r){
+ins.state = 'attack';
+ins.stateT = 0;
+}
+break;
+}
+
+case 'attack': {
+if(ins.stateT > 0.25 && !ins._hitDone){
+ins._hitDone = true;
+hurtPlayer(ins.cfg.dmg);
+}
+const m = Math.hypot(dx, dy) || 1;
+ins.x += (dx/m) * ins.cfg.attack * dt * 0.5;
+ins.y += (dy/m) * ins.cfg.attack * dt * 0.5;
+if(ins.stateT > 0.6){
+ins._hitDone = false;
+ins.state = 'chase';
+ins.stateT = 0;
+}
+break;
+}
+
+case 'hurt': {
+ins.hurtT += dt;
+if(ins.hurtVX !== undefined){
+ins.x += ins.hurtVX * dt;
+ins.y += ins.hurtVY * dt;
+ins.hurtVX *= 0.85;
+ins.hurtVY *= 0.85;
+}
+if(ins.hurtT > 0.4){
+ins.state = 'chase';
+ins.hurtT = 0;
+}
+break;
+}
+
+case 'dead': {
+ins.deadT += dt;
+if(ins.deadT > 0.5){
+dropLoot(ins.x, ins.y);
+ST.insects.splice(i, 1);
+SND.die();
 }
 break;
 }
@@ -571,562 +1212,544 @@ break;
 }
 }
 
-function dropFromInsect(ins){
-// Rơi 1-2 món
-const n = 1 + Math.floor(Math.random() * 2);
-for(let i = 0; i < n; i++){
-const items = ['core', 'potion', 'coin', 'thigh'];
-const weights = [0.35, 0.15, 0.35, 0.15];
-let r = Math.random(), acc = 0, pick = 'coin';
-for(let j = 0; j < items.length; j++){
-acc += weights[j];
-if(r <= acc){ pick = items[j]; break; }
-}
-game.drops.push({
-x: ins.x + (Math.random()-0.5)*30,
-y: ins.y + (Math.random()-0.5)*30,
-type: pick,
-life: 20,
-bob: Math.random()*Math.PI*2,
-});
-}
-}
 
-function updateDrops(dt){
-const p = game.player;
-for(let i = game.drops.length - 1; i >= 0; i--){
-const d = game.drops[i];
-d.life -= dt;
-if(d.life <= 0){ game.drops.splice(i,1); continue; }
-const dist = Math.hypot(d.x - p.x, d.y - p.y);
-// Hút đồ khi gần
-if(dist < 60){
-const ang = Math.atan2(p.y - d.y, p.x - d.x);
-const pull = 300 * dt;
-d.x += Math.cos(ang) * pull;
-d.y += Math.sin(ang) * pull;
-}
-// Nhặt
-if(dist < 20){
-collectDrop(d);
-game.drops.splice(i,1);
-}
-}
-}
-
-function collectDrop(d){
-playCoin();
-if(d.type === 'core'){
-game.core = (game.core||0) + 1;
-showHint('💠 +1 Linh hạch');
-} else if(d.type === 'potion'){
-game.player.hp = Math.min(game.player.maxHp, game.player.hp + 30);
-showHint('🧪 +30 Máu');
-} else if(d.type === 'coin'){
-game.coin = (game.coin||0) + 1;
-showHint('🪙 +1 Đồng');
-} else if(d.type === 'thigh'){
-game.player.hp = Math.min(game.player.maxHp, game.player.hp + 40);
-// Hiện đùi quay trên đầu 3 giây
-game.thighActive = true;
-game.thighTimer = 3;
-showSpeech('Nội tâm', 'Nướng con này ăn ngon phết.');
-}
-updateHUD();
-}
-
-function updateInsects(dt){
-const p = game.player;
-for(const ins of game.insects){
-if(ins.hp <= 0) continue;
-
-if(ins.stateTime > 0) ins.stateTime -= dt;
-
-if(ins.state === 'hurt'){
-if(ins.stateTime <= 0) ins.state = 'idle';
-continue;
-}
-
-const dx = p.x - ins.x;
-const dy = p.y - ins.y;
-const d = Math.hypot(dx, dy);
-
-// Nếu player ở gần → đuổi theo
-if(d < 400 && d > 30){
-ins.state = 'chase';
-const spd = 80;
-ins.x += (dx/d) * spd * dt;
-ins.y += (dy/d) * spd * dt;
-ins.facing = dx > 0 ? 1 : -1;
-} else if(d <= 30){
-// Cắn player
-if(!ins._biteCd || ins._biteCd <= 0){
-game.player.hp -= 5;
-ins._biteCd = 1;
-playHurt();
-// Particle máu
-for(let k = 0; k < 8; k++){
-game.particles.push({
-x: p.x, y: p.y,
-vx: (Math.random()-0.5)*150,
-vy: (Math.random()-0.5)*150,
-life: 0.5, maxLife: 0.5,
-color: '#ff4040',
-});
-}
-if(game.player.hp <= 0){
-game.player.hp = 0;
-game.state = 'lose';
-showOverlay('💀 Đạo hữu đã gục ngã...', 'Hãy nghỉ ngơi và thử lại sau.', 'Thử Lại');
-}
-}
-}
-if(ins._biteCd > 0) ins._biteCd -= dt;
-
-// Animation
-ins.animTime += dt;
-if(ins.animTime > 0.2){
-ins.animTime = 0;
-ins.animFrame = (ins.animFrame + 1) % 8;
-}
-}
-}
-
-function updateParticles(dt){
-for(let i = game.particles.length - 1; i >= 0; i--){
-const pt = game.particles[i];
-pt.x += pt.vx * dt;
-pt.y += pt.vy * dt;
-pt.vx *= 0.92;
-pt.vy *= 0.92;
-pt.life -= dt;
-if(pt.life <= 0) game.particles.splice(i,1);
-}
-}
-
-function updateCamera(dt){
-const targetX = game.player.x - W/2;
-const targetY = game.player.y - H/2;
-// Smooth follow
-game.camera.x += (targetX - game.camera.x) * Math.min(1, dt * 6);
-game.camera.y += (targetY - game.camera.y) * Math.min(1, dt * 6);
-}
-
-function updateHUD(){
-document.getElementById('hpBar').style.width = (game.player.hp / game.player.maxHp * 100) + '%';
-document.getElementById('hpTxt').textContent = Math.ceil(game.player.hp) + '/' + game.player.maxHp;
-document.getElementById('core').textContent = game.core || 0;
-document.getElementById('pot').textContent = game.pot || 0;
-document.getElementById('coin').textContent = game.coin || 0;
-}
-
-// ============ DRAW ============
-function drawBackground(){
-// Nền rừng xanh đậm
-const grd = ctx.createLinearGradient(0, 0, 0, H);
-grd.addColorStop(0, '#0f2415');
-grd.addColorStop(1, '#061008');
-ctx.fillStyle = grd;
-ctx.fillRect(0, 0, W, H);
-
-// Vẽ lưới hex mờ — dùng làm nền
-const cam = game.camera;
-const hexSize = 40;
-const hexW = hexSize * 1.5;
-const hexH = hexSize * Math.sqrt(3);
-const startCol = Math.floor(cam.x / hexW) - 1;
-const endCol = Math.ceil((cam.x + W) / hexW) + 1;
-const startRow = Math.floor(cam.y / hexH) - 1;
-const endRow = Math.ceil((cam.y + H) / hexH) + 1;
-
-ctx.strokeStyle = 'rgba(60, 100, 60, 0.15)';
-ctx.lineWidth = 1;
-for(let col = startCol; col <= endCol; col++){
-for(let row = startRow; row <= endRow; row++){
-const x = col * hexW;
-const y = row * hexH + (col % 2 ? hexH/2 : 0);
-const sx = x - cam.x;
-const sy = y - cam.y;
-ctx.beginPath();
-for(let i = 0; i < 6; i++){
-const a = Math.PI / 3 * i - Math.PI / 6;
-const px = sx + hexSize * Math.cos(a);
-const py = sy + hexSize * Math.sin(a);
-if(i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-}
-ctx.closePath();
-ctx.stroke();
-}
-}
-}
-
-function drawBushes(){
-const cam = game.camera;
-for(const b of game.bushes){
-const sx = b.x - cam.x;
-const sy = b.y - cam.y;
-if(sx < -50 || sx > W + 50 || sy < -50 || sy > H + 50) continue;
-
-// Cánh hoa xanh
-ctx.save();
-ctx.translate(sx, sy);
+/* ====== VẼ CÔN TRÙNG ====== */
+function drawInsects(){
+const p = ST.player;
+for(const ins of ST.insects){
+const s = worldToScreen(ins.x, ins.y);
+const size = 1.1 * HEX.pxPerM;
+const flip = ins.facing === 'W';
 
 // Bóng
-ctx.fillStyle = 'rgba(0,0,0,0.35)';
+ctx.save();
+ctx.globalAlpha = 0.35;
+ctx.fillStyle = '#000';
 ctx.beginPath();
-ctx.ellipse(0, 4, b.r * 1.2, b.r * 0.6, 0, 0, Math.PI*2);
+ctx.ellipse(s.x, s.y + size*0.28, size*0.4, size*0.14, 0, 0, Math.PI*2);
 ctx.fill();
+ctx.restore();
 
-// Bụi — mấy cánh tròn
-const lobes = 6;
-for(let i = 0; i < lobes; i++){
-const a = (i / lobes) * Math.PI*2 + b.seed;
-const lx = Math.cos(a) * b.r * 0.5;
-const ly = Math.sin(a) * b.r * 0.4;
-ctx.fillStyle = i % 2 ? '#2a5020' : '#3a6a2a';
+// Chọn frame
+let frame = 0;
+if(ins.state === 'attack' || ins.state === 'chase' || ins.state === 'hurt'){
+frame = 4 + Math.floor(ins.animFrame); // 4..7 (attack)
+} else if(ins.state === 'patrol'){
+frame = Math.floor(ins.animFrame); // 0..3 (walk)
+} else if(ins.state === 'dead'){
+frame = 7;
+}
+
+// Nhấp nháy khi trúng đòn
+const flash = ins.state === 'hurt' && Math.floor(ins.hurtT*20) % 2 === 0;
+if(flash){
+ctx.save();
+ctx.globalAlpha = 0.5;
+ctx.fillStyle = '#fff';
 ctx.beginPath();
-ctx.arc(lx, ly, b.r * 0.65, 0, Math.PI*2);
+ctx.arc(s.x, s.y - size*0.3, size*0.6, 0, Math.PI*2);
 ctx.fill();
-}
-// Lõi sáng
-ctx.fillStyle = '#5a8a3a';
-ctx.beginPath();
-ctx.arc(0, 0, b.r * 0.4, 0, Math.PI*2);
-ctx.fill();
-
-ctx.restore();
-}
-}
-
-function drawDrops(){
-const cam = game.camera;
-for(const d of game.drops){
-const sx = d.x - cam.x;
-const sy = d.y - cam.y + Math.sin(game.time * 4 + d.bob) * 3;
-if(sx < -50 || sx > W + 50 || sy < -50 || sy > H + 50) continue;
-
-ctx.save();
-ctx.translate(sx, sy);
-
-// Hào quang
-const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, 18);
-glow.addColorStop(0, d.type === 'thigh' ? 'rgba(255,180,80,0.8)' : 'rgba(255,255,150,0.6)');
-glow.addColorStop(1, 'rgba(255,255,150,0)');
-ctx.fillStyle = glow;
-ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI*2); ctx.fill();
-
-// Icon
-ctx.font = 'bold 18px sans-serif';
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
-const icons = { core: '💠', potion: '🧪', coin: '🪙', thigh: '🍗' };
-ctx.fillText(icons[d.type] || '?', 0, 0);
-
-ctx.restore();
-}
-}
-
-function drawThighSpinner(){
-// Đùi quay trên đầu nhân vật 3 giây — như 2 cây chữ Y
-if(!game.thighActive) return;
-const p = game.player;
-const cam = game.camera;
-const sx = p.x - cam.x;
-const sy = p.y - cam.y - 40;
-
-ctx.save();
-ctx.translate(sx, sy);
-
-// Vòng tròn bay 2 bên (2 cây chữ Y) — quay
-for(let side = -1; side <= 1; side += 2){
-ctx.save();
-ctx.rotate(game.thighSpin * side);
-// 2 cây chữ Y = 4 cánh
-for(let i = 0; i < 4; i++){
-ctx.save();
-ctx.rotate(i * Math.PI/2);
-// Cánh Y
-ctx.strokeStyle = '#ffe060';
-ctx.lineWidth = 3;
-ctx.lineCap = 'round';
-ctx.beginPath();
-ctx.moveTo(0, 0);
-ctx.lineTo(0, -14);
-ctx.stroke();
-ctx.beginPath();
-ctx.moveTo(0, -14);
-ctx.lineTo(-5, -20);
-ctx.moveTo(0, -14);
-ctx.lineTo(5, -20);
-ctx.stroke();
-ctx.restore();
-}
 ctx.restore();
 }
 
-// Đùi ở giữa
-ctx.font = 'bold 20px sans-serif';
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
-ctx.fillText('🍗', 0, 0);
+drawSprite(ins.cfg.row, frame, s.x - size/2, s.y - size, size, size, flip);
 
-ctx.restore();
+// HP bar khi bị thương
+if(ins.hp < ins.hpMax && ins.state !== 'dead'){
+const bw = size * 0.8;
+const bh = 4;
+const bx = s.x - bw/2;
+const by = s.y - size - 6;
+ctx.fillStyle = 'rgba(0,0,0,.7)';
+ctx.fillRect(bx, by, bw, bh);
+ctx.fillStyle = '#ff4444';
+ctx.fillRect(bx, by, bw * (ins.hp / ins.hpMax), bh);
+ctx.strokeStyle = '#000';
+ctx.lineWidth = 1;
+ctx.strokeRect(bx, by, bw, bh);
+}
+}
 }
 
-function drawEntities(){
-const cam = game.camera;
+/* =========================================================
+NÉM ĐÁ
+========================================================= */
+const STONE = {
+speed: 25, // m/s (bay nhanh)
+range: 15, // 15 mét
+radius: 0.25, // bán kính va chạm (mét)
+};
 
-// Quái
-for(const ins of game.insects){
-if(ins.hp <= 0) continue;
-const sx = ins.x - cam.x - 20;
-const sy = ins.y - cam.y - 20;
-if(sx < -60 || sx > W + 60 || sy < -60 || sy > H + 60) continue;
+function throwStone(){
+const p = ST.player;
+if(p.state === 'attack') return;
+p.state = 'attack';
+p.attackT = 0;
+SND.throwStone();
 
-// HP bar nhỏ trên đầu
-if(ins.hp < ins.maxHp){
-ctx.fillStyle = 'rgba(0,0,0,0.5)';
-ctx.fillRect(ins.x-cam.x-15, ins.y-cam.y-28, 30, 3);
-ctx.fillStyle = '#e04040';
-ctx.fillRect(ins.x-cam.x-15, ins.y-cam.y-28, 30 * (ins.hp/ins.maxHp), 3);
+// Tìm côn trùng gần nhất trong tầm 15m
+let target = null;
+let bestDist = STONE.range; // chỉ nhắm nếu trong 15m
+for(const ins of ST.insects){
+if(ins.state === 'dead' || ins.state === 'hide') continue;
+const d = Math.hypot(ins.x - p.x, ins.y - p.y);
+if(d <= bestDist){
+bestDist = d;
+target = ins;
+}
 }
 
-const sheet = ins.type === 'spider' ? SHEET.spider : SHEET.mantis;
-drawSheet(sheet, ins.animFrame, sx, sy, 40, 40, ins.facing < 0);
+// Có côn trùng trong tầm → nhắm vào đó
+// Không có → ném theo hướng facing (ném vu vơ)
+let dirX, dirY;
+if(target){
+dirX = target.x - p.x;
+dirY = target.y - p.y;
+} else {
+dirX = (p.facing === 'E' ? 1 : -1);
+dirY = 0;
+}
+const len = Math.hypot(dirX, dirY) || 1;
+dirX /= len;
+dirY /= len;
+
+const startX = p.x + dirX * 0.6;
+const startY = p.y - 0.6 + dirY * 0.6;
+
+ST.projectiles.push({
+x: startX, y: startY,
+vx: dirX * STONE.speed,
+vy: dirY * STONE.speed,
+traveled: 0,
+maxRange: STONE.range,
+dead: false,
+targetId: target ? target.id : null,
+});
 }
 
-// Player
-const p = game.player;
-const psx = p.x - cam.x - 20;
-const psy = p.y - cam.y - 20;
-const playerFrame = p.throwAnimT > 0 ? (4 + (Math.floor(p.throwAnimT * 30) % 4)) : p.animFrame % 4;
-drawSheet(SHEET.player, playerFrame, psx, psy, 40, 40, p.facing < 0);
 
-// Đá
-for(const s of game.stones){
-const sx = s.x - cam.x;
-const sy = s.y - cam.y;
+function updateProjectiles(dt){
+for(let i = ST.projectiles.length - 1; i >= 0; i--){
+const pr = ST.projectiles[i];
+const move = STONE.speed * dt;
+pr.x += pr.vx * dt;
+pr.y += pr.vy * dt;
+pr.traveled += move;
+
+// Va chạm với côn trùng
+let hit = false;
+for(const ins of ST.insects){
+
+
+if(ins.state === 'dead' || ins.state === 'hide') continue;
+const d = Math.hypot(ins.x - pr.x, ins.y - pr.y);
+if(d < STONE.radius + 0.7){
+hitInsect(ins, pr);
+hit = true;
+break;
+}
+}
+
+if(hit || pr.traveled >= pr.maxRange){
+ST.projectiles.splice(i, 1);
+}
+}
+}
+
+function hitInsect(ins, pr){
+// Chỉ trúng nếu trong tầm ném (đã check bởi maxRange)
+ins.hp--;
+SND.hit();
+
+// Lùi lại theo hướng đá
+const ang = Math.atan2(pr.vy, pr.vx);
+ins.hurtVX = Math.cos(ang) * 6;
+ins.hurtVY = Math.sin(ang) * 6;
+ins.state = 'hurt';
+ins.hurtT = 0;
+ins.aggro = true;
+
+
+// Số nổi
+const s = worldToScreen(ins.x, ins.y);
+addFloatText(s.x, s.y - 20, '-1', '#ff6666');
+
+if(ins.hp <= 0){
+ins.state = 'dead';
+ins.deadT = 0;
+}
+}
+
+function drawProjectiles(){
+for(const pr of ST.projectiles){
+const s = worldToScreen(pr.x, pr.y);
+const r = STONE.radius * HEX.pxPerM;
+// Vệt bay
 ctx.save();
-ctx.translate(sx, sy);
-ctx.rotate(s.rot);
-ctx.fillStyle = '#8a7a5a';
-ctx.strokeStyle = '#3a2a1a';
+ctx.globalAlpha = 0.4;
+ctx.strokeStyle = '#ddd';
 ctx.lineWidth = 2;
 ctx.beginPath();
-ctx.arc(0, 0, 7, 0, Math.PI*2);
-ctx.fill(); ctx.stroke();
+ctx.moveTo(s.x - pr.vx * 0.02, s.y - pr.vy * 0.02);
+ctx.lineTo(s.x, s.y);
+ctx.stroke();
+ctx.restore();
+
+// Viên đá
+ctx.fillStyle = '#888';
+ctx.beginPath();
+ctx.arc(s.x, s.y, r, 0, Math.PI*2);
+ctx.fill();
+ctx.strokeStyle = '#555';
+ctx.lineWidth = 1;
+ctx.stroke();
+}
+}
+
+/* =========================================================
+ĐỒ RƠI
+========================================================= */
+function dropLoot(x, y){
+const items = ['hach', 'hppot', 'dong', 'dong'];
+for(let i = 0; i < items.length; i++){
+const ang = Math.random() * Math.PI * 2;
+const dist = 0.3 + Math.random() * 0.8;
+ST.pickups.push({
+x: x + Math.cos(ang) * dist,
+y: y + Math.sin(ang) * dist,
+type: items[i],
+bob: Math.random() * Math.PI * 2,
+life: 30,
+});
+}
+}
+
+function updatePickups(dt){
+const p = ST.player;
+for(let i = ST.pickups.length - 1; i >= 0; i--){
+const pk = ST.pickups[i];
+pk.life -= dt;
+pk.bob += dt * 3;
+if(pk.life <= 0){ ST.pickups.splice(i, 1); continue; }
+
+// Nhặt khi lại gần
+const d = Math.hypot(pk.x - p.x, pk.y - p.y);
+if(d < 0.9){
+collectPickup(pk);
+ST.pickups.splice(i, 1);
+}
+}
+}
+
+function collectPickup(pk){
+const inv = ST.inv;
+const map = {
+hach: '💎 Linh hạch',
+hppot: '🧪 Bình máu',
+dong: '🪙 Tiền đồng',
+thach: '🔮 Linh thạch',
+vang: '🥇 Tiền vàng',
+};
+if(pk.type === 'hach') inv.hach++;
+if(pk.type === 'hppot') inv.hpPot++;
+if(pk.type === 'dong') inv.dong += 2;
+if(pk.type === 'thach') inv.thach++;
+if(pk.type === 'vang') inv.vang++;
+
+const valMap = { hach: '+1', hppot: '+1', dong: '+2' };
+const s = worldToScreen(pk.x, pk.y);
+addFloatText(s.x, s.y, `${map[pk.type]} ${valMap[pk.type] || '+1'}`, '#ffe680');
+SND.pick();
+refreshHUD();
+}
+
+function drawPickups(){
+const t = performance.now() / 1000;
+for(const pk of ST.pickups){
+const s = worldToScreen(pk.x, pk.y);
+const bob = Math.sin(pk.bob) * 4;
+const size = 14;
+ctx.save();
+// Glow
+ctx.globalAlpha = 0.5;
+const col = { hach:'#ffffff', hppot:'#ff5566', dong:'#ffcc44' }[pk.type] || '#fff';
+const g = ctx.createRadialGradient(s.x, s.y + bob, 0, s.x, s.y + bob, size*2);
+g.addColorStop(0, col);
+g.addColorStop(1, 'rgba(0,0,0,0)');
+ctx.fillStyle = g;
+ctx.beginPath();
+ctx.arc(s.x, s.y + bob, size*2, 0, Math.PI*2);
+ctx.fill();
+
+// Icon
+ctx.globalAlpha = 1;
+ctx.font = '20px sans-serif';
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+const icon = { hach:'💎', hppot:'🧪', dong:'🪙' }[pk.type] || '❓';
+ctx.fillText(icon, s.x, s.y + bob);
+
+// Đổ bóng
+ctx.globalAlpha = 0.3;
+ctx.fillStyle = '#000';
+ctx.beginPath();
+ctx.ellipse(s.x, s.y + 12, 10, 4, 0, 0, Math.PI*2);
+ctx.fill();
 ctx.restore();
 }
-
-// Hạt máu
-for(const pt of game.particles){
-const sx = pt.x - cam.x;
-const sy = pt.y - cam.y;
-ctx.fillStyle = pt.color;
-ctx.globalAlpha = pt.life / pt.maxLife;
-ctx.fillRect(sx - 2, sy - 2, 4, 4);
-}
-ctx.globalAlpha = 1;
 }
 
-function drawFog(){
-// Sương mù vùng chưa đi — radial quanh player
-const p = game.player;
-const sx = p.x - game.camera.x;
-const sy = p.y - game.camera.y;
-const grd = ctx.createRadialGradient(sx, sy, CFG.FOG_R * 0.6, sx, sy, CFG.FOG_R);
-grd.addColorStop(0, 'rgba(0,0,0,0)');
-grd.addColorStop(1, 'rgba(0,0,0,0.85)');
-ctx.fillStyle = grd;
-ctx.fillRect(0, 0, W, H);
+/* =========================================================
+FLOAT TEXT
+========================================================= */
+function addFloatText(sx, sy, text, color){
+const el = document.createElement('div');
+el.className = 'float-text';
+el.style.left = sx + 'px';
+el.style.top = sy + 'px';
+el.style.color = color;
+el.textContent = text;
+document.body.appendChild(el);
+setTimeout(()=>el.remove(), 1500);
 }
 
-// ============ GAME LOOP ============
-let lastT = performance.now();
+/* =========================================================
+MÁU NGƯỜI + CHẾT
+========================================================= */
+function hurtPlayer(dmg){
+const p = ST.player;
+p.hp -= dmg;
+SND.hurt();
+const s = worldToScreen(p.x, p.y);
+addFloatText(s.x, s.y - 30, `-${dmg}`, '#ff4444');
+// Rung màn hình
+document.body.classList.add('shake');
+setTimeout(()=>document.body.classList.remove('shake'), 200);
+refreshHUD();
+if(p.hp <= 0){
+p.hp = 0;
+toast('💀 Bạn đã gục ngã... Hồi sinh sau 3 giây');
+setTimeout(()=>{
+p.hp = p.hpMax;
+const sp = hexPos(2, 10);
+p.x = sp.x; p.y = sp.y;
+ST.insects = [];
+refreshHUD();
+}, 3000);
+}
+}
+
+/* CSS shake (thêm vào style nếu cần) */
+const shakeStyle = document.createElement('style');
+shakeStyle.textContent = `
+@keyframes shakeAnim{0%,100%{transform:translate(0,0)}25%{transform:translate(-3px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,-3px)}}
+body.shake{animation:shakeAnim .2s}
+`;
+document.head.appendChild(shakeStyle);
+
+/* =========================================================
+HUD + PANEL
+========================================================= */
+function refreshHUD(){
+const p = ST.player;
+document.getElementById('hud-hp').textContent = `${p.hp} / ${p.hpMax}`;
+document.getElementById('hud-tuvi').textContent =
+`${ST.tuvi.realm} T${ST.tuvi.tier}`;
+
+document.getElementById('attr-hp-pot').textContent = ST.inv.hpPot;
+document.getElementById('attr-hach').textContent = ST.inv.hach;
+document.getElementById('attr-thach').textContent = ST.inv.thach;
+document.getElementById('attr-dong').textContent = ST.inv.dong;
+document.getElementById('attr-vang').textContent = ST.inv.vang;
+document.getElementById('attr-tuvi').textContent = `${ST.tuvi.realm} T${ST.tuvi.tier}`;
+document.getElementById('attr-tuvi-exp').textContent = `${ST.tuvi.exp} / ${ST.tuvi.expMax}`;
+
+document.getElementById('abs-hp-qty').textContent = ST.inv.hpPot;
+document.getElementById('abs-hach-qty').textContent = ST.inv.hach;
+}
+
+/* ====== MỞ / ĐÓNG PANEL ====== */
+function openPanel(){
+ST.paused = true;
+refreshHUD();
+document.getElementById('panel').classList.add('show');
+}
+function closePanel(){
+ST.paused = false;
+document.getElementById('panel').classList.remove('show');
+}
+document.getElementById('btn-panel').onclick = openPanel;
+document.getElementById('btn-close-panel').onclick = closePanel;
+
+/* ====== HẤP THU ====== */
+function openAbsorb(){
+ST.paused = true;
+refreshHUD();
+document.getElementById('absorb').classList.add('show');
+}
+function closeAbsorb(){
+ST.paused = false;
+document.getElementById('absorb').classList.remove('show');
+}
+document.getElementById('btn-absorb').onclick = openAbsorb;
+document.getElementById('btn-close-absorb').onclick = closeAbsorb;
+
+document.getElementById('abs-hp').onclick = () => {
+if(ST.inv.hpPot <= 0){ toast('Không có bình máu'); return; }
+if(ST.player.hp >= ST.player.hpMax){ toast('Máu đã đầy'); return; }
+ST.inv.hpPot--;
+ST.player.hp = Math.min(ST.player.hpMax, ST.player.hp + 5);
+SND.beep(880, 0.2, 'sine', 0.2);
+toast('🧪 Hồi +5 máu');
+refreshHUD();
+};
+
+document.getElementById('abs-hach').onclick = () => {
+if(ST.inv.hach <= 0){ toast('Không có linh hạch'); return; }
+ST.inv.hach--;
+ST.tuvi.exp += 50;
+SND.beep(1200, 0.3, 'sine', 0.2);
+while(ST.tuvi.exp >= ST.tuvi.expMax){
+ST.tuvi.exp -= ST.tuvi.expMax;
+ST.tuvi.tier++;
+if(ST.tuvi.tier > 9){
+ST.tuvi.tier = 1;
+if(ST.tuvi.realm === 'Luyện Khí') ST.tuvi.realm = 'Trúc Cơ';
+else if(ST.tuvi.realm === 'Trúc Cơ') ST.tuvi.realm = 'Kim Đan';
+else if(ST.tuvi.realm === 'Kim Đan') ST.tuvi.realm = 'Nguyên Anh';
+}
+ST.tuvi.expMax = Math.floor(ST.tuvi.expMax * 1.3);
+toast(`🌟 Đột phá! ${ST.tuvi.realm} T${ST.tuvi.tier}`);
+SND.beep(1600, 0.5, 'sine', 0.25);
+}
+toast('💎 +50 tu vi');
+refreshHUD();
+};
+
+/* ====== NÚT KHÁM PHÁ ====== */
+document.getElementById('btn-explore').onclick = () => {
+// Sau này đổi link
+window.open('https://abc.com', '_blank');
+};
+
+/* ====== NÚT ÂM THANH ====== */
+document.getElementById('btn-sound').onclick = (e) => {
+SND.enabled = !SND.enabled;
+e.currentTarget.textContent = SND.enabled ? '🔊' : '🔇';
+if(SND.enabled) SND.ensure();
+};
+
+/* =========================================================
+INPUT: JOYSTICK + NÚT NÉM ĐÁ + BÀN PHÍM
+========================================================= */
+const joyEl = document.getElementById('joystick');
+const knobEl = document.getElementById('joy-knob');
+
+function joyStart(e){
+e.preventDefault();
+const t = e.touches ? e.touches[0] : e;
+ST.joy.active = true;
+ST.joy.id = t.identifier !== undefined ? t.identifier : 'mouse';
+joyMove(e);
+}
+function joyMove(e){
+if(!ST.joy.active) return;
+e.preventDefault();
+let t;
+if(e.touches){
+for(const tt of e.touches) if(tt.identifier === ST.joy.id) t = tt;
+if(!t) return;
+} else t = e;
+
+const rect = joyEl.getBoundingClientRect();
+const cx = rect.left + rect.width/2;
+const cy = rect.top + rect.height/2;
+let dx = t.clientX - cx;
+let dy = t.clientY - cy;
+const max = rect.width/2 - 10;
+const d = Math.hypot(dx, dy);
+if(d > max){ dx = dx/d*max; dy = dy/d*max; }
+
+knobEl.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+ST.joy.dx = dx / max;
+ST.joy.dy = dy / max;
+}
+function joyEnd(e){
+e.preventDefault();
+ST.joy.active = false;
+ST.joy.dx = 0; ST.joy.dy = 0;
+knobEl.style.transform = 'translate(-50%,-50%)';
+}
+joyEl.addEventListener('touchstart', joyStart, {passive:false});
+joyEl.addEventListener('touchmove', joyMove, {passive:false});
+joyEl.addEventListener('touchend', joyEnd);
+joyEl.addEventListener('mousedown', joyStart);
+window.addEventListener('mousemove', joyMove);
+window.addEventListener('mouseup', joyEnd);
+
+/* Nút ném đá */
+document.getElementById('btn-stone').addEventListener('touchstart', (e)=>{
+e.preventDefault(); throwStone();
+}, {passive:false});
+document.getElementById('btn-stone').addEventListener('click', (e)=>{
+e.preventDefault(); throwStone();
+});
+
+/* Bàn phím */
+window.addEventListener('keydown', (e)=>{
+const k = e.key.toLowerCase();
+ST.keys[k] = true;
+if(k === ' ') throwStone();
+if(k === 'escape'){
+if(document.getElementById('panel').classList.contains('show')) closePanel();
+else if(document.getElementById('absorb').classList.contains('show')) closeAbsorb();
+}
+if(k === 'p') openPanel();
+if(k === 'h') openAbsorb();
+});
+window.addEventListener('keyup', (e)=>{
+ST.keys[e.key.toLowerCase()] = false;
+});
+
+/* =========================================================
+LOOP CHÍNH
+========================================================= */
+let lastFrame = performance.now();
+let realT = 0;
+
 function loop(now){
-const dt = Math.min((now - lastT) / 1000, 0.05);
-lastT = now;
-game.time += dt;
+const dtRaw = (now - lastFrame) / 1000;
+const dt = Math.min(dtRaw, 0.05);
+lastFrame = now;
+realT += dt;
 
-// Hint/speech timers
-if(hintTimer > 0){
-hintTimer -= dt;
-if(hintTimer <= 0) hintEl.classList.remove('show');
-}
-if(speechTimer > 0){
-speechTimer -= dt;
-if(speechTimer <= 0) speechEl.classList.remove('show');
-}
-
-// Speech ngẫu nhiên
-if(game.state === 'playing' && game.time > nextSpeechAt){
-const s = SPEECHES[Math.floor(Math.random() * SPEECHES.length)];
-showSpeech(s[0], s[1], 4);
-nextSpeechAt = game.time + 15 + Math.random() * 20;
-}
-
-// Thigh timer
-if(game.thighActive){
-game.thighTimer -= dt;
-game.thighSpin += dt * 8;
-if(game.thighTimer <= 0) game.thighActive = false;
-}
-
-// Update theo state
-if(game.state === 'intro'){
-game.introTime += dt;
-if(game.introTime > CFG.INTRO_TIME){
-game.state = 'playing';
-}
-} else if(game.state === 'playing'){
-updatePlayer(dt);
-updateInsects(dt);
-updateStones(dt);
-updateDrops(dt);
-updateParticles(dt);
-updateCamera(dt);
-updateHUD();
-
-// Dế kêu khi yên tĩnh
-if(Math.random() < dt * 1.5){
-const pitch = 0.9 + Math.random() * 0.3;
-playCricket(pitch);
-}
-}
-
-// ============ DRAW ============
-ctx.clearRect(0, 0, W, H);
-
-if(game.state === 'intro'){
-// Nền tối
 ctx.fillStyle = '#050510';
 ctx.fillRect(0, 0, W, H);
 
-// Truyền tống trận — QUAY NGƯỢC CHIỀU so với ban đầu
-// vòng ngoài CW = -spin (ngược), vòng trong CCW = +spin
-const spin = game.time * 1.5;
-const alpha = Math.min(1, game.introTime / 0.4);
-drawPortal(-spin, spin, alpha);
-
-// Nhân vật fade in từ trận
-const appearProgress = Math.min(1, game.introTime / CFG.INTRO_TIME);
-if(appearProgress > 0){
-const charScale = 0.3 + appearProgress * 0.7;
-const charAlpha = appearProgress;
-const size = 60 * charScale;
-const px = W/2 - size/2;
-const py = H/2 - size/2;
-
-ctx.save();
-ctx.globalAlpha = charAlpha;
-// Hào quang
-const glow = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, 80 * charScale);
-glow.addColorStop(0, 'rgba(255,240,150,0.7)');
-glow.addColorStop(1, 'rgba(255,240,150,0)');
-ctx.fillStyle = glow;
-ctx.beginPath(); ctx.arc(W/2, H/2, 80 * charScale, 0, Math.PI*2); ctx.fill();
-
-// Vẽ player placeholder trong trận
-drawSheet(SHEET.player, 0, px, py, size, size, false);
-ctx.restore();
+if(ST.scene === 'PORTAL'){
+ST.portalT += dt;
+ST.portalProgress = Math.min(1, ST.portalT / 3);
+if(ST.portalT > 0.1 && !ST.portalDone){
+ST.portalDone = true;
+SND.portal();
 }
-
-// Chữ
-ctx.save();
-ctx.globalAlpha = Math.min(1, game.introTime / 0.6);
-ctx.fillStyle = '#ffe060';
-ctx.font = 'bold 22px sans-serif';
-ctx.textAlign = 'center';
-ctx.shadowColor = '#000';
-ctx.shadowBlur = 8;
-ctx.fillText('TRUYỀN TỐNG TRẬN', W/2, 80);
-ctx.font = '14px sans-serif';
-ctx.fillStyle = '#a0d0ff';
-ctx.fillText('Đạo hữu đang được đưa đến Tranh Bá Tông...', W/2, 110);
-ctx.restore();
-} else {
-// Vẽ game world
-drawBackground();
-drawBushes();
-drawDrops();
-drawEntities();
-drawThighSpinner();
-drawFog();
+if(ST.portalProgress >= 1 && ST.portalT > 4){
+SND.portalDone();
+startForest();
+}
+drawPortal(dt, realT);
+} else if(ST.scene === 'FOREST'){
+if(!ST.paused){
+updateForest(dt);
+}
+renderForest();
 }
 
 requestAnimationFrame(loop);
 }
 
-// ============ OVERLAY ============
-const overlay = document.getElementById('overlay');
-function showOverlay(title, desc, btnTxt){
-overlay.innerHTML = `
-<h1>${title}</h1>
-<p>${desc}</p>
-<button id="btnPrimary">${btnTxt}</button>
-`;
-overlay.classList.remove('hidden');
-document.getElementById('btnPrimary').addEventListener('click', () => {
-overlay.classList.add('hidden');
-restartGame();
-});
-}
-function hideOverlay(){ overlay.classList.add('hidden'); }
-
-function restartGame(){
-initAudio();
-game.state = 'intro';
-game.time = 0;
-game.introTime = 0;
-game.core = 0; game.coin = 0; game.pot = 0;
-game.player.hp = game.player.maxHp;
-game.stones = [];
-game.drops = [];
-game.particles = [];
-game.thighActive = false;
-initWorld();
-updateHUD();
-}
-
-// ============ INPUT ============
-document.getElementById('startBtn').addEventListener('click', () => {
-initAudio();
-hideOverlay();
-restartGame();
-});
-
-document.getElementById('throwBtn').addEventListener('click', () => {
-if(game.state === 'playing') throwStone();
-});
-
-// D-Pad
-function bindDpad(id, keyName){
-const el = document.getElementById(id);
-const down = e => { e.preventDefault(); keys[keyName] = true; };
-const up = e => { e.preventDefault(); keys[keyName] = false; };
-el.addEventListener('touchstart', down, {passive:false});
-el.addEventListener('touchend', up);
-el.addEventListener('touchcancel', up);
-el.addEventListener('mousedown', down);
-el.addEventListener('mouseup', up);
-el.addEventListener('mouseleave', up);
-}
-bindDpad('dpU', 'dp_u');
-bindDpad('dpD', 'dp_d');
-bindDpad('dpL', 'dp_l');
-bindDpad('dpR', 'dp_r');
-
-// Space để ném
-document.addEventListener('keydown', e => {
-if(e.code === 'Space' && game.state === 'playing'){
-e.preventDefault();
-throwStone();
-}
-});
-
-// ============ START ============
-initWorld();
-updateHUD();
+resize();
+refreshHUD();
 requestAnimationFrame(loop);
 </script>
 </body>
