@@ -563,15 +563,59 @@ return { row, col };
 }
 
 
+
 /* ====== TẠO RỪNG ====== */
+
+// 6 hướng đi của hex dẹt (row chẵn và lẻ khác nhau)
+// E, W, NE, NW, SE, SW
+function getNeighbor(row, col, dir){
+const even = (row % 2 === 0);
+switch(dir){
+case 'E': return { row, col: col + 2 };
+case 'W': return { row, col: col - 2 };
+case 'NE': return { row: row - 1, col: col + (even ? 1 : 0) };
+case 'NW': return { row: row - 1, col: col + (even ? -1 : -2) };
+case 'SE': return { row: row + 1, col: col + (even ? 1 : 0) };
+case 'SW': return { row: row + 1, col: col + (even ? -1 : -2) };
+}
+return { row, col };
+}
+
+// Kiểm tra node có hợp lệ (trong map) không
+function isValidNode(row, col){
+return row >= 0 && row < HEX.rows && col >= 0 && col < HEX.cols;
+}
+
+// Từ hướng joystick (dx, dy) → chọn hướng hex phù hợp
+function joyToHexDir(ix, iy){
+if(Math.abs(ix) < 0.05 && Math.abs(iy) < 0.05) return null;
+const ang = Math.atan2(iy, ix); // -π..π
+// 6 hướng: E(0°), SE(~60°), SW(~120°), W(180°), NW(~-120°), NE(~-60°)
+const deg = ang * 180 / Math.PI;
+if(deg >= -30 && deg < 30) return 'E';
+if(deg >= 30 && deg < 90) return 'SE';
+if(deg >= 90 && deg < 150) return 'SW';
+if(deg >= 150 || deg < -150) return 'W';
+if(deg >= -150 && deg < -90) return 'NW';
+if(deg >= -90 && deg < -30) return 'NE';
+return null;
+}
+
+// Chiếu điểm (px, py) lên đoạn thẳng AB, trả về điểm gần nhất
+function projectOnSegment(px, py, ax, ay, bx, by){
+const abx = bx - ax, aby = by - ay;
+const len2 = abx*abx + aby*aby;
+if(len2 < 0.0001) return { x: ax, y: ay, t: 0 };
+let t = ((px - ax) * abx + (py - ay) * aby) / len2;
+t = Math.max(0, Math.min(1, t));
+return { x: ax + abx * t, y: ay + aby * t, t };
+}
 function generateForest(){
 ST.trees = [];
 for(let r = 0; r < HEX.rows; r++){
-// Hàng lẻ bắt đầu từ cột 1 để so le (tổ ong đẹp hơn)
 const startCol = (r % 2 === 0) ? 0 : 1;
-for(let c = startCol; c < HEX.cols; c += 2){ // ← đi bước 2: để 1, rút 1
+for(let c = startCol; c < HEX.cols; c += 2){
 const p = hexPos(r, c);
-// Tree có kích thước ngẫu nhiên chút để tự nhiên
 const sizeJitter = 0.85 + Math.random() * 0.3;
 ST.trees.push({
 row: r, col: c,
@@ -800,77 +844,101 @@ ctx.restore();
 }
 
 /* ====== DI CHUYỂN NGƯỜI ====== */
-function updatePlayer(dt){
-const p = ST.player;
-if(p.state === 'attack'){
-p.attackT += dt;
-if(p.attackT >= 0.4){
-p.state = 'idle';
-p.attackT = 0;
-}
-// Không di chuyển khi đang attack
-return;
-}
+function updatePlayer(dt) {
+  const p = ST.player;
 
-// Input vector: joystick hoặc bàn phím
-let ix = ST.joy.dx;
-let iy = ST.joy.dy;
-if(Math.abs(ix) < 0.05 && Math.abs(iy) < 0.05){
-// Bàn phím
-if(ST.keys['w'] || ST.keys['arrowup']) iy -= 1;
-if(ST.keys['s'] || ST.keys['arrowdown']) iy += 1;
-if(ST.keys['a'] || ST.keys['arrowleft']) ix -= 1;
-if(ST.keys['d'] || ST.keys['arrowright']) ix += 1;
-}
+  // 1. Trạng thái Attack
+  if (p.state === 'attack') {
+    p.attackT += dt;
+    if (p.attackT >= 0.4) {
+      p.state = 'idle';
+      p.attackT = 0;
+    }
+    return;
+  }
 
-const mag = Math.hypot(ix, iy);
-if(mag < 0.05){
-p.state = 'idle';
-return;
-}
+  // 2. Lấy Input
+  let ix = ST.joy.dx;
+  let iy = ST.joy.dy;
+  if (Math.abs(ix) < 0.05 && Math.abs(iy) < 0.05) {
+    if (ST.keys['w'] || ST.keys['arrowup']) iy -= 1;
+    if (ST.keys['s'] || ST.keys['arrowdown']) iy += 1;
+    if (ST.keys['a'] || ST.keys['arrowleft']) ix -= 1;
+    if (ST.keys['d'] || ST.keys['arrowright']) ix += 1;
+  }
 
-// Chuẩn hóa
-ix /= mag; iy /= mag;
+  const mag = Math.hypot(ix, iy);
+  if (mag < 0.05) {
+    p.state = 'idle';
+    return;
+  }
 
-// Hướng đi: ưu tiên ngang để chọn 2h / 10h
-// Nếu ix > 0 → đi 2h (phải-lên), ix < 0 → đi 10h (trái-lên)
-// Nếu chỉ có iy > 0 (xuống) → đi thẳng xuống (không lật)
-if(ix > 0.15) p.facing = 'E';
-else if(ix < -0.15) p.facing = 'W';
+  ix /= mag;
+  iy /= mag;
 
-// Tốc độ: chạy lùi (đi ngược hướng nhìn) thì nhanh hơn
-const baseSpeed = p.speed; // 10 km/h
-const backSpeed = p.backSpeed; // 15 km/h
-// "Chạy lùi": người chơi đang giữ S hoặc ngược hướng joystick
-const isBacking = (iy > 0.5 && Math.abs(ix) < 0.3);
-const spd = isBacking ? backSpeed : baseSpeed;
+  // 3. Tính toán tốc độ & Hướng Hex
+  const isBacking = iy > 0.5 && Math.abs(ix) < 0.3;
+  const spd = isBacking ? p.backSpeed : p.speed;
 
-p.x += ix * spd * dt;
-p.y += iy * spd * dt;
-// Giới hạn trong map
-const maxX = hexPos(0, HEX.cols - 1).x + HEX.r;
-const maxY = hexPos(HEX.rows - 1, 0).y + HEX.r;
-p.x = Math.max(-HEX.r, Math.min(maxX, p.x));
-p.y = Math.max(-HEX.r, Math.min(maxY, p.y));
+  // Lấy node hiện tại dưới chân nhân vật
+  const curNode = worldToNode(p.x, p.y);
+  const dir = joyToHexDir(ix, iy);
 
-// Đi hết map trên → nhảy xuống hàng 2 từ dưới lên
-if(p.y <= 0){
+  if (!dir) {
+    p.state = 'idle';
+    return;
+  }
+
+  // Tìm node mục tiêu theo hướng joystick
+  let targetNode = getNeighbor(curNode.row, curNode.col, dir);
+  if (!isValidNode(targetNode.row, targetNode.col)) {
+    targetNode = curNode; // Đụng biên thì đứng yên
+  }
+
+  // Tọa độ World của node đích
+  const targetPos = hexPos(targetNode.row, targetNode.col);
+
+  // 4. Di chuyển mượt về phía targetPos (Vector Interpolation)
+  const dx = targetPos.x - p.x;
+  const dy = targetPos.y - p.y;
+  const distToTarget = Math.hypot(dx, dy);
+
+  if (distToTarget > 0.1) {
+    const step = spd * dt;
+    // Tịnh tiến vị trí mượt theo đường thẳng nối 2 node hex
+    const moveDist = Math.min(step, distToTarget);
+    p.x += (dx / distToTarget) * moveDist;
+    p.y += (dy / distToTarget) * moveDist;
+  }
+
+  // 5. Giới hạn biên map
+  const maxX = hexPos(0, HEX.cols - 1).x + HEX.r;
+  const maxY = hexPos(HEX.rows - 1, 0).y + HEX.r;
+  p.x = Math.max(-HEX.r, Math.min(maxX, p.x));
+  p.y = Math.max(-HEX.r, Math.min(maxY, p.y));
+
+  // 6. Facing & Chuyển map
+  if (ix > 0.15) p.facing = 'E';
+  else if (ix < -0.15) p.facing = 'W';
+
+  if (p.y <= 0) {
+    // Spawn ở node không có cây: nếu cột giữa chẵn thì lệch sang 1 đơn vị
 const startRow = HEX.rows - 2;
-const startCol = Math.floor(HEX.cols / 2);
-const sp = hexPos(startRow, startCol);
-p.x = sp.x;
-p.y = sp.y;
-ST.insects = [];
-toast('🌲 Vào khu rừng mới');
-}
+let startCol = Math.floor(HEX.cols / 2);
+// Đảm bảo cột bắt đầu là cột có "chẵn/lẻ" khớp với hàng để không trùng cây
+if((startRow % 2 === 0) && (startCol % 2 !== 0)) startCol -= 1;
+if((startRow % 2 !== 0) && (startCol % 2 === 0)) startCol -= 1;
+const p = hexPos(startRow, startCol);
+    p.x = sp.x;
+    p.y = sp.y;
+    ST.insects = [];
+    toast('🌲 Vào khu rừng mới');
+  }
 
-
-
-
-// Animation walk
-p.state = 'walk';
-p.animT += dt;
-p.animFrame = (p.animT * 8) % 4; // 8 fps cho walk
+  // 7. Animation
+  p.state = 'walk';
+  p.animT += dt;
+  p.animFrame = (p.animT * 8) % 4;
 }
 
 /* ====== VẼ HUD WORLD (nút hướng, mũi tên) ====== */
