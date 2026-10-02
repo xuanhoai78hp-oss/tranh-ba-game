@@ -760,7 +760,7 @@ ctx.restore();
 function drawPlayer(){
 const p = ST.player;
 const s = worldToScreen(p.x, p.y);
-const size = 1.2 * HEX.pxPerM; // người to hơn cây chút
+const size = 1.9 * HEX.pxPerM; // người to hơn cây chút
 const flip = p.facing === 'W';
 
 // Bóng
@@ -1218,7 +1218,7 @@ function drawInsects(){
 const p = ST.player;
 for(const ins of ST.insects){
 const s = worldToScreen(ins.x, ins.y);
-const size = 1.1 * HEX.pxPerM;
+const size = 3 * HEX.pxPerM;
 const flip = ins.facing === 'W';
 
 // Bóng
