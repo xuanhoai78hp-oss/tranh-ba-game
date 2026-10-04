@@ -93,45 +93,57 @@ z-index:15; display:none; pointer-events:none;
 #msg.show{ display:block; animation:pop 0.2s ease-out; }
 @keyframes pop{ from{transform:translateX(-50%) scale(0.8);opacity:0;} to{transform:translateX(-50%) scale(1);opacity:1;} }
 
-.stick{
-position:fixed; bottom:14px; width:160px; height:110px; z-index:100;
-display:none;
+/* ==================== UI CẦN GẠT BÁNH XÍCH ==================== */
+.lever-container {
+position: fixed; bottom: 20px; z-index: 100;
+display: none; flex-direction: row; gap: 20px;
 }
-.stick.show{ display:block; }
-.stick.left{ left:53px; }
+.lever-container.show { display: flex; }
+.lever-container.left { left: 20px; }
+.lever-container.right { right: 110px; }
 
-.cellBtn{
-position:absolute; width:53px; height:55px;
-background:rgba(255,180,80,0.08);
-border:1.5px dashed rgba(255,180,80,0.4);
-border-radius:8px;
-display:flex; align-items:center; justify-content:center;
-font-size:22px; font-weight:900; color:rgba(255,220,150,0.35);
-user-select:none; cursor:pointer;
+.lever-track {
+width: 60px; height: 160px;
+background: rgba(20, 15, 10, 0.75);
+border: 2px solid #d9a34a;
+border-radius: 30px;
+position: relative;
+touch-action: none;
+box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+display: flex; justify-content: center; align-items: center;
 }
-.cellBtn:active{ background:rgba(255,180,80,0.35); }
-.cellBtn.tapped{ background:rgba(255,180,80,0.45); color:#fff; }
-
-.c1{ top:0; left:0; }
-.c2{ top:0; left:53px; }
-.c3{ top:0; left:106px; }
-.c4{ top:55px; left:0; }
-.c5{ top:55px; left:53px; }
-.c6{ top:55px; left:106px; }
+.lever-label {
+position: absolute; top: -22px; width: 100%; text-align: center;
+font-size: 11px; font-weight: bold; color: #ffd97a; text-shadow: 0 1px 2px #000;
+}
+.lever-slot {
+width: 8px; height: 120px; background: rgba(255,200,100,0.2);
+border-radius: 4px; position: absolute;
+}
+.lever-knob {
+width: 52px; height: 52px;
+background: radial-gradient(circle, #ffd97a 0%, #a06020 100%);
+border: 2px solid #fff; border-radius: 50%;
+position: absolute; top: 54px; /* Vị trí giữa mặc định */
+box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+cursor: pointer; touch-action: none;
+display: flex; align-items: center; justify-content: center;
+font-size: 12px; font-weight: bold; color: #222;
+}
 
 #dumpBtn{
-position:fixed; right:14px; bottom:140px;
-width:80px; height:80px; border-radius:50%;
+position:fixed; right:15px; bottom:20px;
+width:80px; height:160px; border-radius:20px;
 background:radial-gradient(circle,#ffcc44,#996600);
 border:3px solid #fff;
-color:#2a1a00; font-size:13px; font-weight:900;
+color:#2a1a00; font-size:14px; font-weight:900;
 display:none; align-items:center; justify-content:center;
 z-index:100; cursor:pointer;
 box-shadow:0 4px 14px rgba(255,200,80,0.6);
-text-align:center; line-height:1.1;
+text-align:center; line-height:1.2;
 }
 #dumpBtn.show{ display:flex; }
-#dumpBtn:active{ transform:scale(0.92); }
+#dumpBtn:active{ transform:scale(0.95); }
 
 #overlay{
 position:fixed; inset:0; background:rgba(0,0,0,0.92);
@@ -215,24 +227,32 @@ font-size:14px; cursor:pointer; font-weight:bold; margin-top:6px;
 <div id="soundBtn">🔊</div>
 <div id="msg"></div>
 
-<div class="stick left" id="stickL">
-<div class="cellBtn c1" data-key="1">⇧<br><span style="font-size:9px">TRÁI</span></div>
-<div class="cellBtn c2" data-key="2">⇧<br><span style="font-size:9px">2 BÁNH</span></div>
-<div class="cellBtn c3" data-key="3">⇧<br><span style="font-size:9px">PHẢI</span></div>
-<div class="cellBtn c4" data-key="4">⇩<br><span style="font-size:9px">TRÁI</span></div>
-<div class="cellBtn c5" data-key="5">⇩<br><span style="font-size:9px">2 BÁNH</span></div>
-<div class="cellBtn c6" data-key="6">⇩<br><span style="font-size:9px">PHẢI</span></div>
+<!-- CẦN GẠT BÁNH XÍCH TẢ THỰC -->
+<div class="lever-container left" id="leverLContainer">
+  <div class="lever-track" id="leverLTrack">
+    <div class="lever-label">XÍCH TRÁI</div>
+    <div class="lever-slot"></div>
+    <div class="lever-knob" id="leverLKnob">N</div>
+  </div>
+</div>
+
+<div class="lever-container right" id="leverRContainer">
+  <div class="lever-track" id="leverRTrack">
+    <div class="lever-label">XÍCH PHẢI</div>
+    <div class="lever-slot"></div>
+    <div class="lever-knob" id="leverRKnob">N</div>
+  </div>
 </div>
 
 <div id="dumpBtn">NHẢ<br>CÁT</div>
 
 <div id="overlay">
 <h2>🚜 MÁY XÚC LẤP KÊNH</h2>
-<p>Dùng cụm nút bên dưới để điều khiển 2 bánh xích.</p>
-<p><b>Hàng trên ⇧</b>: tiến · <b>Hàng dưới ⇩</b>: lùi</p>
-<p>Nút <span class="hl">1</span>: bánh trái · Nút <span class="hl">3</span>: bánh phải · Nút <span class="hl">2</span>: cả 2 bánh</p>
+<p>Điều khiển <span class="hl">2 cần gạt bánh xích độc lập</span>:</p>
+<p>• <b>Đẩy cả 2 cần lên</b>: Tiến thẳng</p>
+<p>• <b>Kéo cả 2 cần xuống</b>: Lùi thẳng</p>
+<p>• <b>Gạt 1 cần tiến / 1 cần lùi</b>: Xoay vòng tại chỗ</p>
 <p>Húc gầu vào đống cát để múc. Bấm <span class="hl">NHẢ CÁT</span> khi đứng trên kênh.</p>
-<p>Lấp đầy kênh nhiều hơn AI để <span class="hl">thắng</span> và nâng cấp!</p>
 <button id="startBtn">🚀 BẮT ĐẦU</button>
 </div>
 
@@ -243,13 +263,10 @@ font-size:14px; cursor:pointer; font-weight:bold; margin-top:6px;
 <div id="uploadNote">⏳ GAME ĐANG UPLOAD...</div>
 <h2>KHÁM PHÁ GAME KHÁC</h2>
 <a class="bigBtn" id="goIndex" href="index.html">⚔️ TRANH BÁ GAME</a>
-<a class="bigBtn" id="goIndex" href="xecontainer.html">🚛 XE CONTAINER</a>
+<a class="bigBtn" href="xecontainer.html">🚛 XE CONTAINER</a>
 <a class="bigBtn newBtn" href="helicopter.html">🆕 Lái Trực Thăng</a>
 <a class="bigBtn" id="goXuc" href="flycamvantai.html">🎣 FLYCAM ĐÁNH CÁ</a>
-<a class="bigBtn" id="goRan" href="snackanchu.HTML">🐍 RẮN SĂN MỒI</a>
-<a class="bigBtn newBtn" href="index.html">🆕 GAME 4 (coming)</a>
-<a class="bigBtn newBtn" href="index.html">🆕 GAME 5 (coming)</a>
-<a class="bigBtn newBtn" href="index.html">🆕 GAME 6 (coming)</a>
+<a class="bigBtn" id="goRan" href="danhquai.HTML">🐍 Tu Tiên Săn Côn Trùng</a>
 <button id="closeMenu">← Đóng</button>
 </div>
 
@@ -476,8 +493,8 @@ this.angle=0;
 this.color=color;
 this.halfW = 26;
 this.halfH = 22;
-this.notchL = 0;
-this.notchR = 0;
+this.notchL = 0; // Giá trị từ -3 đến +3
+this.notchR = 0; // Giá trị từ -3 đến +3
 this.bucketLoaded = false;
 this.trackPhase = 0;
 this.fuel = 100;
@@ -486,24 +503,9 @@ this.refueling = false;
 this.delivered = 0;
 this.blockTimer = 0;
 }
-applyNotch(key){
-const K = String(key);
-if(K==="1"){ if(this.notchL < CFG.MAX_NOTCH) this.notchL++; }
-else if(K==="3"){ if(this.notchR < CFG.MAX_NOTCH) this.notchR++; }
-else if(K==="4"){ if(this.notchL > -CFG.MAX_NOTCH) this.notchL--; }
-else if(K==="6"){ if(this.notchR > -CFG.MAX_NOTCH) this.notchR--; }
-else if(K==="2"){
-if(this.notchL < CFG.MAX_NOTCH) this.notchL++;
-if(this.notchR < CFG.MAX_NOTCH) this.notchR++;
-}
-else if(K==="5"){
-if(this.notchL > -CFG.MAX_NOTCH) this.notchL--;
-if(this.notchR > -CFG.MAX_NOTCH) this.notchR--;
-}
-}
+
 getSpeedFactor(){ return (this.notchL + this.notchR)/2 * CFG.STEP; }
 
-// Lấy vị trí gầu (mũi xe, phía trước)
 getBucketPos(){
 const d = this.halfH + 16;
 return {
@@ -538,7 +540,6 @@ if(d < b.radius + 22) return true;
 if(x > world.channel.x - 4 && x < world.channel.x + world.channel.width + 4){
 if(world.channel.isBlocking(y)) return true;
 }
-// ⚡ LỖI 10: chặn va chạm với xe kia
 if(opponent && !opponent.refueling){
 const d = Math.hypot(x-opponent.x, y-opponent.y);
 if(d < CFG.MIN_CAR_DIST) return true;
@@ -556,15 +557,13 @@ else blocked = true;
 }
 const moved = Math.hypot(finalX-this.x, finalY-this.y);
 this.x = finalX; this.y = finalY;
-// Quay (khi có hiệu tốc 2 bánh)
+
 let wantRotate = Math.abs(omega) > 0.001;
 if(wantRotate){
-// nhưng kiểm tra điểm mũi/quay có bị đè không
 const testA = this.angle + omega*dt;
 const testNoseX = this.x + Math.cos(testA) * this.halfH;
 const testNoseY = this.y + Math.sin(testA) * this.halfH;
 let rotBlocked = false;
-// chỉ chặn nếu chạm xe kia
 if(opponent){
 const d = Math.hypot(testNoseX-opponent.x, testNoseY-opponent.y);
 if(d < CFG.MIN_CAR_DIST - 6) rotBlocked = true;
@@ -597,7 +596,6 @@ this.scoopCooldown = 0;
 this.dumpCooldown = 0;
 this.speedMul = 1;
 
-// LỖI 11: người mới tập lái
 this.hesitateTimer = 0;
 this.revTimer = 0;
 this.aimAngle = 0;
@@ -610,7 +608,7 @@ this.lastBlocked = 0;
 this.overshootAng = 0;
 this.scoopMissTimer = 0;
 this.dumpMissTimer = 0;
-this.confusedTimer = 0; // lúng túng sau va chạm
+this.confusedTimer = 0;
 this.stuckTimer = 0;
 }
 
@@ -620,7 +618,6 @@ this.updateMotion(dt, world, this.speedMul, opponent);
 return;
 }
 
-// Mục tiêu
 this.bucketLoaded ? (this.aiState="toChannel") : (this.aiState="seek");
 let tx, ty;
 
@@ -643,57 +640,47 @@ ty = this.aiChanY;
 const dx = tx - this.x, dy = ty - this.y;
 let targetA = Math.atan2(dy,dx);
 
-// ⚡ LỖI 11: lệch hướng tự nhiên (run tay)
 this.wobblePhase += dt * 1.6;
-const wobbleAmp = 0.13; // ±~7.5°
+const wobbleAmp = 0.13;
 targetA += Math.sin(this.wobblePhase) * wobbleAmp;
 
-// Quay quá tay ngẫu nhiên
 if(this.overshootAng !== 0){
 targetA += this.overshootAng;
 this.overshootAng *= (1 - dt*3);
 if(Math.abs(this.overshootAng) < 0.01) this.overshootAng = 0;
 }
 
-// Đang tránh xe → ưu tiên hướng tránh
 if(this.avoidTimer > 0){
 this.avoidTimer -= dt;
-targetA = this.avoidDir; // quay theo hướng tránh
+targetA = this.avoidDir;
 }
-// Đang lúng túng sau va chạm → chậm chạp
 if(this.confusedTimer > 0){
 this.confusedTimer -= dt;
-targetA += Math.sin(this.wobblePhase*3) * 0.35; // loạng choạng
+targetA += Math.sin(this.wobblePhase*3) * 0.35;
 }
 
-// Quay mượt (chậm hơn người bình thường)
 const turnRate = this.confusedTimer>0 ? 1.2 : 1.9;
 this.angle += normAng(targetA - this.angle) * Math.min(1, turnRate*dt);
 
-// Đặt ga (mới tập lái)
 const dNow = Math.hypot(dx,dy);
 let ga = 0;
 if(this.hesitateTimer > 0){
 this.hesitateTimer -= dt;
-ga = 0; // đứng ngơ ngác
+ga = 0;
 } else if(this.confusedTimer > 0){
-ga = 1; // vẫn đi nhưng chậm
+ga = 1;
 } else if(dNow > 16){
-// ngẫu nhiên ngơ ngác đứng lại
 if(Math.random() < dt * 0.15){
 this.hesitateTimer = rand(0.5, 1.5);
-// đôi khi rú ga để nghe "người mới"
 if(Math.random()<0.5) this.sfx_rev_hint = true;
 } else {
-ga = Math.random() < 0.35 ? 1 : 2; // chủ yếu nấc 1-2
+ga = Math.random() < 0.35 ? 1 : 2;
 }
 } else {
 ga = 0;
 }
 
-// Nếu đang tránh (do va chạm) → lùi trước
 if(this.avoidTimer > 0){
-// 0.3s đầu lùi, sau đó tiến theo hướng tránh
 if(this.avoidTimer > (this.avoidTotal - 0.3)){
 this.notchL = -2; this.notchR = -2;
 } else {
@@ -702,23 +689,21 @@ this.notchL = 1; this.notchR = 1;
 } else {
 this.notchL = ga; this.notchR = ga;
 }
-// Đôi khi quay 1 bánh để xoay tại chỗ
+
 if(this.confusedTimer > 0 && Math.random() < dt*2){
 this.notchL = 1; this.notchR = -1;
 }
 
 const res = this.updateMotion(dt, world, this.speedMul, opponent);
 
-// Phát hiện bị chặn → tránh
 if(res.blocked && Math.abs(this.notchL)+Math.abs(this.notchR) > 0){
 this.lastBlocked += dt;
 if(this.lastBlocked > 0.4 && this.avoidTimer <= 0){
 this.lastBlocked = 0;
-// Xác định bên đối diện → tránh
 let sideDir = 0;
 if(opponent){
 const relAng = normAng(Math.atan2(opponent.y-this.y, opponent.x-this.x) - this.angle);
-sideDir = relAng > 0 ? -1 : 1; // quay ngược phía đối phương
+sideDir = relAng > 0 ? -1 : 1;
 } else {
 sideDir = Math.random() < 0.5 ? -1 : 1;
 }
@@ -726,13 +711,11 @@ this.avoidDir = this.angle + sideDir * (Math.PI*0.55);
 this.avoidTotal = 0.85;
 this.avoidTimer = this.avoidTotal;
 this.confusedTimer = 1.5;
-if(this.sfx) this.sfx(brake) ; // placeholder, dùng qua game
 }
 } else {
 this.lastBlocked = Math.max(0, this.lastBlocked - dt);
 }
 
-// Kẹt cứng > 4s → đổi mục tiêu
 if(res.blocked && Math.abs(this.notchL)+Math.abs(this.notchR) > 0){
 this.stuckTimer += dt;
 } else {
@@ -745,7 +728,6 @@ else { this.aiTarget = null; }
 this.confusedTimer = 1.0;
 }
 
-// LỖI 11: khi tới gần boulder, 25% khả năng đâm hụt → phải lùi lại
 if(this.aiState==="seek" && this.aiTarget && this.aiTarget.buckets>0){
 const b = this.aiTarget;
 const bucket = this.getBucketPos();
@@ -756,11 +738,9 @@ this.scoopMissTimer -= dt;
 } else if(!this._scoopMissChecked){
 this._scoopMissChecked = true;
 if(Math.random() < 0.18){
-// đâm hụt → lùi lại 1 chút
 this.scoopMissTimer = 0.7;
 this.notchL = -2; this.notchR = -2;
 } else {
-// múc thành công
 this.aiTarget.buckets--;
 this.bucketLoaded = true;
 this.aiTarget = null;
@@ -775,7 +755,6 @@ this._scoopMissChecked = false;
 }
 }
 
-// Nhả cát — đôi khi lố kênh phải lùi lại
 if(this.aiState==="toChannel" && this.bucketLoaded){
 const c = world.channel;
 const inX = this.x > c.x - 40 && this.x < c.x + c.width + 40;
@@ -786,7 +765,6 @@ this.notchL = -2; this.notchR = -2;
 } else if(!this._dumpChecked){
 this._dumpChecked = true;
 if(Math.random() < 0.15){
-// nhả hụt → lùi lại thử lại
 this.dumpMissTimer = 0.6;
 } else {
 c.fillOne();
@@ -929,7 +907,6 @@ const total = c.totalSegments();
 const filled = c.filledCount();
 const aiRatio = this.ai.delivered / total;
 
-// LỖI 7: AI mệt
 if(aiRatio >= 0.40 && aiRatio < 0.50){
 this.ai.speedMul = 0.5;
 if(!this._aiSlowNotified){
@@ -944,22 +921,17 @@ this._showMsg("⚡ AI đã hồi sức!", 2.0);
 }
 }
 
-// Player
 this.player.updateMotion(dt, this.world, boost, this.ai);
-// AI
 this.ai.aiUpdate(dt, this.world, this.player);
 
-// Audio: rú/phanh cho AI khi confused (throttle)
 if(this.ai.confusedTimer > 1.3 && this._aiBrakeCd<=0){
 this.sfx.brake();
 this._aiBrakeCd = 1.5;
 }
 if(this._aiBrakeCd>0) this._aiBrakeCd -= dt;
-// Đôi khi AI rồ ga
 if(this.ai.hesitateTimer > 0 && Math.random() < dt*1.5){
 this.sfx.rev();
 }
-// Crash sound khi 2 xe quá gần
 const dCar = Math.hypot(this.player.x-this.ai.x, this.player.y-this.ai.y);
 if(dCar < CFG.MIN_CAR_DIST + 4 && this._crashCd<=0){
 this.sfx.crash();
@@ -967,7 +939,6 @@ this._crashCd = 0.6;
 }
 if(this._crashCd>0) this._crashCd -= dt;
 
-// ✅ LỖI 9: PLAYER múc — chỉ khi GẦU chạm (không tính lùi)
 if(!this.player.bucketLoaded){
 const bucket = this.player.getBucketPos();
 for(const b of this.world.boulders){
@@ -984,7 +955,6 @@ break;
 }
 }
 
-// LỖI 6: respawn cát
 let totalRem = 0;
 for(const b of this.world.boulders) totalRem += b.buckets;
 const needed = total - filled;
@@ -995,11 +965,9 @@ this.respawnSand(spawnCount);
 setTimeout(()=>{ this._respawning = false; }, 800);
 }
 
-// Camera
 this.cam.x += (this.player.x - this.cam.x)*CFG.CAM_LERP;
 this.cam.y += (this.player.y - this.cam.y)*CFG.CAM_LERP;
 
-// SFX động cơ
 const spd = this.player.getSpeedFactor();
 this.sfx.setEngine(spd, this.player.bucketLoaded);
 
@@ -1110,12 +1078,10 @@ ctx.rotate(v.angle);
 const bw = v.halfH*2*z;
 const bh = v.halfW*2*z;
 
-// Bánh xích
 ctx.fillStyle = v.bucketLoaded ? "#4a4030" : "#333";
 ctx.fillRect(-bw/2, -bh/2-4*z, bw, 12*z);
 ctx.fillRect(-bw/2, bh/2-8*z, bw, 12*z);
 
-// Mắt xích
 ctx.strokeStyle = "#666";
 ctx.lineWidth = 1.5*z;
 for(let t=-6;t<12;t++){
@@ -1126,18 +1092,15 @@ ctx.moveTo(px, bh/2-8*z); ctx.lineTo(px, bh/2+4*z);
 ctx.stroke();
 }
 
-// Thân
 ctx.fillStyle = v.color;
 ctx.fillRect(-bw/2+6*z, -bh/2+8*z, bw-12*z, bh-16*z);
 ctx.strokeStyle = "#222";
 ctx.lineWidth = 2*z;
 ctx.strokeRect(-bw/2+6*z, -bh/2+8*z, bw-12*z, bh-16*z);
 
-// Buồng lái
 ctx.fillStyle = isAI ? "#802020" : "#906018";
 ctx.fillRect(-bw/2+14*z, -bh/4, bw-28*z, bh/2);
 
-// Gầu
 const bucketColor = v.bucketLoaded ? "#f0d080" : "#5a5040";
 ctx.fillStyle = bucketColor;
 ctx.fillRect(bw/2-4*z, -bh/3, 14*z, bh*2/3);
@@ -1191,7 +1154,7 @@ c.strokeStyle="#fff"; c.lineWidth=1; c.stroke();
 }
 }
 
-/* ============================ BOOT ============================ */
+/* ============================ BOOT & LOGIC CẦN GẠT ============================ */
 const game = new Game(
 document.getElementById("game"),
 document.getElementById("minimap")
@@ -1200,7 +1163,8 @@ window._game = game;
 
 document.getElementById("startBtn").onclick = () => {
 document.getElementById("overlay").style.display = "none";
-document.getElementById("stickL").classList.add("show");
+document.getElementById("leverLContainer").classList.add("show");
+document.getElementById("leverRContainer").classList.add("show");
 document.getElementById("dumpBtn").classList.add("show");
 document.getElementById("minimap").classList.add("show");
 document.getElementById("fuelWrap").classList.add("show");
@@ -1212,38 +1176,128 @@ game.startLevel(1);
 game.run();
 };
 
-/* Joystick */
-function bindKeyBtn(container){
-container.querySelectorAll(".cellBtn").forEach(btn=>{
-const k = btn.dataset.key;
-const trigger = (e)=>{
-e.preventDefault();
-if(!game.player) return;
-game.player.applyNotch(k);
-btn.classList.add("tapped");
-setTimeout(()=>btn.classList.remove("tapped"), 120);
-game.sfx.tone(380, 0.03, "square", 0.08);
-};
-btn.addEventListener("touchstart", trigger, {passive:false});
-btn.addEventListener("mousedown", trigger);
-});
-}
-bindKeyBtn(document.getElementById("stickL"));
+/* --- TÍNH NĂNG ĐIỀU KHIỂN CẦN GẠT BÁNH XÍCH CẢM ỨNG --- */
+function setupLever(trackId, knobId, isLeftTrack) {
+  const track = document.getElementById(trackId);
+  const knob = document.getElementById(knobId);
+  const minTop = 4;   // Kéo hết cỡ lên trên (+3)
+  const maxTop = 104; // Kéo hết cỡ xuống dưới (-3)
+  const midTop = 54;  // Vị trí trung gian (0)
 
+  let activeTouchId = null;
+
+  function updateLeverPosition(clientY) {
+    const rect = track.getBoundingClientRect();
+    let y = clientY - rect.top - 26; // 26 là nửa chiều cao nút knob
+    y = Math.max(minTop, Math.min(maxTop, y));
+    knob.style.top = y + "px";
+
+    // Quy đổi độ lệch Y ra nấc ga (-3 đến +3)
+    let dy = midTop - y; // Dương là tiến, Âm là lùi
+    let notch = Math.round((dy / 50) * 3);
+    notch = clamp(notch, -3, 3);
+
+    if (game.player) {
+      if (isLeftTrack) game.player.notchL = notch;
+      else game.player.notchR = notch;
+    }
+
+    knob.innerText = notch > 0 ? "+" + notch : (notch < 0 ? notch : "N");
+  }
+
+  function resetLever() {
+    knob.style.top = midTop + "px";
+    knob.innerText = "N";
+    if (game.player) {
+      if (isLeftTrack) game.player.notchL = 0;
+      else game.player.notchR = 0;
+    }
+    activeTouchId = null;
+  }
+
+  // Touch Events
+  track.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    if (activeTouchId === null && e.changedTouches.length > 0) {
+      const touch = e.changedTouches[0];
+      activeTouchId = touch.identifier;
+      updateLeverPosition(touch.clientY);
+      game.sfx.tone(380, 0.03, "square", 0.08);
+    }
+  }, { passive: false });
+
+  window.addEventListener("touchmove", (e) => {
+    if (activeTouchId !== null) {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === activeTouchId) {
+          updateLeverPosition(e.changedTouches[i].clientY);
+          break;
+        }
+      }
+    }
+  }, { passive: false });
+
+  window.addEventListener("touchend", (e) => {
+    if (activeTouchId !== null) {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === activeTouchId) {
+          resetLever();
+          break;
+        }
+      }
+    }
+  });
+
+  // Mouse fallback (khi test trên máy tính)
+  let isMouseDown = false;
+  track.addEventListener("mousedown", (e) => {
+    isMouseDown = true;
+    updateLeverPosition(e.clientY);
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (isMouseDown) updateLeverPosition(e.clientY);
+  });
+  window.addEventListener("mouseup", () => {
+    if (isMouseDown) {
+      isMouseDown = false;
+      resetLever();
+    }
+  });
+}
+
+setupLever("leverLTrack", "leverLKnob", true);
+setupLever("leverRTrack", "leverRKnob", false);
+
+/* Nút Nhả Cát */
 const dumpBtn = document.getElementById("dumpBtn");
 const onDump = (e)=>{ e && e.preventDefault(); if(game.player) game.tryDump(); };
 dumpBtn.addEventListener("touchstart", onDump, {passive:false});
 dumpBtn.addEventListener("mousedown", onDump);
 
+/* Phím tắt hỗ trợ chơi trên Bàn Phím PC */
+const keysHeld = {};
 window.addEventListener("keydown", (e)=>{
-if(!game.player) return;
-const k = e.key;
-if(["1","2","3","4","5","6"].includes(k)){
-game.player.applyNotch(k);
-game.sfx.tone(380, 0.03, "square", 0.08);
-}
-if(k===" "){ e.preventDefault(); game.tryDump(); }
+  keysHeld[e.key.toLowerCase()] = true;
+  updateKeyboardControls();
+  if(e.key === " "){ e.preventDefault(); game.tryDump(); }
 });
+window.addEventListener("keyup", (e)=>{
+  delete keysHeld[e.key.toLowerCase()];
+  updateKeyboardControls();
+});
+
+function updateKeyboardControls(){
+  if(!game.player) return;
+  // Xích trái: Phím W / S
+  if(keysHeld["w"]) game.player.notchL = 3;
+  else if(keysHeld["s"]) game.player.notchL = -3;
+  else game.player.notchL = 0;
+
+  // Xích phải: Mũi tên Up / Down hoặc I / K
+  if(keysHeld["arrowup"] || keysHeld["i"]) game.player.notchR = 3;
+  else if(keysHeld["arrowdown"] || keysHeld["k"]) game.player.notchR = -3;
+  else game.player.notchR = 0;
+}
 
 const sndBtn = document.getElementById("soundBtn");
 sndBtn.onclick = () => {
