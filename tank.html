@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🚜 Tank vs Bugs</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+html, body {
+width:100%; height:100%; overflow:hidden;
+background:#0b1a0b;
+font-family:'Segoe UI', sans-serif;
+color:#c8ffc8;
+touch-action:none;
+}
+
+/* ===== CANVAS ===== */
+#game {
+position:absolute; inset:0;
+display:block;
+touch-action:none;
+}
+
+/* ===== HUD TRÁI TRÊN ===== */
+#hudTop {
+position:absolute; top:8px; left:10px;
+z-index:10; display:flex; flex-direction:column; gap:6px;
+pointer-events:none;
+}
+.hud-box {
+background:rgba(0,20,0,0.55);
+border:1px solid #3a8a3a;
+border-radius:6px;
+padding:6px 10px;
+font-size:14px; font-weight:bold;
+color:#a8ffa8;
+text-shadow:0 0 6px #3aff3a;
+display:flex; align-items:center; gap:8px;
+min-width:140px;
+}
+.hud-icon { font-size:16px; }
+#fuelBar {
+width:80px; height:10px;
+background:#1a3a1a; border:1px solid #3a8a3a;
+border-radius:3px; overflow:hidden;
+}
+#fuelFill {
+height:100%; width:100%;
+background:linear-gradient(90deg,#ffaa22,#ffdd44);
+transition:width 0.2s;
+}
+
+/* ===== HUD PHẢI TRÊN — RADAR + KHÁM PHÁ ===== */
+#hudRight {
+position:absolute; top:8px; right:10px;
+z-index:10;
+display:flex; flex-direction:column; gap:8px;
+align-items:flex-end;
+}
+#radar {
+width:130px; height:130px;
+background:rgba(0,20,0,0.65);
+border:2px solid #3a8a3a;
+border-radius:50%;
+box-shadow:0 0 15px #3aff3a44, inset 0 0 20px #00000088;
+}
+#btnExplore {
+background:linear-gradient(180deg,#2a5a2a,#183018);
+color:#c8ffc8;
+border:2px solid #5ac85a;
+border-radius:8px;
+padding:8px 14px;
+font-size:13px; font-weight:bold;
+cursor:pointer;
+text-shadow:0 0 4px #3aff3a;
+box-shadow:0 0 12px #3aff3a44;
+font-family:inherit;
+transition:transform 0.1s;
+}
+#btnExplore:active { transform:scale(0.94); background:#5ac85a; color:#000; }
+
+/* ===== HUD GIỮA TRÊN — ĐÃ DIỆT ===== */
+#hudKill {
+position:absolute; top:8px; left:50%;
+transform:translateX(-50%);
+z-index:10;
+background:rgba(0,20,0,0.65);
+border:2px solid #3a8a3a;
+border-radius:8px;
+padding:8px 18px;
+font-size:16px; font-weight:bold;
+color:#aaffaa;
+text-shadow:0 0 8px #3aff3a;
+letter-spacing:2px;
+pointer-events:none;
+}
+#hudKill b { color:#ffcc44; font-size:20px; }
+
+/* ===== CẦN GẠT ẢO ===== */
+#leverLeft, #leverRight {
+position:absolute; bottom:20px;
+width:80px; height:180px;
+z-index:10;
+touch-action:none;
+}
+#leverLeft { left:20px; }
+#leverRight { right:20px; }
+
+.lever-track {
+position:absolute; inset:0;
+background:linear-gradient(180deg,
+rgba(0,40,0,0.5),
+rgba(0,80,0,0.5),
+rgba(0,40,0,0.5));
+border:2px solid #3a8a3a;
+border-radius:40px;
+box-shadow:
+inset 0 0 20px #000000aa,
+0 0 15px #3aff3a44;
+}
+
+.lever-track::before {
+content:'';
+position:absolute;
+left:50%; top:10%; bottom:10%;
+width:4px; margin-left:-2px;
+background:repeating-linear-gradient(180deg,
+transparent 0,
+transparent 18px,
+#3a8a3a 18px,
+#3a8a3a 20px);
+opacity:0.6;
+}
+
+.lever-track::after {
+content:'';
+position:absolute;
+left:20%; right:20%; top:50%;
+height:3px; margin-top:-1.5px;
+background:#ffcc44;
+box-shadow:0 0 10px #ffcc44;
+border-radius:2px;
+}
+
+.lever-knob {
+position:absolute;
+left:50%; top:50%;
+width:64px; height:64px;
+margin-left:-32px; margin-top:-32px;
+background:radial-gradient(circle at 35% 30%, #88ff88, #2a5a2a 60%, #0a2a0a);
+border:3px solid #aaffaa;
+border-radius:50%;
+box-shadow:
+0 0 20px #3aff3a,
+inset 0 -6px 12px #00000088;
+transition:top 0.06s linear;
+pointer-events:none;
+}
+.lever-knob::after {
+content:'';
+position:absolute; left:50%; top:50%;
+width:16px; height:16px;
+margin-left:-8px; margin-top:-8px;
+background:#0a2a0a;
+border-radius:50%;
+box-shadow:inset 0 0 6px #000;
+}
+
+.lever-label {
+position:absolute;
+bottom:-18px; left:0; right:0;
+text-align:center;
+font-size:11px;
+color:#7ac87a;
+letter-spacing:2px;
+}
+
+.lever-val {
+position:absolute;
+top:-22px; left:0; right:0;
+text-align:center;
+font-size:14px; font-weight:bold;
+color:#ffcc44;
+text-shadow:0 0 6px #ffcc44;
+}
+
+/* ===== THÔNG BÁO ===== */
+#toast {
+position:absolute;
+top:50%; left:50%;
+transform:translate(-50%, -50%);
+z-index:100;
+background:rgba(0,40,0,0.85);
+border:3px solid #5ac85a;
+border-radius:12px;
+padding:20px 40px;
+font-size:22px; font-weight:bold;
+color:#aaffaa;
+text-shadow:0 0 12px #3aff3a;
+letter-spacing:3px;
+box-shadow:0 0 40px #3aff3a88;
+display:none;
+pointer-events:none;
+text-align:center;
+}
+#toast.show { display:block; animation:pop 0.4s; }
+@keyframes pop {
+from { opacity:0; transform:translate(-50%,-50%) scale(0.7); }
+to { opacity:1; transform:translate(-50%,-50%) scale(1); }
+}
+
+/* ===== MÀN HÌNH BẮT ĐẦU ===== */
+#startScreen {
+position:absolute; inset:0;
+z-index:200;
+background:radial-gradient(circle at 50% 40%, #0a2a0a 0%, #000 100%);
+display:flex; flex-direction:column;
+align-items:center; justify-content:center;
+gap:20px;
+}
+#startScreen h1 {
+font-size:32px;
+color:#aaffaa;
+letter-spacing:6px;
+text-shadow:0 0 20px #3aff3a;
+}
+#startScreen p {
+font-size:14px;
+color:#7ac87a;
+text-align:center;
+line-height:1.8;
+max-width:320px;
+}
+#btnStart {
+margin-top:16px;
+background:linear-gradient(180deg,#2a5a2a,#183018);
+color:#c8ffc8;
+border:3px solid #5ac85a;
+border-radius:12px;
+padding:16px 40px;
+font-size:18px; font-weight:bold;
+letter-spacing:4px;
+cursor:pointer;
+font-family:inherit;
+text-shadow:0 0 8px #3aff3a;
+box-shadow:0 0 30px #3aff3a55;
+}
+#btnStart:active { transform:scale(0.95); }
+
+/* ===== MÀN HÌNH QUA CỬA ===== */
+#winScreen {
+position:absolute; inset:0;
+z-index:250;
+background:radial-gradient(circle at 50% 40%, #2a5a0a 0%, #000 100%);
+display:none;
+flex-direction:column;
+align-items:center; justify-content:center;
+gap:20px;
+}
+#winScreen.show { display:flex; }
+#winScreen h1 {
+font-size:40px;
+color:#ffdd44;
+letter-spacing:8px;
+text-shadow:0 0 30px #ffaa22;
+}
+#winScreen p { color:#c8ffc8; font-size:15px; }
+#btnRestart {
+margin-top:16px;
+background:linear-gradient(180deg,#5a2a0a,#2a1400);
+color:#ffdd88;
+border:3px solid #ffaa44;
+border-radius:12px;
+padding:14px 32px;
+font-size:16px; font-weight:bold;
+cursor:pointer;
+font-family:inherit;
+letter-spacing:3px;
+}
+
+@media (max-width:700px){
+#radar { width:100px; height:100px; }
+#leverLeft, #leverRight { width:66px; height:150px; }
+.lever-knob { width:54px; height:54px; margin-left:-27px; margin-top:-27px; }
+.hud-box { font-size:12px; padding:5px 8px; min-width:120px; }
+#hudKill { font-size:13px; padding:6px 12px; }
+#hudKill b { font-size:16px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<!-- ===== HUD ===== -->
+<div id="hudTop">
+<div class="hud-box">
+<span class="hud-icon">🔫</span>
+<span>Đạn: <span id="ammoVal">100</span></span>
+</div>
+<div class="hud-box">
+<span class="hud-icon">⛽</span>
+<div id="fuelBar"><div id="fuelFill"></div></div>
+<span id="fuelVal" style="font-size:12px;">100%</span>
+</div>
+</div>
+
+<div id="hudKill">
+🐜 ĐÃ DIỆT: <b id="killVal">0</b>/20
+</div>
+
+<div id="hudRight">
+<canvas id="radar" width="260" height="260"></canvas>
+<button id="btnExplore">🌐 KHÁM PHÁ</button>
+</div>
+
+<!-- ===== CẦN GẠT ẢO ===== -->
+<div id="leverLeft">
+<div class="lever-val" id="valLeft">0</div>
+<div class="lever-track"></div>
+<div class="lever-knob" id="knobLeft"></div>
+<div class="lever-label">TRÁI</div>
+</div>
+
+<div id="leverRight">
+<div class="lever-val" id="valRight">0</div>
+<div class="lever-track"></div>
+<div class="lever-knob" id="knobRight"></div>
+<div class="lever-label">PHẢI</div>
+</div>
+
+<!-- ===== THÔNG BÁO ===== -->
+<div id="toast"></div>
+
+<!-- ===== MÀN HÌNH BẮT ĐẦU ===== -->
+<div id="startScreen">
+<h1>🚜 TANK vs BUGS 🐜</h1>
+<p>
+Kéo 2 cần gạt để lái xe tăng<br>
+Xe tự bắn khi côn trùng nằm thẳng hướng<br>
+Diệt 20 con để qua cửa<br>
+Cẩn thận cây — côn trùng có thể núp!
+</p>
+<button id="btnStart">BẮT ĐẦU</button>
+</div>
+
+<!-- ===== MÀN HÌNH QUA CỬA ===== -->
+<div id="winScreen">
+<h1>🎉 QUA CỬA 🎉</h1>
+<p>Anh đã diệt sạch 20 con côn trùng!</p>
+<button id="btnRestart">CHƠI LẠI</button>
+</div>
+
+<!-- ===== MÀN HÌNH THUA ===== -->
+<div id="loseScreen" style="
+position:absolute; inset:0;
+z-index:250;
+background:radial-gradient(circle at 50% 40%, #5a0a0a 0%, #000 100%);
+display:none;
+flex-direction:column;
+align-items:center; justify-content:center;
+gap:20px;
+">
+<h1 style="
+font-size:40px; color:#ff4444;
+letter-spacing:8px;
+text-shadow:0 0 30px #ff2222;">⛽ HẾT XĂNG ⛽</h1>
+<p style="color:#ffcccc; font-size:15px;">Xe tăng đã cạn nhiên liệu!</p>
+<button id="btnRestartLose" style="
+margin-top:16px;
+background:linear-gradient(180deg,#5a0a0a,#2a0000);
+color:#ff8888;
+border:3px solid #ff4444;
+border-radius:12px;
+padding:14px 32px;
+font-size:16px; font-weight:bold;
+cursor:pointer;
+font-family:inherit;
+letter-spacing:3px;">CHƠI LẠI</button>
+</div>
+
+<script>
+/* =========================================================
+🚜 TANK vs BUGS — v1
+========================================================= */
+
+/* ===== CẤU HÌNH ===== */
+const CFG = {
+MAP_RADIUS_M: 30, 
+PX_PER_M: 12, 
+SPRITE_SIZE: 40, 
+TANK_SPEED_MAX: 6, 
+TANK_ACCEL: 8, 
+TANK_TURN_FACTOR: 1.4, 
+BUG_SPEED: 2.2, 
+BUG_ATTACK_MULT: 1.5, 
+BUG_HP: 5, 
+BUG_STUN_AFTER_HIT: 3.0, 
+FIRE_INTERVAL: 2.0, 
+FUEL_MAX: 100, 
+FUEL_DRAIN_PER_SEC: 100/300, 
+FUEL_BUG_ATTACK: 2, 
+FUEL_PICKUP: 20, 
+AMMO_START: 100,
+AMMO_PICKUP: 20, 
+KILL_TARGET: 20,
+CAMERA_ANGLE: 30 * Math.PI / 180, 
+CAMERA_HEIGHT: 220, 
+CAMERA_DIST: 340, 
+};
+
+/* ===== CANVAS ===== */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let W, H, CX, CY;
+function resizeCanvas(){
+W = canvas.width = window.innerWidth;
+H = canvas.height = window.innerHeight;
+CX = W / 2;
+CY = H / 2;
+canvas.style.width = W + 'px';
+canvas.style.height = H + 'px';
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+/* ===== SPRITE ===== */
+const sprite = {
+img: null,
+loaded: false,
+cols: 8,
+rows: 4,
+cell: 40,
+};
+
+const spriteImg = new Image();
+spriteImg.onload = () => { sprite.loaded = true; };
+spriteImg.onerror = () => {
+console.warn('Không load được anh.png — dùng sprite tạm');
+};
+spriteImg.src = 'anh.png';
+sprite.img = spriteImg;
+
+function drawSprite(row, col, x, y, size, flip=false, rotate=0){
+if(!sprite.loaded){
+ctx.fillStyle = row === 0 ? '#5a8a4a' : '#8a3a2a';
+ctx.fillRect(x-size/2, y-size/2, size, size);
+return;
+}
+ctx.save();
+ctx.translate(x, y);
+if(rotate) ctx.rotate(rotate);
+if(flip) ctx.scale(-1, 1);
+ctx.drawImage(
+sprite.img,
+col * sprite.cell, row * sprite.cell,
+sprite.cell, sprite.cell,
+-size/2, -size/2,
+size, size
+);
+ctx.restore();
+}
+
+/* ===== ÂM THANH ===== */
+let audioCtx = null;
+function getCtx(){
+if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+if(audioCtx.state === 'suspended') audioCtx.resume();
+return audioCtx;
+}
+
+let trackNoise = null;
+let trackGain = null;
+function startTrackNoise(){
+if(trackNoise) return;
+const ac = getCtx();
+const bufferSize = ac.sampleRate * 2;
+const buffer = ac.createBuffer(1, bufferSize, ac.sampleRate);
+const data = buffer.getChannelData(0);
+for(let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+const src = ac.createBufferSource();
+src.buffer = buffer; src.loop = true;
+const filter = ac.createBiquadFilter();
+filter.type = 'bandpass';
+filter.frequency.value = 220;
+filter.Q.value = 1.2;
+const gain = ac.createGain();
+gain.gain.value = 0;
+src.connect(filter).connect(gain).connect(ac.destination);
+src.start();
+trackNoise = src;
+trackGain = gain;
+}
+function setTrackVolume(v){
+if(trackGain) trackGain.gain.setTargetAtTime(v * 0.09, getCtx().currentTime, 0.05);
+}
+
+function sfxShoot(){
+const ac = getCtx(), t = ac.currentTime;
+const osc = ac.createOscillator(), g = ac.createGain();
+osc.type = 'square';
+osc.frequency.setValueAtTime(600, t);
+osc.frequency.exponentialRampToValueAtTime(80, t + 0.12);
+g.gain.setValueAtTime(0.18, t);
+g.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+osc.connect(g).connect(ac.destination);
+osc.start(t); osc.stop(t + 0.15);
+
+const osc2 = ac.createOscillator(), g2 = ac.createGain();
+osc2.type = 'triangle';
+osc2.frequency.setValueAtTime(1200, t);
+g2.gain.setValueAtTime(0.12, t);
+g2.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+osc2.connect(g2).connect(ac.destination);
+osc2.start(t); osc2.stop(t + 0.06);
+}
+
+function sfxBugDeath(){
+const ac = getCtx(), t = ac.currentTime;
+const osc = ac.createOscillator(), g = ac.createGain();
+osc.type = 'sawtooth';
+osc.frequency.setValueAtTime(300, t);
+osc.frequency.exponentialRampToValueAtTime(40, t + 0.35);
+g.gain.setValueAtTime(0.16, t);
+g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+osc.connect(g).connect(ac.destination);
+osc.start(t); osc.stop(t + 0.4);
+}
+
+function sfxPickup(){
+const ac = getCtx(), t = ac.currentTime;
+[880, 1320, 1760].forEach((f, i) => {
+const osc = ac.createOscillator(), g = ac.createGain();
+osc.type = 'sine';
+osc.frequency.value = f;
+const st = t + i * 0.06;
+g.gain.setValueAtTime(0, st);
+g.gain.linearRampToValueAtTime(0.12, st + 0.01);
+g.gain.exponentialRampToValueAtTime(0.001, st + 0.18);
+osc.connect(g).connect(ac.destination);
+osc.start(st); osc.stop(st + 0.2);
+});
+}
+
+function sfxBugAttack(){
+const ac = getCtx(), t = ac.currentTime;
+const osc = ac.createOscillator(), g = ac.createGain();
+osc.type = 'sawtooth';
+osc.frequency.setValueAtTime(90, t);
+osc.frequency.linearRampToValueAtTime(180, t + 0.15);
+g.gain.setValueAtTime(0.14, t);
+g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+osc.connect(g).connect(ac.destination);
+osc.start(t); osc.stop(t + 0.2);
+}
+
+/* ===== TRẠNG THÁI GAME ===== */
+const game = {
+running: false,
+killed: 0,
+ammo: CFG.AMMO_START,
+fuel: CFG.FUEL_MAX,
+camX: 0, camY: 0,
+fireTimer: 0,
+winShown: false,
+overShown: false,
+};
+
+const tank = {
+x: 0, y: 0,
+angle: 0, 
+speedL: 0, speedR: 0, 
+speedLTarget: 0, speedRTarget: 0,
+animFrame: 0,
+animTimer: 0,
+isFiring: false,
+fireAnimTimer: 0,
+};
+
+const trees = [];
+const grasses = [];
+const bugs = [];
+const pickups = [];
+const bullets = [];
+
+/* ===== KHỞI TẠO MAP ===== */
+function generateMap(){
+trees.length = 0;
+grasses.length = 0;
+
+const treeCount = 18;
+let tries = 0;
+while(trees.length < treeCount && tries < 500){
+tries++;
+const ang = Math.random() * Math.PI * 2;
+const r = 4 + Math.random() * (CFG.MAP_RADIUS_M - 5);
+const x = Math.cos(ang) * r;
+const y = Math.sin(ang) * r;
+if(Math.hypot(x - tank.x, y - tank.y) < 6) continue;
+if(trees.some(t => Math.hypot(t.x - x, t.y - y) < 6)) continue;
+trees.push({
+x, y,
+type: Math.random() < 0.5 ? 'pine' : 'oak',
+size: 1.6 + Math.random() * 0.8, 
+radius: 1.4, 
+});
+}
+
+for(let i = 0; i < 60; i++){
+const ang = Math.random() * Math.PI * 2;
+const r = Math.random() * CFG.MAP_RADIUS_M;
+grasses.push({
+x: Math.cos(ang) * r,
+y: Math.sin(ang) * r,
+size: 0.5 + Math.random() * 0.4,
+sway: Math.random() * Math.PI * 2,
+});
+}
+}
+
+/* ===== SPAWN CÔN TRÙNG ===== */
+function spawnBug(){
+if(bugs.length >= 2) return;
+
+let baseAng;
+if(bugs.length === 0){
+baseAng = Math.random() * Math.PI * 2;
+} else {
+const other = bugs[0];
+const angOther = Math.atan2(other.y, other.x);
+baseAng = angOther + Math.PI + (Math.random() - 0.5) * 0.6;
+}
+
+const r = CFG.MAP_RADIUS_M * 0.92;
+const x = Math.cos(baseAng) * r;
+const y = Math.sin(baseAng) * r;
+
+bugs.push({
+x, y,
+angle: 0,
+type: Math.random() < 0.5 ? 1 : 2,
+hp: CFG.BUG_HP,
+state: 'walk',
+stunTimer: 0,
+animFrame: 0,
+animTimer: 0,
+attackFlash: 0,
+});
+}
+
+/* ===== RADAR ===== */
+const radarCanvas = document.getElementById('radar');
+const radarCtx = radarCanvas.getContext('2d');
+
+function drawRadar(){
+const R = radarCanvas.width;
+const c = R / 2;
+radarCtx.clearRect(0, 0, R, R);
+
+radarCtx.fillStyle = 'rgba(0, 30, 0, 0.85)';
+radarCtx.beginPath();
+radarCtx.arc(c, c, c - 2, 0, Math.PI * 2);
+radarCtx.fill();
+
+radarCtx.strokeStyle = '#3a8a3a';
+radarCtx.lineWidth = 1.5;
+[0.33, 0.66, 1].forEach(r => {
+radarCtx.beginPath();
+radarCtx.arc(c, c, (c - 4) * r, 0, Math.PI * 2);
+radarCtx.stroke();
+});
+
+radarCtx.beginPath();
+radarCtx.moveTo(c, 4); radarCtx.lineTo(c, R - 4);
+radarCtx.moveTo(4, c); radarCtx.lineTo(R - 4, c);
+radarCtx.stroke();
+
+const scale = (c - 10) / CFG.MAP_RADIUS_M;
+const rot = -tank.angle + Math.PI/2;
+const cosA = Math.cos(rot);
+const sinA = Math.sin(rot);
+
+bugs.forEach(b => {
+const dx = b.x - tank.x;
+const dy = b.y - tank.y;
+const rx = dx * cosA - dy * sinA;
+const ry = dx * sinA + dy * cosA;
+const px = c + rx * scale;
+const py = c + ry * scale;
+if(Math.hypot(px - c, py - c) > c - 6) return;
+radarCtx.fillStyle = b.state === 'attack' ? '#ff3333' : '#ffaa44';
+radarCtx.beginPath();
+radarCtx.arc(px, py, 4, 0, Math.PI * 2);
+radarCtx.fill();
+});
+
+pickups.forEach(p => {
+const dx = p.x - tank.x;
+const dy = p.y - tank.y;
+const rx = dx * cosA - dy * sinA;
+const ry = dx * sinA + dy * cosA;
+const px = c + rx * scale;
+const py = c + ry * scale;
+radarCtx.fillStyle = '#44ddff';
+radarCtx.beginPath();
+radarCtx.arc(px, py, 3, 0, Math.PI * 2);
+radarCtx.fill();
+});
+
+radarCtx.fillStyle = '#aaffaa';
+radarCtx.beginPath();
+radarCtx.moveTo(c, c - 8);
+radarCtx.lineTo(c - 6, c + 6);
+radarCtx.lineTo(c + 6, c + 6);
+radarCtx.closePath();
+radarCtx.fill();
+}
+
+function worldToScreen(wx, wy){
+const dx = wx - tank.x;
+const dy = wy - tank.y;
+const rot = -tank.angle;
+const rx = dx * Math.cos(rot) - dy * Math.sin(rot);
+const ry = dx * Math.sin(rot) + dy * Math.cos(rot);
+const sx = rx * CFG.PX_PER_M;
+const sy = ry * CFG.PX_PER_M * Math.cos(CFG.CAMERA_ANGLE);
+return { x: CX + sx, y: CY + sy };
+}
+
+/* ===== VẼ CẢNH ===== */
+function drawScene(){
+ctx.fillStyle = '#0b2a0b';
+ctx.fillRect(0, 0, W, H);
+
+const fog = ctx.createRadialGradient(CX, CY, 50, CX, CY, W * 0.55);
+fog.addColorStop(0, 'rgba(0,0,0,0)');
+fog.addColorStop(1, 'rgba(0,10,0,0.6)');
+ctx.fillStyle = fog;
+ctx.fillRect(0, 0, W, H);
+
+const edge = [];
+for(let a = 0; a < Math.PI * 2; a += Math.PI / 24){
+const wxp = tank.x + Math.cos(a) * CFG.MAP_RADIUS_M;
+const wyp = tank.y + Math.sin(a) * CFG.MAP_RADIUS_M;
+edge.push(worldToScreen(wxp, wyp));
+}
+ctx.strokeStyle = '#3a6a3a';
+ctx.lineWidth = 3;
+ctx.beginPath();
+edge.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+ctx.closePath();
+ctx.stroke();
+
+ctx.strokeStyle = 'rgba(60,140,60,0.12)';
+ctx.lineWidth = 1;
+for(let gx = -CFG.MAP_RADIUS_M; gx <= CFG.MAP_RADIUS_M; gx += 5){
+const p1 = worldToScreen(gx, -CFG.MAP_RADIUS_M);
+const p2 = worldToScreen(gx, CFG.MAP_RADIUS_M);
+ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+}
+for(let gy = -CFG.MAP_RADIUS_M; gy <= CFG.MAP_RADIUS_M; gy += 5){
+const p1 = worldToScreen(-CFG.MAP_RADIUS_M, gy);
+const p2 = worldToScreen( CFG.MAP_RADIUS_M, gy);
+ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+}
+
+const drawables = [];
+grasses.forEach(g => {
+const p = worldToScreen(g.x, g.y);
+drawables.push({ y: p.y, type: 'grass', obj: g, screen: p });
+});
+trees.forEach(t => {
+const p = worldToScreen(t.x, t.y);
+drawables.push({ y: p.y, type: 'tree', obj: t, screen: p });
+});
+bugs.forEach(b => {
+const p = worldToScreen(b.x, b.y);
+drawables.push({ y: p.y, type: 'bug', obj: b, screen: p });
+});
+pickups.forEach(pk => {
+const p = worldToScreen(pk.x, pk.y);
+drawables.push({ y: p.y, type: 'pickup', obj: pk, screen: p });
+});
+bullets.forEach(bl => {
+const p = worldToScreen(bl.x, bl.y);
+drawables.push({ y: p.y, type: 'bullet', obj: bl, screen: p });
+});
+drawables.push({ y: CY + 0.1, type: 'tank', obj: tank, screen: { x: CX, y: CY } });
+
+drawables.sort((a, b) => a.y - b.y);
+
+drawables.forEach(d => {
+switch(d.type){
+case 'grass': drawGrass(d.screen, d.obj); break;
+case 'tree': drawTree(d.screen, d.obj); break;
+case 'bug': drawBug(d.screen, d.obj); break;
+case 'pickup': drawPickup(d.screen, d.obj); break;
+case 'bullet': drawBullet(d.screen); break;
+case 'tank': drawTank(); break;
+}
+});
+}
+
+function drawGrass(p, g){
+const s = g.size * CFG.PX_PER_M;
+const sway = Math.sin(performance.now() / 800 + g.sway) * 2;
+ctx.save();
+ctx.translate(p.x, p.y);
+ctx.strokeStyle = '#4a8a4a';
+ctx.lineWidth = 2;
+ctx.lineCap = 'round';
+for(let i = -1; i <= 1; i++){
+ctx.beginPath();
+ctx.moveTo(i * 3, 0);
+ctx.quadraticCurveTo(i * 3 + sway, -s * 0.7, i * 3 + sway * 1.5, -s);
+ctx.stroke();
+}
+ctx.restore();
+}
+
+function drawTree(p, t){
+const s = t.size * CFG.PX_PER_M;
+ctx.fillStyle = 'rgba(0,0,0,0.35)';
+ctx.beginPath();
+ctx.ellipse(p.x, p.y, s * 0.5, s * 0.25, 0, 0, Math.PI * 2);
+ctx.fill();
+
+ctx.fillStyle = '#3a2410';
+ctx.fillRect(p.x - s * 0.05, p.y - s * 0.4, s * 0.1, s * 0.4);
+
+if(t.type === 'pine'){
+ctx.fillStyle = '#1a4a1a';
+ctx.beginPath();
+ctx.moveTo(p.x, p.y - s * 1.6);
+ctx.lineTo(p.x - s * 0.5, p.y - s * 0.4);
+ctx.lineTo(p.x + s * 0.5, p.y - s * 0.4);
+ctx.closePath();
+ctx.fill();
+ctx.fillStyle = '#2a6a2a';
+ctx.beginPath();
+ctx.moveTo(p.x, p.y - s * 1.9);
+ctx.lineTo(p.x - s * 0.35, p.y - s * 0.9);
+ctx.lineTo(p.x + s * 0.35, p.y - s * 0.9);
+ctx.closePath();
+ctx.fill();
+} else {
+ctx.fillStyle = '#1a3a1a';
+ctx.beginPath();
+ctx.arc(p.x, p.y - s * 0.9, s * 0.65, 0, Math.PI * 2);
+ctx.fill();
+ctx.fillStyle = '#2a5a2a';
+ctx.beginPath();
+ctx.arc(p.x - s * 0.2, p.y - s * 1.1, s * 0.5, 0, Math.PI * 2);
+ctx.fill();
+ctx.fillStyle = '#3a7a3a';
+ctx.beginPath();
+ctx.arc(p.x + s * 0.15, p.y - s * 1.2, s * 0.4, 0, Math.PI * 2);
+ctx.fill();
+}
+}
+
+function drawBug(p, b){
+const size = CFG.PX_PER_M * 1.6;
+ctx.fillStyle = 'rgba(0,0,0,0.3)';
+ctx.beginPath();
+ctx.ellipse(p.x, p.y, size * 0.5, size * 0.25, 0, 0, Math.PI * 2);
+ctx.fill();
+
+let row = b.type === 1 ? 1 : 2;
+let col = (b.state === 'attack' || b.state === 'stun') ? 4 + (b.animFrame % 4) : b.animFrame % 4;
+
+const bugWorldAng = b.angle;
+const relAng = bugWorldAng - tank.angle;
+const flip = Math.sin(relAng) < 0;
+
+if(b.hitFlash && b.hitFlash > 0){
+ctx.save();
+ctx.globalAlpha = 0.5;
+ctx.fillStyle = '#ff3333';
+ctx.beginPath();
+ctx.arc(p.x, p.y - size * 0.3, size * 0.8, 0, Math.PI * 2);
+ctx.fill();
+ctx.restore();
+}
+
+drawSprite(row, col, p.x, p.y - size * 0.3, size, flip);
+}
+
+function drawPickup(p, pk){
+const t = performance.now() / 500;
+const bob = Math.sin(t + pk.phase) * 3;
+const size = CFG.PX_PER_M * 1.1;
+
+ctx.fillStyle = 'rgba(0,0,0,0.3)';
+ctx.beginPath();
+ctx.ellipse(p.x, p.y, size * 0.4, size * 0.2, 0, 0, Math.PI * 2);
+ctx.fill();
+
+if(pk.kind === 'fuel'){
+const gx = p.x, gy = p.y - size * 0.6 + bob;
+ctx.fillStyle = '#cc2222';
+ctx.fillRect(gx - size * 0.35, gy - size * 0.5, size * 0.7, size * 1.0);
+ctx.fillStyle = '#881111';
+ctx.fillRect(gx - size * 0.15, gy - size * 0.65, size * 0.3, size * 0.15);
+ctx.fillStyle = '#ffdd44';
+ctx.font = `bold ${Math.round(size * 0.6)}px Arial`;
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+ctx.fillText('⛽', gx, gy + 2);
+} else {
+const gx = p.x, gy = p.y - size * 0.6 + bob;
+ctx.fillStyle = '#ffcc44';
+ctx.beginPath();
+ctx.moveTo(gx, gy - size * 0.5);
+ctx.lineTo(gx + size * 0.35, gy + size * 0.4);
+ctx.lineTo(gx - size * 0.35, gy + size * 0.4);
+ctx.closePath();
+ctx.fill();
+ctx.fillStyle = '#aa8822';
+ctx.fillRect(gx - 2, gy + size * 0.4, 4, size * 0.3);
+ctx.shadowColor = '#ffcc44';
+ctx.shadowBlur = 12;
+ctx.fillStyle = '#ffee88';
+ctx.beginPath();
+ctx.arc(gx, gy, size * 0.15, 0, Math.PI * 2);
+ctx.fill();
+ctx.shadowBlur = 0;
+}
+}
+
+function drawBullet(p){
+ctx.save();
+ctx.shadowColor = '#ffcc44';
+ctx.shadowBlur = 12;
+ctx.fillStyle = '#ffee88';
+ctx.beginPath();
+ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+ctx.fill();
+ctx.restore();
+}
+
+function drawTank(){
+const size = CFG.PX_PER_M * 2.4;
+
+ctx.fillStyle = 'rgba(0,0,0,0.4)';
+ctx.beginPath();
+ctx.ellipse(CX, CY + 8, size * 0.55, size * 0.25, 0, 0, Math.PI * 2);
+ctx.fill();
+
+let row = 3, col = tank.isFiring ? 4 + (tank.animFrame % 4) : tank.animFrame % 4;
+drawSprite(row, col, CX, CY, size, false);
+}
+
+/* ===== VẬT LÝ XE ===== */
+function updateTank(dt){
+const accel = CFG.TANK_ACCEL * dt;
+tank.speedL += Math.sign(tank.speedLTarget - tank.speedL) * Math.min(accel, Math.abs(tank.speedLTarget - tank.speedL));
+tank.speedR += Math.sign(tank.speedRTarget - tank.speedR) * Math.min(accel, Math.abs(tank.speedRTarget - tank.speedR));
+if(Math.abs(tank.speedL - tank.speedLTarget) < 0.05) tank.speedL = tank.speedLTarget;
+if(Math.abs(tank.speedR - tank.speedRTarget) < 0.05) tank.speedR = tank.speedRTarget;
+
+const v = (tank.speedL + tank.speedR) / 2;
+const omega = (tank.speedL - tank.speedR) * CFG.TANK_TURN_FACTOR * 0.15;
+
+tank.angle += omega * dt;
+
+const dirX = Math.sin(tank.angle);
+const dirY = -Math.cos(tank.angle);
+tank.x += dirX * v * dt;
+tank.y += dirY * v * dt;
+
+const r = Math.hypot(tank.x, tank.y);
+if(r > CFG.MAP_RADIUS_M - 1){
+const k = (CFG.MAP_RADIUS_M - 1) / r;
+tank.x *= k; tank.y *= k;
+}
+
+tank.animTimer += dt;
+const speed = Math.abs(v);
+const frameRate = 0.12 / Math.max(0.3, speed / CFG.TANK_SPEED_MAX);
+if(tank.animTimer > frameRate){
+tank.animTimer = 0;
+if(speed > 0.2 || tank.isFiring){
+tank.animFrame = (tank.animFrame + 1) % 4;
+}
+}
+if(tank.fireAnimTimer > 0){
+tank.fireAnimTimer -= dt;
+if(tank.fireAnimTimer <= 0) tank.isFiring = false;
+}
+
+const trackVol = Math.min(1, speed / CFG.TANK_SPEED_MAX);
+setTrackVolume(trackVol);
+
+if(Math.abs(tank.speedL) > 0.1 || Math.abs(tank.speedR) > 0.1){
+game.fuel -= CFG.FUEL_DRAIN_PER_SEC * dt;
+if(game.fuel < 0) game.fuel = 0;
+if(game.fuel <= 0 && !game.overShown){
+game.overShown = true;
+game.running = false;
+setTrackVolume(0);
+setTimeout(() => {
+document.getElementById('loseScreen').style.display = 'flex';
+}, 300);
+}
+}
+} // <--- ĐÃ SỬA LỖI ĐÓNG NGOẶC HÀM updateTank
+
+/* ===== CẬP NHẬT CÔN TRÙNG ===== */
+function updateBugs(dt){
+bugs.forEach(b => {
+const dx = tank.x - b.x;
+const dy = tank.y - b.y;
+const dist = Math.hypot(dx, dy);
+const targetAng = Math.atan2(dy, dx);
+
+if(b.state === 'stun'){
+b.stunTimer -= dt;
+if(b.stunTimer <= 0){
+b.state = 'attack';
+}
+} else if(b.state === 'attack'){
+const sp = CFG.BUG_SPEED * CFG.BUG_ATTACK_MULT;
+b.x += Math.cos(targetAng) * sp * dt;
+b.y += Math.sin(targetAng) * sp * dt;
+b.angle = targetAng;
+
+if(dist < 2.2){
+game.fuel -= CFG.FUEL_BUG_ATTACK;
+if(game.fuel < 0) game.fuel = 0;
+sfxBugAttack();
+b.x -= Math.cos(targetAng) * 2.5;
+b.y -= Math.sin(targetAng) * 2.5;
+b.state = 'stun';
+b.stunTimer = 0.8;
+}
+} else {
+const wanderAng = b.angle + (Math.random() - 0.5) * 0.4;
+b.angle = wanderAng * 0.9 + targetAng * 0.1;
+b.x += Math.cos(b.angle) * CFG.BUG_SPEED * dt;
+b.y += Math.sin(b.angle) * CFG.BUG_SPEED * dt;
+}
+
+b.animTimer += dt;
+const fr = b.state === 'attack' ? 0.08 : 0.15;
+if(b.animTimer > fr){
+b.animTimer = 0;
+b.animFrame = (b.animFrame + 1) % 4;
+}
+if(b.hitFlash > 0) b.hitFlash -= dt;
+});
+}
+
+/* ===== BẮN TỰ ĐỘNG ===== */
+function updateShooting(dt){
+game.fireTimer -= dt;
+if(game.fireTimer > 0 || game.ammo <= 0) return;
+
+const fx = Math.sin(tank.angle);
+const fy = -Math.cos(tank.angle);
+const FOV = 0.06;
+
+let target = null, targetDist = Infinity;
+bugs.forEach(b => {
+const dx = b.x - tank.x;
+const dy = b.y - tank.y;
+const dist = Math.hypot(dx, dy);
+if(dist < 1) return;
+const dot = (dx * fx + dy * fy) / dist;
+const ang = Math.acos(Math.max(-1, Math.min(1, dot)));
+if(ang < FOV && dist < targetDist){
+target = b; targetDist = dist;
+}
+});
+
+if(target){
+bullets.push({
+x: tank.x + fx * 1.5,
+y: tank.y + fy * 1.5,
+vx: fx * 40,
+vy: fy * 40,
+life: 2.0,
+});
+game.ammo--;
+game.fireTimer = CFG.FIRE_INTERVAL;
+tank.isFiring = true;
+tank.fireAnimTimer = 0.35;
+sfxShoot();
+}
+}
+
+/* ===== CẬP NHẬT ĐẠN ===== */
+function updateBullets(dt){
+for(let i = bullets.length - 1; i >= 0; i--){
+const b = bullets[i];
+b.x += b.vx * dt;
+b.y += b.vy * dt;
+b.life -= dt;
+
+if(Math.hypot(b.x, b.y) > CFG.MAP_RADIUS_M + 2 || b.life <= 0){
+bullets.splice(i, 1); continue;
+}
+
+let blocked = false;
+for(const t of trees){
+if(Math.hypot(b.x - t.x, b.y - t.y) < t.radius){
+blocked = true; break;
+}
+}
+if(blocked){ bullets.splice(i, 1); continue; }
+
+for(const bug of bugs){
+if(bug.state === 'dead') continue;
+const d = Math.hypot(b.x - bug.x, b.y - bug.y);
+if(d < 1.3){
+bug.hp--;
+bug.hitFlash = 0.15;
+
+if(bug.hp <= 0){
+killBug(bug);
+} else {
+if(bug.state === 'attack'){
+bug.state = 'stun';
+bug.stunTimer = CFG.BUG_STUN_AFTER_HIT;
+} else if(bug.state === 'walk'){
+bug.state = 'attack';
+}
+}
+bullets.splice(i, 1);
+break;
+}
+}
+}
+}
+
+function killBug(bug){
+game.killed++;
+updateHUD();
+sfxBugDeath();
+
+const idx = bugs.indexOf(bug);
+if(idx >= 0) bugs.splice(idx, 1);
+
+const kind = Math.random() < 0.6 ? 'fuel' : 'ammo';
+pickups.push({
+x: bug.x, y: bug.y,
+kind,
+phase: Math.random() * Math.PI * 2,
+});
+
+setTimeout(() => { if(game.running) spawnBug(); }, 800);
+
+if(game.killed >= CFG.KILL_TARGET && !game.winShown){
+game.winShown = true;
+setTimeout(() => {
+game.running = false;
+setTrackVolume(0);
+document.getElementById('winScreen').classList.add('show');
+}, 900);
+}
+}
+
+function updatePickups(dt){
+for(let i = pickups.length - 1; i >= 0; i--){
+const p = pickups[i];
+if(Math.hypot(p.x - tank.x, p.y - tank.y) < 1.8){
+if(p.kind === 'fuel'){
+game.fuel = Math.min(CFG.FUEL_MAX, game.fuel + CFG.FUEL_PICKUP);
+showToast('⛽ +20% NHIÊN LIỆU');
+} else {
+game.ammo += CFG.AMMO_PICKUP;
+showToast('🔫 +20 ĐẠN');
+}
+sfxPickup();
+pickups.splice(i, 1);
+updateHUD();
+}
+}
+}
+
+/* ===== HUD ===== */
+const ammoValEl = document.getElementById('ammoVal');
+const fuelFillEl = document.getElementById('fuelFill');
+const fuelValEl = document.getElementById('fuelVal');
+const killValEl = document.getElementById('killVal');
+
+function updateHUD(){
+ammoValEl.textContent = game.ammo;
+const pct = Math.max(0, Math.min(100, game.fuel));
+fuelFillEl.style.width = pct + '%';
+fuelValEl.textContent = Math.round(pct) + '%';
+killValEl.textContent = game.killed;
+if(pct < 25){
+fuelFillEl.style.background = 'linear-gradient(90deg,#ff2222,#ff8844)';
+} else {
+fuelFillEl.style.background = 'linear-gradient(90deg,#ffaa22,#ffdd44)';
+}
+}
+
+const toastEl = document.getElementById('toast');
+let toastTimer = null;
+function showToast(text){
+toastEl.textContent = text;
+toastEl.classList.add('show');
+if(toastTimer) clearTimeout(toastTimer);
+toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1400);
+}
+
+/* ===== VÒNG LẶP ===== */
+let lastTime = performance.now();
+function loop(now){
+const dt = Math.min(0.05, (now - lastTime) / 1000);
+lastTime = now;
+
+if(game.running){
+updateTank(dt);
+updateBugs(dt);
+updateShooting(dt);
+updateBullets(dt);
+updatePickups(dt);
+updateHUD();
+}
+
+drawScene();
+drawRadar();
+
+requestAnimationFrame(loop);
+}
+
+/* ===== CẦN GẠT ===== */
+function setupLever(leverId, knobId, valId, side){
+const lever = document.getElementById(leverId);
+const knob = document.getElementById(knobId);
+const valEl = document.getElementById(valId);
+let dragging = false;
+
+const setFromY = (clientY) => {
+const rect = lever.getBoundingClientRect();
+let rel = (clientY - rect.top) / rect.height;
+rel = Math.max(0, Math.min(1, rel));
+const raw = (0.5 - rel) * 6;
+const nấc = Math.max(-3, Math.min(3, Math.round(raw)));
+const knobRel = 0.5 - nấc / 7 * 0.72;
+knob.style.top = (knobRel * 100) + '%';
+valEl.textContent = (nấc > 0 ? '+' : '') + nấc;
+valEl.style.color = nấc === 0 ? '#7ac87a' : (nấc > 0 ? '#88ff88' : '#ffaa44');
+
+const targetSpeed = nấc * (CFG.TANK_SPEED_MAX / 3);
+if(side === 'L') tank.speedLTarget = targetSpeed;
+else tank.speedRTarget = targetSpeed;
+};
+
+const start = (e) => {
+e.preventDefault();
+dragging = true;
+getCtx();
+if(!trackNoise) startTrackNoise();
+setFromY(e.clientY ?? e.touches?.[0]?.clientY);
+};
+const move = (e) => {
+if(!dragging) return;
+const y = e.clientY ?? e.touches?.[0]?.clientY;
+if(y === undefined) return;
+setFromY(y);
+};
+const end = () => {
+if(!dragging) return;
+dragging = false;
+knob.style.top = '50%';
+valEl.textContent = '0';
+valEl.style.color = '#7ac87a';
+if(side === 'L') tank.speedLTarget = 0;
+else tank.speedRTarget = 0;
+};
+
+lever.addEventListener('pointerdown', start);
+lever.addEventListener('pointermove', move);
+lever.addEventListener('pointerup', end);
+lever.addEventListener('pointercancel', end);
+lever.addEventListener('pointerleave', end);
+}
+
+setupLever('leverLeft', 'knobLeft', 'valLeft', 'L');
+setupLever('leverRight', 'knobRight', 'valRight', 'R');
+
+/* ===== NÚT KHÁM PHÁ ===== */
+document.getElementById('btnExplore').addEventListener('click', () => {
+window.open('https://tranh-ba-game-gw3q.vercel.app/index.html', '_blank');
+});
+
+/* ===== BẮT ĐẦU / CHƠI LẠI ===== */
+function startGame(){
+document.getElementById('startScreen').style.display = 'none';
+document.getElementById('winScreen').classList.remove('show');
+document.getElementById('loseScreen').style.display = 'none';
+
+game.running = true;
+game.killed = 0;
+game.ammo = CFG.AMMO_START;
+game.fuel = CFG.FUEL_MAX;
+game.fireTimer = 0;
+game.winShown = false;
+game.overShown = false;
+tank.x = 0; tank.y = 0;
+tank.angle = 0;
+tank.speedL = tank.speedR = 0;
+tank.speedLTarget = tank.speedRTarget = 0;
+tank.animFrame = 0;
+tank.animTimer = 0;
+tank.isFiring = false;
+
+bugs.length = 0;
+pickups.length = 0;
+bullets.length = 0;
+
+generateMap();
+spawnBug();
+spawnBug();
+
+getCtx();
+if(!trackNoise) startTrackNoise();
+
+updateHUD();
+lastTime = performance.now();
+showToast('🚜 SẴN SÀNG!');
+}
+
+document.getElementById('btnStart').addEventListener('click', startGame);
+document.getElementById('btnRestart').addEventListener('click', startGame);
+document.getElementById('btnRestartLose').addEventListener('click', startGame);
+
+document.body.addEventListener('touchstart', () => getCtx(), { once:true });
+document.body.addEventListener('click', () => getCtx(), { once:true });
+
+requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>
