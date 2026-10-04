@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game viết bởi Ai</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Be Vietnam Pro', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; padding: 20px; color: #fff; }
+.header { text-align: center; margin-bottom: 25px; }
+.header h1 { font-size: 32px; font-weight: 700; background: linear-gradient(90deg, #00d4ff, #7b2ff7, #ff006e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 0 30px rgba(0, 212, 255, 0.3); letter-spacing: 2px; }
+.header .subtitle { font-size: 14px; color: #8892b0; margin-top: 5px; }
+.hot-badge { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(90deg, #ff006e, #ff4d94); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 15px; animation: pulse 1.5s ease-in-out infinite; }
+.hot-badge span { font-size: 16px; }
+@keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 110, 0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 20px 5px rgba(255, 0, 110, 0.3); } }
+.game-grid { display: flex; flex-direction: column; gap: 20px; max-width: 700px; margin: 0 auto; }
+.game-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.game-card { background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 16px; backdrop-filter: blur(10px); transition: all 0.3s ease; position: relative; }
+.game-card:hover { transform: translateY(-3px); border-color: rgba(0, 212, 255, 0.4); box-shadow: 0 10px 40px rgba(0, 212, 255, 0.15); }
+.game-card.hot { border-color: rgba(255, 0, 110, 0.5); background: linear-gradient(145deg, rgba(255,0,110,0.1), rgba(255,0,110,0.02)); }
+.game-card.hot::before { content: '🔥 HOT'; position: absolute; top: -8px; right: 12px; background: linear-gradient(90deg, #ff006e, #ff4d94); padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; animation: pulse 1.5s ease-in-out infinite; z-index: 1; }
+.game-info h3 { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.game-info .icon { font-size: 22px; }
+.game-info p { font-size: 12px; color: #a8b2d1; line-height: 1.5; margin-bottom: 12px; }
+.play-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 16px; background: linear-gradient(135deg, #00d4ff, #0099cc); border: none; border-radius: 10px; color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; transition: all 0.2s ease; }
+.play-btn:hover { background: linear-gradient(135deg, #00e5ff, #00b8d4); transform: scale(1.02); box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4); }
+.play-btn .btn-icon { font-size: 18px; }
+@media (max-width: 500px) { .game-row { grid-template-columns: 1fr; } .header h1 { font-size: 26px; } }
+</style>
+</head>
+<body>
+<div class="header">
+<h1>🎮 GAME VIẾT BỞI AI 🚀</h1>
+<p class="subtitle">Chơi ngay trên điện thoại - siêu nhỏ nhẹ</p>
+</div>
+<div class="hot-badge"><span>🔥</span> GAME ĐANG HOT - THỬ NGAY!</div>
+<div class="game-grid">
+<div class="game-row">
+<div class="game-card hot">
+<div class="game-info"><h3><span class="icon">🐜</span> Đánh Quái</h3><p>Game hành động phiêu lưu trong rừng. Diệt côn trùng, thu thập nguyên liệu, tu luyện!</p></div>
+<a href="https://tranh-ba-game-gw3q.vercel.app/danhquai310.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
+</div>
+<div class="game-card">
+<div class="game-info"><h3><span class="icon">🚁</span> Flycam Vận Tải</h3><p>Điều khiển flycam chở hàng hóa. Bay qua các chướng ngại vật, hạ cánh an toàn!</p></div>
+<a href="https://tranh-ba-game-gw3q.vercel.app/flycamvantai.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
+</div>
+</div>
+<div class="game-row">
+<div class="game-card">
+<div class="game-info"><h3><span class="icon">📚</span> Học Làm Cơ Trưởng</h3><p>Game giáo dục học cách lái máy bay dân dụng. Từ cơ bản đến nâng cao, rất dễ hiểu!</p></div>
+<a href="https://tranh-ba-game-gw3q.vercel.app/hoclamcotruong.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
+</div>
+<div class="game-card">
+<div class="game-info"><h3><span class="icon">🚛</span> Xe Container</h3><p>Lái xe container chở hàng. Cẩn thận với những đoạn đường khó!</p></div>
+<a href="https://tranh-ba-game-gw3q.vercel.app/xecontainer.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
+</div>
+</div>
+<div class="game-row">
+<div class="game-card">
+<div class="game-info"><h3><span class="icon">🚜</span> Lái Máy Xúc</h3><p>Điều khiển máy xúc đào đất, xúc vật liệu. Công việc của một thợ lái bằng Fc!</p></div>
+<a href="https://tranh-ba-game-gw3q.vercel.app/laimayxuc.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
+</div>
+<div class="game-card">
+<div class="game-info"><h3><span class="icon">🏗️</span> Lái Xe Nâng</h3><p>Lái xe nâng di chuyển hàng hóa trong kho. Chính xác và nhanh nhất!</p></div>
+<a href="https://tranh-ba-game-gw3q.vercel.app/laixenang.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
+</div>
+</div>
+<div class="game-row">
+<div class="game-card hot">
+<div class="game-info"><h3><span class="icon">🚜</span> Tank vs Bugs</h3><p>Điều khiển xe tăng bằng 2 cần gạt. Bắn côn trùng bảo vệ rừng!</p></div>
+<a href="https://tranh-ba-game-gw3q.vercel.app/tank.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
+</div>
+<div class="game-card">
+<div class="game-info"><h3><span class="icon">🚁</span> Team Vĩnh Lộc</h3><p>Lái máy bay giao hàng. Nhiệm vụ vận chuyển hàng hóa đến các điểm!</p></div>
+<a href="https://tranh-ba-game-gw3q.vercel.app/helicopter.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
+</div>
+</div>
+<div class="game-row">
+<div class="game-card">
+<div class="game-info"><h3><span class="icon">🐍</span> Rắn Ăn Chữ</h3><p>Game giáo dục tiếng Việt. Ăn chữ đúng để rắn dài ra, tránh chướng ngại!</p></div>
+<a href="https://tranh-ba-game-gw3q.vercel.app/snackanchu.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
+</div>
+<div class="game-card">
+<div class="game-info"><h3><span class="icon">🎵</span> Giao Nhạc Player</h3><p>Gõ nốt nhạc theo giai điệu. Nghe nhạc cùng lúc, tập nhạc cơ bản!</p></div>
+<a href="https://tranh-ba-game-gw3q.vercel.app/giaonhanplayer.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
+</div>
+</div>
+<div class="game-row">
+<div class="game-card">
+<div class="game-info"><h3><span class="icon">🚁</span> Flycam Vận Tải 2</h3><p>Phiên bản 2 của Flycam Vận Tải. Nhiều thử thách hơn, hấp dẫn hơn!</p></div>
+<a href="https://tranh-ba-game-gw3q.vercel.app/flycamvantai2.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
+</div>
+<div class="game-card">
+<div class="game-info"><h3><span class="icon">📖</span> Giới Thiệu</h3><p>Tìm hiểu thêm về các game và cập nhật mới nhất từ tác giả!</p></div>
+<a href="https://tranh-ba-game-gw3q.vercel.app/gioithieu.html" class="play-btn" target="_blank"><span class="btn-icon">📖</span> XEM NGAY</a>
+</div>
+</div>
+</div>
+</body>
+</html>
