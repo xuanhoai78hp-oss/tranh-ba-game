@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Đàn Bầu Việt Nam</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&display=swap');
+
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+-webkit-tap-highlight-color: transparent;
+-webkit-touch-callout: none;
+-webkit-user-select: none;
+-khtml-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+}
+
+body {
+width: 100vw;
+height: 100vh;
+background: linear-gradient(180deg, #2d1810 0%, #4a2c1a 50%, #3d2415 100%);
+font-family: 'Be Vietnam Pro', sans-serif;
+overflow: hidden;
+touch-action: none;
+}
+
+.container {
+width: 100%;
+height: 100%;
+display: flex;
+flex-direction: column;
+padding: 10px;
+}
+
+.header-bar {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 8px;
+padding: 0 5px;
+}
+
+.title {
+color: #d4a574;
+font-size: 14px;
+font-weight: 600;
+letter-spacing: 1px;
+text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.volume-control {
+display: flex;
+align-items: center;
+gap: 8px;
+background: rgba(0,0,0,0.4);
+padding: 4px 10px;
+border-radius: 12px;
+border: 1px solid #5D3A1A;
+}
+
+.volume-control label {
+color: #ffd700;
+font-size: 11px;
+font-weight: 600;
+}
+
+.volume-slider {
+-webkit-appearance: none;
+width: 80px;
+height: 4px;
+background: #654321;
+border-radius: 2px;
+outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+-webkit-appearance: none;
+width: 14px;
+height: 14px;
+border-radius: 50%;
+background: #ffd700;
+cursor: pointer;
+}
+
+.instrument {
+flex: 1;
+position: relative;
+background: linear-gradient(180deg, #8B5A2B 0%, #654321 30%, #5D3A1A 100%);
+border-radius: 15px;
+box-shadow: inset 0 2px 10px rgba(255,255,255,0.1), inset 0 -5px 15px rgba(0,0,0,0.3), 0 5px 20px rgba(0,0,0,0.5);
+border: 2px solid #3d2415;
+overflow: hidden;
+}
+
+.instrument::before {
+content: '';
+position: absolute;
+inset: 0;
+background: repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(0,0,0,0.05) 8px, rgba(0,0,0,0.05) 10px);
+pointer-events: none;
+}
+
+.head {
+position: absolute;
+left: 2.5%;
+top: 10%;
+height: 80%;
+width: 3%;
+background: linear-gradient(90deg, #3d2415, #5D3A1A, #3d2415);
+border-radius: 5px;
+box-shadow: 2px 0 5px rgba(0,0,0,0.4);
+}
+
+.string {
+position: absolute;
+left: 5%;
+top: 35%;
+width: 90%;
+height: 4px;
+background: linear-gradient(180deg, #fff 0%, #e0e0e0 50%, #fff 100%);
+border-radius: 2px;
+box-shadow: 0 0 8px rgba(255,255,255,0.5);
+}
+
+.touch-point {
+position: absolute;
+width: 44px;
+height: 44px;
+border-radius: 50%;
+background: radial-gradient(circle at 30% 30%, #f5deb3, #d2b48c);
+border: 2px solid #8B7355;
+box-shadow: 0 3px 8px rgba(0,0,0,0.3), inset 0 2px 5px rgba(255,255,255,0.4);
+cursor: pointer;
+transform: translate(-50%, -50%);
+z-index: 10;
+}
+
+.touch-point:active, .touch-point.active {
+transform: translate(-50%, -50%) scale(0.95);
+background: radial-gradient(circle at 30% 30%, #deb887, #c4a67c);
+}
+
+.touch-point::after {
+content: attr(data-note);
+position: absolute;
+bottom: -18px;
+left: 50%;
+transform: translateX(-50%);
+color: #d4a574;
+font-size: 10px;
+font-weight: 600;
+white-space: nowrap;
+text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+z-index: 11;
+}
+
+.slider-container {
+position: absolute;
+left: 3%;
+top: 50%;
+transform: translateY(-50%);
+width: 20%;
+height: 30px;
+background: linear-gradient(180deg, #2d1810, #3d2415);
+border-radius: 15px;
+box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.slider-track {
+position: absolute;
+top: 50%;
+left: 10%;
+transform: translateY(-50%);
+width: 80%;
+height: 4px;
+background: linear-gradient(90deg, #654321, #3d2415);
+border-radius: 2px;
+}
+
+.slider-knob {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+width: 28px;
+height: 28px;
+background: radial-gradient(circle at 30% 30%, #cd853f, #8B4513);
+border: 2px solid #654321;
+border-radius: 50%;
+box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.slider-knob.active {
+background: radial-gradient(circle at 30% 30%, #daa520, #b8860b);
+}
+
+.slider-hitarea {
+position: absolute;
+left: 1%;
+top: 20%;
+width: 25%;
+height: 120px;
+transform: translateY(-20%);
+z-index: 20;
+}
+
+.tone-display {
+position: absolute;
+right: 3%;
+top: 50%;
+transform: translateY(-50%);
+background: rgba(0,0,0,0.5);
+padding: 8px 12px;
+border-radius: 8px;
+color: #d4a574;
+font-size: 16px;
+font-weight: 600;
+text-align: center;
+}
+
+.tone-display .current {
+font-size: 20px;
+color: #ffd700;
+}
+
+.info-bar {
+display: flex;
+justify-content: space-around;
+padding: 8px;
+background: rgba(0,0,0,0.3);
+border-radius: 8px;
+margin-top: 8px;
+}
+
+.info-item {
+color: #d4a574;
+font-size: 11px;
+text-align: center;
+}
+
+.info-item span {
+display: block;
+color: #ffd700;
+font-size: 13px;
+font-weight: 600;
+}
+
+.hint {
+text-align: center;
+color: #8B7355;
+font-size: 10px;
+margin-top: 5px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header-bar">
+<div class="title">🎵 ĐÀN BẦU VIỆT NAM</div>
+<div class="volume-control">
+<label for="volControl">🔊 ÂM LƯỢNG</label>
+<input type="range" id="volControl" class="volume-slider" min="0" max="2" step="0.1" value="1">
+</div>
+</div>
+
+<div class="instrument" id="instrument">
+<div class="head"></div>
+<div class="string"></div>
+<div class="slider-hitarea" id="sliderHitarea"></div>
+<div class="slider-container" id="sliderContainer">
+<div class="slider-track"></div>
+<div class="slider-knob" id="sliderKnob"></div>
+</div>
+<div class="touch-point" id="btnD5" data-note="D5" style="left: 31.25%; top: 35%;"></div>
+<div class="touch-point" id="btnA4" data-note="A4" style="left: 50%; top: 35%;"></div>
+<div class="touch-point" id="btnD4" data-note="D4" style="left: 81.25%; top: 35%;"></div>
+<div class="tone-display">
+<div class="current" id="currentNote">D4</div>
+<div style="font-size: 10px;">BASE</div>
+</div>
+</div>
+
+<div class="info-bar">
+<div class="info-item">D4<span id="freqD4">294 Hz</span></div>
+<div class="info-item">A4<span id="freqA4">440 Hz</span></div>
+<div class="info-item">D5<span id="freqD5">587 Hz</span></div>
+</div>
+<div class="hint">🎯 Nhấn giữ nốt để gẩy • Kéo cần trái sang Trái/Phải để uốn âm (Tối đa 1 Tone)</div>
+</div>
+
+<script>
+// Vô hiệu hóa menu chuột phải & nhấn giữ hệ thống
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+let audioCtx = null;
+let masterGain = null;
+const BASE_FREQ = { D4: 293.66, A4: 440, D5: 587.33 };
+let currentBaseNote = 'D4';
+let semitoneShift = 0;
+let activeOscillators = new Map();
+
+function initAudio() {
+if (audioCtx) return;
+audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+masterGain = audioCtx.createGain();
+
+// Thiết lập âm lượng khởi tạo (mặc định mức 1)
+const volInput = document.getElementById('volControl');
+masterGain.gain.value = parseFloat(volInput.value);
+
+masterGain.connect(audioCtx.destination);
+}
+
+// Xử lý thay đổi Thanh Âm Lượng
+document.getElementById('volControl').addEventListener('input', (e) => {
+if (masterGain && audioCtx) {
+masterGain.gain.setValueAtTime(parseFloat(e.target.value), audioCtx.currentTime);
+}
+});
+
+function getFrequency(baseFreq, semitones) {
+return baseFreq * Math.pow(2, semitones / 12);
+}
+
+function updateAllFrequencies() {
+document.getElementById('freqD4').textContent = Math.round(getFrequency(BASE_FREQ.D4, semitoneShift)) + ' Hz';
+document.getElementById('freqA4').textContent = Math.round(getFrequency(BASE_FREQ.A4, semitoneShift)) + ' Hz';
+document.getElementById('freqD5').textContent = Math.round(getFrequency(BASE_FREQ.D5, semitoneShift)) + ' Hz';
+
+if (activeOscillators.size > 0) {
+activeOscillators.forEach(({ osc }) => {
+const baseFreq = BASE_FREQ[osc.baseNote];
+osc.frequency.setValueAtTime(getFrequency(baseFreq, semitoneShift), audioCtx.currentTime);
+});
+const noteName = getNoteName(currentBaseNote, semitoneShift);
+document.getElementById('currentNote').textContent = noteName;
+}
+}
+
+function playNote(note, touchPoint) {
+initAudio();
+if (audioCtx.state === 'suspended') {
+audioCtx.resume();
+}
+
+const baseFreq = BASE_FREQ[note];
+const freq = getFrequency(baseFreq, semitoneShift);
+
+const osc = audioCtx.createOscillator();
+osc.baseNote = note;
+currentBaseNote = note;
+
+const gainNode = audioCtx.createGain();
+
+// Dùng dạng sóng 'triangle' kết hợp 'sine' giúp tiếng to và đầm hơn
+osc.type = 'triangle';
+osc.frequency.value = freq;
+
+// Thiết lập biên độ âm thanh mạnh hơn (đạt đỉnh 1.0)
+gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+gainNode.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.015);
+
+osc.connect(gainNode);
+gainNode.connect(masterGain);
+osc.start();
+
+const id = Date.now() + Math.random();
+activeOscillators.set(id, { osc, gainNode, touchPoint });
+
+document.getElementById('currentNote').textContent = getNoteName(note, semitoneShift);
+touchPoint.classList.add('active');
+updateAllFrequencies();
+return id;
+}
+
+function stopNote(id) {
+if (!activeOscillators.has(id)) return;
+const { osc, gainNode, touchPoint } = activeOscillators.get(id);
+gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.25);
+
+setTimeout(() => {
+try { osc.stop(); osc.disconnect(); gainNode.disconnect(); } catch(e){}
+}, 250);
+
+activeOscillators.delete(id);
+if (touchPoint) { touchPoint.classList.remove('active'); }
+if (activeOscillators.size === 0) {
+document.getElementById('currentNote').textContent = 'D4';
+updateAllFrequencies();
+}
+}
+
+function getNoteName(baseNote, shift) {
+const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const baseNames = { D4: 'D', A4: 'A', D5: 'D' };
+let baseIndex = notes.indexOf(baseNames[baseNote]);
+let octave = baseNote.includes('5') ? 5 : 4;
+let index = baseIndex + Math.round(shift);
+while (index >= 12) { index -= 12; octave++; }
+while (index < 0) { index += 12; octave--; }
+return notes[index] + octave;
+}
+
+// Xử lý các nốt bấm
+const buttons = ['btnD4', 'btnA4', 'btnD5'];
+const noteMap = { btnD4: 'D4', btnA4: 'A4', btnD5: 'D5' };
+const activeNotes = new Map();
+
+buttons.forEach(id => {
+const btn = document.getElementById(id);
+const note = noteMap[id];
+
+btn.addEventListener('touchstart', (e) => {
+e.preventDefault();
+if(!activeNotes.has(id)){
+const noteId = playNote(note, btn);
+activeNotes.set(id, noteId);
+}
+}, { passive: false });
+
+btn.addEventListener('touchend', (e) => {
+e.preventDefault();
+if (activeNotes.has(id)) {
+stopNote(activeNotes.get(id));
+activeNotes.delete(id);
+}
+}, { passive: false });
+
+btn.addEventListener('touchcancel', () => {
+if (activeNotes.has(id)) {
+stopNote(activeNotes.get(id));
+activeNotes.delete(id);
+}
+});
+
+btn.addEventListener('mousedown', () => {
+if (!activeNotes.has(id)) {
+const noteId = playNote(note, btn);
+activeNotes.set(id, noteId);
+}
+});
+
+btn.addEventListener('mouseup', () => {
+if (activeNotes.has(id)) {
+stopNote(activeNotes.get(id));
+activeNotes.delete(id);
+}
+});
+
+btn.addEventListener('mouseleave', () => {
+if (activeNotes.has(id)) {
+stopNote(activeNotes.get(id));
+activeNotes.delete(id);
+}
+});
+});
+
+// XỬ LÝ CẦN ĐÀN (SLIDER) UỐN ÂM CHUẨN ĐÀN BẦU
+const sliderKnob = document.getElementById('sliderKnob');
+const sliderContainer = document.getElementById('sliderContainer');
+const sliderHitarea = document.getElementById('sliderHitarea');
+
+let sliderTouchId = null;
+let isMouseDown = false;
+
+function updateSliderPosition(clientX) {
+const rect = sliderContainer.getBoundingClientRect();
+const containerWidth = rect.width;
+const knobWidth = 28;
+
+let newX = clientX - rect.left - (knobWidth / 2);
+newX = Math.max(0, Math.min(containerWidth - knobWidth, newX));
+
+const percent = newX / (containerWidth - knobWidth);
+
+// CÔNG THỨC UỐN ÂM CHUẨN (Kéo Trái = Tăng âm / Đẩy Phải = Giảm âm, Giới hạn 1 Tone = 2 bán âm)
+semitoneShift = (0.5 - percent) * 4;
+
+sliderKnob.style.left = (newX + knobWidth / 2) + 'px';
+updateAllFrequencies();
+}
+
+// Xử lý Cảm ứng (Touch)
+sliderHitarea.addEventListener('touchstart', (e) => {
+e.preventDefault();
+if (sliderTouchId === null) {
+const touch = e.changedTouches[0];
+sliderTouchId = touch.identifier;
+sliderKnob.classList.add('active');
+sliderKnob.style.transition = 'none';
+updateSliderPosition(touch.clientX);
+}
+}, { passive: false });
+
+window.addEventListener('touchmove', (e) => {
+if (sliderTouchId !== null) {
+for (let i = 0; i < e.changedTouches.length; i++) {
+if (e.changedTouches[i].identifier === sliderTouchId) {
+updateSliderPosition(e.changedTouches[i].clientX);
+break;
+}
+}
+}
+}, { passive: false });
+
+const resetSlider = () => {
+sliderKnob.classList.remove('active');
+sliderKnob.style.transition = 'left 0.1s ease-out';
+sliderKnob.style.left = '50%';
+semitoneShift = 0;
+setTimeout(() => {
+sliderKnob.style.transition = 'none';
+updateAllFrequencies();
+}, 100);
+};
+
+window.addEventListener('touchend', (e) => {
+if (sliderTouchId !== null) {
+for (let i = 0; i < e.changedTouches.length; i++) {
+if (e.changedTouches[i].identifier === sliderTouchId) {
+sliderTouchId = null;
+resetSlider();
+break;
+}
+}
+}
+});
+
+window.addEventListener('touchcancel', () => {
+if (sliderTouchId !== null) {
+sliderTouchId = null;
+resetSlider();
+}
+});
+
+// Xử lý Chuột (Desktop)
+sliderHitarea.addEventListener('mousedown', (e) => {
+isMouseDown = true;
+sliderKnob.classList.add('active');
+sliderKnob.style.transition = 'none';
+updateSliderPosition(e.clientX);
+});
+
+window.addEventListener('mousemove', (e) => {
+if (isMouseDown) {
+updateSliderPosition(e.clientX);
+}
+});
+
+window.addEventListener('mouseup', () => {
+if (isMouseDown) {
+isMouseDown = false;
+resetSlider();
+}
+});
+
+// Khởi tạo vị trí cần gạt ở giữa
+sliderKnob.style.left = '50%';
+updateAllFrequencies();
+</script>
+</body>
+</html>
