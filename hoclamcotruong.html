@@ -5,14 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>✈️ Học Làm Cơ Trưởng — Màn 1: Cất Cánh</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{background:#05080f;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hidden;user-select:none;height:100%;}
+/* ============================================================
+CSS GLOBAL
+============================================================ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#05080f;color:#fff;font-family:'Segoe UI',sans-serif;user-select:none;position:fixed;inset:0}
 #gameWrap{position:fixed;inset:0;display:flex;flex-direction:column;}
 #sideView{flex:30;background:#0a1628;position:relative;overflow:hidden;border-bottom:3px solid #1a2a40;}
 #topView{flex:70;background:#3a4a3a;position:relative;overflow:hidden;}
 #sideCanvas,#topCanvas{position:absolute;inset:0;width:100%;height:100%;}
 
-/* ===== HUD TO ===== */
+/* ===== HUD ===== */
 #hudLeft{position:fixed;top:8px;left:8px;z-index:30;display:flex;gap:8px;pointer-events:none;}
 .hudBox{background:rgba(0,0,0,0.78);border:2px solid #4aa0dd;border-radius:8px;padding:6px 12px;color:#a8e0ff;font-family:'Courier New',monospace;font-size:11px;font-weight:bold;line-height:1.3;}
 .hudBox .val{color:#fff;font-size:24px;letter-spacing:2px;display:block;font-weight:900;}
@@ -23,7 +26,6 @@ html,body{background:#05080f;color:#fff;font-family:'Segoe UI',sans-serif;overfl
 .hudBox.warnP .val{color:#ffaa44;}
 .hudBox.good{border-color:#4aff88;color:#88ffb0;}
 
-/* Attitude Indicator (đồng hồ chân trời) */
 #attInd{position:fixed;top:8px;right:8px;z-index:30;width:110px;height:110px;pointer-events:none;}
 #attCv{width:110px;height:110px;border-radius:50%;border:2px solid #4aa0dd;background:#0a0a0a;}
 
@@ -38,17 +40,9 @@ html,body{background:#05080f;color:#fff;font-family:'Segoe UI',sans-serif;overfl
 #soundBtn{position:fixed;top:8px;left:50%;transform:translateX(calc(-50% + 120px));z-index:30;width:40px;height:32px;background:linear-gradient(135deg, rgba(40,120,180,0.4), rgba(20,60,100,0.4));border:2px solid #4aa0dd;border-radius:6px;color:#a8e0ff;font-weight:bold;font-size:14px;display:none;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;}
 #soundBtn.show{display:flex;}
 
-/* Tin nhắn chữ chạy giữa màn hình (banner) */
 #banner{position:fixed;top:32%;left:50%;transform:translate(-50%,-50%);z-index:150;pointer-events:none;width:92%;max-width:560px;text-align:center;}
 .bannerLine{background:linear-gradient(90deg,rgba(0,0,0,0),rgba(10,30,60,0.92) 15%,rgba(10,30,60,0.92) 85%,rgba(0,0,0,0));border-top:2px solid #4aa0dd;border-bottom:2px solid #4aa0dd;color:#d8ecff;font-size:14px;font-weight:bold;padding:10px 20px;margin:6px 0;letter-spacing:0.5px;opacity:0;animation:bannerIn 0.35s ease-out forwards;}
 @keyframes bannerIn{from{opacity:0;transform:translateX(-40px);}to{opacity:1;transform:translateX(0);}}
-.bannerLine .hi{color:#ffcc55;}
-.bannerLine .hl{color:#4aff88;}
-
-/* HUD nút gợi ý nhấp nháy */
-#hintW,#hintUP{position:fixed;z-index:40;pointer-events:none;display:none;}
-#hintW.show,#hintUP.show{display:block;animation:pulse 0.7s ease-in-out infinite;}
-@keyframes pulse{0%,100%{opacity:0.5;}50%{opacity:1;}}
 
 #msg{position:fixed;top:38%;left:50%;transform:translate(-50%,-50%);font-size:14px;font-weight:bold;padding:14px 24px;border-radius:14px;background:rgba(60,0,0,0.92);border:3px solid #ff5555;color:#fff;max-width:88%;z-index:200;display:none;text-align:center;line-height:1.5;box-shadow:0 8px 30px rgba(255,50,50,0.5);}
 #msg.show{display:block;animation:popMsg 0.25s ease-out;}
@@ -64,13 +58,10 @@ html,body{background:#05080f;color:#fff;font-family:'Segoe UI',sans-serif;overfl
 .wasdBtn.disabled{opacity:0.3;filter:grayscale(1);}
 .wW{top:0;left:58px;} .wA{top:58px;left:0;} .wS{top:58px;left:58px;} .wD{top:58px;left:116px;}
 
-/* Pitch + Landing panel */
 #rightPanel{position:fixed;bottom:14px;right:14px;z-index:100;display:none;flex-direction:column;gap:8px;width:90px;}
 #rightPanel.show{display:flex;}
 .pitchBtn{height:60px;background:radial-gradient(circle at 50% 30%, rgba(40,180,255,0.5), rgba(20,80,140,0.6));border:2px solid #4aa0dd;border-radius:12px;color:#e8f8ff;font-weight:900;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;user-select:none;}
 .pitchBtn:active,.pitchBtn.tapped,.pitchBtn.pulse{background:radial-gradient(circle at 50% 30%, rgba(100,220,255,0.9), rgba(40,140,220,0.9));transform:scale(0.95);}
-.pitchBtn.pulse{animation:pulseGlow 0.7s ease-in-out infinite;}
-@keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 rgba(120,220,255,0.7);}50%{box-shadow:0 0 0 10px rgba(120,220,255,0);}}
 .landingBtn{height:52px;background:linear-gradient(135deg, rgba(120,60,40,0.55), rgba(60,30,20,0.65));border:2px solid #996644;border-radius:12px;color:#e8d0b0;font-weight:bold;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;text-align:center;line-height:1.2;}
 .landingBtn.disabled{opacity:0.55;}
 
@@ -81,7 +72,6 @@ html,body{background:#05080f;color:#fff;font-family:'Segoe UI',sans-serif;overfl
 #overlay .hl{color:#ffcc55;font-weight:bold;}
 #overlay .warn{color:#ff8888;font-weight:bold;}
 #overlay button{margin-top:16px;padding:14px 36px;font-size:16px;font-weight:bold;border:none;border-radius:12px;background:linear-gradient(135deg,#4aa0dd,#1a5088);color:#fff;cursor:pointer;letter-spacing:1px;box-shadow:0 6px 24px rgba(80,180,255,0.5);}
-#overlay button:active{transform:scale(0.96);}
 
 #bottomLinks{position:fixed;inset:0;background:linear-gradient(180deg,#2a1e10 0%,#0f0a05 100%);display:none;flex-direction:column;justify-content:center;align-items:center;gap:12px;z-index:400;padding:20px;overflow-y:auto;}
 #bottomLinks.show{display:flex;}
@@ -90,11 +80,6 @@ html,body{background:#05080f;color:#fff;font-family:'Segoe UI',sans-serif;overfl
 #uploadNote{color:#ff9b9b;font-size:12px;font-weight:bold;background:rgba(255,80,80,0.15);border:1px dashed rgba(255,120,120,0.6);padding:5px 12px;border-radius:8px;}
 .bigBtn{display:block;width:85%;max-width:340px;padding:13px 20px;font-size:14px;font-weight:bold;border-radius:12px;text-decoration:none;color:#fff;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,0.4);}
 #goIndex{background:linear-gradient(135deg,#ff6b6b,#a02020);}
-#goXucNew{background:linear-gradient(135deg,#ffcc44,#a06020);}
-#goVanTai{background:linear-gradient(135deg,#4aa0dd,#1a5088);}
-#goXuc{background:linear-gradient(135deg,#ffb84a,#a06020);}
-#goRan{background:linear-gradient(135deg,#7CFC00,#2e8b57);}
-.newBtn{background:linear-gradient(135deg,#5a5a5a,#2a2a2a);border:1px dashed #999;}
 #closeMenu{background:linear-gradient(135deg,#444,#222);color:#fff;padding:11px 28px;border-radius:10px;border:2px solid #ffb84a;font-size:13px;cursor:pointer;font-weight:bold;margin-top:4px;}
 </style>
 </head>
@@ -111,9 +96,7 @@ html,body{background:#05080f;color:#fff;font-family:'Segoe UI',sans-serif;overfl
 </div>
 
 <div id="attInd"><canvas id="attCv"></canvas></div>
-
 <div id="attemptBadge">LẦN THỬ<br><span id="attTxt">1/5</span></div>
-
 <div id="hdgBox">HƯỚNG MŨI<span class="val" id="hdgTxt">12h</span></div>
 
 <div id="menuBtn">☰ KHÁM PHÁ</div>
@@ -154,12 +137,7 @@ html,body{background:#05080f;color:#fff;font-family:'Segoe UI',sans-serif;overfl
 <div class="bannerShare">🌟 Cùng khám phá những game khác<br>của <span style="color:#ffb84a">TRANH BÁ GAME</span> nhé! 🌟</div>
 <div id="uploadNote">⏳ GAME ĐANG UPLOAD...</div>
 <h2>KHÁM PHÁ GAME KHÁC</h2>
-<a class="bigBtn" href="index.html">⚔️ TRANH BÁ GAME</a>
-<a class="bigBtn" href="laimayxuc.html">🚜 LÁI MÁY XÚC</a>
-<a class="bigBtn" href="flycamvantai.html">🚚 FLYCAM VẬN TẢI</a>
-<a class="bigBtn" href="flycam.html">🎣 FLYCAM ĐÁNH CÁ</a>
-<a class="bigBtn" href="snackantu.html">🐍 RẮN SĂN MỒI</a>
-<a class="bigBtn newBtn" href="index.html">🆕 GAME 6 (coming)</a>
+<a class="bigBtn" id="goIndex" href="index.html">⚔️️ TRANH BÁ GAME</a>
 <button id="closeMenu">← Đóng</button>
 </div>
 
@@ -168,15 +146,15 @@ html,body{background:#05080f;color:#fff;font-family:'Segoe UI',sans-serif;overfl
 
 /* ================== CONFIG ================== */
 const CFG = {
-RW_ANGLE: -Math.PI/3, // đường băng hướng 1 giờ
+RW_ANGLE: -Math.PI/3,
 RW_LENGTH: 1600,
 RW_WIDTH: 50,
-RW_START_X: 300, RW_START_Y: 1400, // đầu băng (world, mét)
+RW_START_X: 300, RW_START_Y: 1400,
 
-PLANE_LEN: 15,
-PLANE_WID: 16,
+PLANE_LEN: 25,
+PLANE_WID: 25,
 
-TOP_VIEW_SPAN: 500, // 500m tầm nhìn top view
+TOP_VIEW_SPAN: 500,
 
 SPD_N1: 20, SPD_N2: 50, SPD_N3: 110, SPD_MAX: 200,
 SPD_LIFT_START: 80, SPD_LIFTOFF: 110,
@@ -184,14 +162,41 @@ SPD_LIFT_START: 80, SPD_LIFTOFF: 110,
 PITCH_STEP: 2.0,
 PITCH_MAX_OK: 18, PITCH_DANGER: 25,
 
-SPD_REVERSE_MAX: 20, // ngưỡng cho lùi
-SPD_YAW_MIN: 10, // tối thiểu để A/D có tác dụng
-YAW_COOLDOWN: 2.5, // giây
-YAW_ROT_TIME: 1.5, // giây để quay 30°
+SPD_REVERSE_MAX: 20,
+SPD_YAW_MIN: 10,
+YAW_COOLDOWN: 2.5,
+YAW_ROT_TIME: 1.5,
 
 MAX_ATTEMPTS: 5, FUEL_START: 100, FUEL_PER_ATT: 20,
 DT_MAX: 0.05,
+WHITE_THRESHOLD: 220
 };
+
+/* ================== LOAD ẢNH ================== */
+const img = new Image();
+img.src = 'tranhba3.png';
+let imgClean = null;
+let imgReady = false;
+
+img.onload = () => {
+  try { imgClean = removeWhiteBg(img); }
+  catch(e){ console.warn('Không xoá được phông:', e); imgClean = img; }
+  imgReady = true;
+};
+
+function removeWhiteBg(image, t=CFG.WHITE_THRESHOLD){
+  const c = document.createElement('canvas');
+  c.width = image.naturalWidth; c.height = image.naturalHeight;
+  const cx = c.getContext('2d',{willReadFrequently:true});
+  cx.drawImage(image,0,0);
+  const d = cx.getImageData(0,0,c.width,c.height);
+  const p = d.data;
+  for(let i=0;i<p.length;i+=4){
+    if(p[i]>t && p[i+1]>t && p[i+2]>t) p[i+3] = 0;
+  }
+  cx.putImageData(d,0,0);
+  return c;
+}
 
 /* ================== SFX ================== */
 class SFX {
@@ -243,38 +248,15 @@ const kmhToPxs=(kmh,ppm)=>kmh*(1000/3600)*ppm;
 
 /* ================== STATE ================== */
 const State = {
-PHASE:"idle", // idle | taxi | ready | lineup | liftstart | airborne | won | failed
-speed:0, // km/h (âm khi lùi)
-gaNotch:0, // 0..3
-pitch:0,
-viewPitch:0,
-roll:0,
-yaw:0, // rad — snap 12 hướng
-yawClock:12,
-yawTargetClock:12,
-yawLock:0, // cooldown giây còn lại
-yawRingActive:false,
-yawRingStart:0,
-yawRingFromClock:12,
-yawRingToClock:12,
-
-posX:0, posY:0, // mét
-alt:0,
-fuel:CFG.FUEL_START,
-attempts:1,
-
-bailed:false, // đã cất cánh
-lineupMode:false, // tự trôi vào vạch xuất phát
-
-_pitchInput:0,
-_lastW:false, _lastS:false,
-_wDisabled:0, // giây W bị khoá
-_banner_queue:[],
-_banner_timer:0,
-_groundScrollY:0, // view ngang
-_shapeScroll:0, // dòng cảnh vật trôi 7h (top view)
-_shadowOff:0, // bóng trôi 11h
-_shadowAlpha:0,
+PHASE:"idle",
+speed:0, gaNotch:0, pitch:0, viewPitch:0, roll:0, yaw:0,
+yawClock:12, yawTargetClock:12, yawLock:0, yawRingActive:false,
+yawRingStart:0, yawRingFromClock:12, yawRingToClock:12,
+posX:0, posY:0, alt:0, fuel:CFG.FUEL_START, attempts:1,
+bailed:false, lineupMode:false,
+_pitchInput:0, _lastW:false, _lastS:false, _wDisabled:0,
+_banner_queue:[], _banner_timer:0, _groundScrollY:0, _shapeScroll:0,
+_shadowOff:0, _shadowAlpha:0,
 };
 
 /* ================== GAME ================== */
@@ -302,145 +284,72 @@ _buildClouds(){
 this._clouds=[];
 for(let i=0;i<12;i++) this._clouds.push({
 x:Math.random()*1800, y:15+Math.random()*95,
-w:60+Math.random()*130, h:16+Math.random()*22,
-v:1.5+Math.random()*3
+w:60+Math.random()*130, h:16+Math.random()*22, v:1.5+Math.random()*3
 });
 }
 
 _buildScenery(){
-// Cảnh top view - các ô đất/cây/nhà ngẫu nhiên quanh khu vực
 this._scenery=[];
 const rnd = (a,b)=>a+Math.random()*(b-a);
 for(let i=0;i<40;i++){
 this._scenery.push({
 x: rnd(-400, 800), y: rnd(-400, 1800),
-t: Math.random()<0.6 ? "tree" : "house",
-s: rnd(0.7, 1.3),
+t: Math.random()<0.6 ? "tree" : "house", s: rnd(0.7, 1.3),
 c: Math.random()<0.5 ? "#3a6a3a" : "#5a8a4a"
 });
 }
-// Cọc tiêu view ngang
-this._poles=[];
-for(let i=0;i<8;i++) this._poles.push({ x: i*60, h: 22+Math.random()*8 });
 }
 
 _resetState(){
-State.PHASE="idle";
-State.speed=0; State.gaNotch=0;
-State.pitch=0;
-State.viewPitch=0; State.roll=0;
-// Đường băng 1h → máy bay xuất phát hướng 3h (lệch phải) ở bên phải sân
-State.yawClock=3;
-State.yawTargetClock=3;
-State.yaw=this._clockToAngle(3);
+State.PHASE="idle"; State.speed=0; State.gaNotch=0; State.pitch=0; State.viewPitch=0; State.roll=0;
+State.yawClock=3; State.yawTargetClock=3; State.yaw=this._clockToAngle(3);
 State.yawLock=0; State.yawRingActive=false;
-
-// Vị trí xuất phát: giữa-dưới bên PHẢI đường băng (world)
-State.posX=CFG.RW_START_X - 150;
-State.posY=CFG.RW_START_Y + 210;
-State.alt=0;
-State.bailed=false;
-State.lineupMode=false;
-State._pitchInput=0;
-State._wDisabled=0;
-State._groundScrollY=0;
-State._shapeScroll=0;
-State._shadowOff=0; State._shadowAlpha=0;
-State._banner_queue=[]; State._banner_timer=0;
-State._hintW=false; State._hintUP=false;
+State.posX=CFG.RW_START_X - 150; State.posY=CFG.RW_START_Y + 210; State.alt=0;
+State.bailed=false; State.lineupMode=false; State._pitchInput=0; State._wDisabled=0;
+State._groundScrollY=0; State._shapeScroll=0; State._shadowOff=0; State._shadowAlpha=0;
+State._banner_queue=[]; State._banner_timer=0; State._hintW=false; State._hintUP=false;
 }
 
-_clockToAngle(h){
-const deg=((h%12)+12)%12*30;
-return (-90+deg)*Math.PI/180;
-}
+_clockToAngle(h){ return (((h%12)+12)%12*30 - 90)*Math.PI/180; }
 _angleToClock(a){
-let deg=a*180/Math.PI+90;
-deg=((deg%360)+360)%360;
-let h=Math.round(deg/30)%12; if(h===0)h=12;
-return h;
+let deg=a*180/Math.PI+90; deg=((deg%360)+360)%360;
+let h=Math.round(deg/30)%12; return h===0?12:h;
 }
 
 _bindResize(){
 const rz=()=>{
 const sv=document.getElementById("sideView"), tv=document.getElementById("topView");
-const w1=sv.clientWidth,h1=sv.clientHeight,w2=tv.clientWidth,h2=tv.clientHeight;
-this.W1=w1;this.H1=h1;this.W2=w2;this.H2=h2;
-this.side.width=w1*this.dpr;this.side.height=h1*this.dpr;
-this.top.width=w2*this.dpr;this.top.height=h2*this.dpr;
+this.W1=sv.clientWidth; this.H1=sv.clientHeight; this.W2=tv.clientWidth; this.H2=tv.clientHeight;
+this.side.width=this.W1*this.dpr; this.side.height=this.H1*this.dpr;
+this.top.width=this.W2*this.dpr; this.top.height=this.H2*this.dpr;
 this.sxCtx.setTransform(this.dpr,0,0,this.dpr,0,0);
 this.tpCtx.setTransform(this.dpr,0,0,this.dpr,0,0);
-// Att indicator
-const AC=this.attCv, sz=110;
-AC.width=sz*this.dpr; AC.height=sz*this.dpr;
+this.attCv.width=110*this.dpr; this.attCv.height=110*this.dpr;
 this.attCtx.setTransform(this.dpr,0,0,this.dpr,0,0);
 };
-rz();
-window.addEventListener("resize", rz);
+rz(); window.addEventListener("resize", rz);
 }
 
-newAttempt(){
-const attempts=State.attempts, fuel=State.fuel;
-this._resetState();
-State.attempts=attempts; State.fuel=fuel;
-this._updateHUD();
-}
+newAttempt(){ const a=State.attempts, f=State.fuel; this._resetState(); State.attempts=a; State.fuel=f; this._updateHUD(); }
+start(){ this.sfx.init(); this.sfx.resume(); this.sfx.startProp(); if(State.PHASE==="idle") State.PHASE="taxi"; this._lastTs=0; requestAnimationFrame(this._loop); }
 
-start(){
-this.sfx.init(); this.sfx.resume(); this.sfx.startProp();
-if(State.PHASE==="idle") State.PHASE="taxi";
-this._lastTs=0;
-requestAnimationFrame(this._loop);
-}
-
-/* ================ INPUT ================ */
-keyW(){
-if(State._wDisabled>0) return;
-State.gaNotch=Math.min(3,State.gaNotch+1);
-this.sfx.click();
-}
-keyS(){
-// giảm ga, nếu < 20 km/h & ga = 0 thì lùi
-State.gaNotch=Math.max(0,State.gaNotch-1);
-this.sfx.click();
-}
-holdW(){ if(State._wDisabled>0) return; State._hintW=false; this._wTryStart(); }
-_wTryStart(){ /* dùng cho giữ W */
-if(State.PHASE!=="taxi" && State.PHASE!=="lineup") return;
-}
+keyW(){ if(State._wDisabled>0) return; State.gaNotch=Math.min(3,State.gaNotch+1); this.sfx.click(); }
+keyS(){ State.gaNotch=Math.max(0,State.gaNotch-1); this.sfx.click(); }
 keyA(){ this._requestYaw(-1); }
 keyD(){ this._requestYaw(1); }
 
 _requestYaw(dir){
-// Điều kiện: tốc > 10, cooldown xong, không đang quay
 if(State.PHASE==="idle"||State.PHASE==="won"||State.PHASE==="failed") return;
-if(Math.abs(State.speed)<CFG.SPD_YAW_MIN){
-this.sfx.beep(300,0.08);
-return;
-}
-if(State.yawLock>0){
-this.sfx.beep(300,0.08);
-return;
-}
-if(State.yawRingActive) return;
-// Bắt đầu quay 1 nấc
+if(Math.abs(State.speed)<CFG.SPD_YAW_MIN || State.yawLock>0 || State.yawRingActive){ this.sfx.beep(300,0.08); return; }
 let target = State.yawTargetClock + dir;
 if(target<1) target=12; if(target>12) target=1;
-State.yawTargetClock = target;
-State.yawRingActive=true;
-State.yawRingStart=performance.now();
-State.yawRingFromClock=State.yawClock;
-State.yawRingToClock=target;
+State.yawTargetClock = target; State.yawRingActive=true; State.yawRingStart=performance.now();
+State.yawRingFromClock=State.yawClock; State.yawRingToClock=target;
 this.sfx.beep(900,0.05);
 }
 
 setPitch(dir){
-// Cho phép ngóc khi tốc >= 80 (hoặc khi đã bay)
-if(dir>0 && !State.bailed && State.speed<CFG.SPD_LIFT_START){
-// Nhấn ▲ quá sớm → phạt
-this._earlyPitchPenalty();
-return;
-}
+if(dir>0 && !State.bailed && State.speed<CFG.SPD_LIFT_START){ this._earlyPitchPenalty(); return; }
 State._pitchInput=dir;
 }
 clearPitch(){ State._pitchInput=0; }
@@ -448,242 +357,107 @@ clearPitch(){ State._pitchInput=0; }
 _earlyPitchPenalty(){
 if(State.PHASE!=="taxi" && State.PHASE!=="lineup") return;
 if(State._penalizing) return;
-State._penalizing=true;
-this.sfx.fail();
+State._penalizing=true; this.sfx.fail();
 this._showMsg("⚠️ Nhấn CẤT CÁNH quá sớm!\nGa bị khoá + quay về điểm xuất phát", "fail");
-// Khoá W 3s
-State._wDisabled=3;
-// Đưa máy bay về điểm xuất phát, hướng 3h (như ban đầu)
-State.speed=0; State.gaNotch=0;
-State.posX=CFG.RW_START_X - 150;
-State.posY=CFG.RW_START_Y + 210;
+State._wDisabled=3; State.speed=0; State.gaNotch=0;
+State.posX=CFG.RW_START_X - 150; State.posY=CFG.RW_START_Y + 210;
 State.yawClock=3; State.yawTargetClock=3; State.yaw=this._clockToAngle(3);
-State.bailed=false;
-State.lineupMode=false;
-
-// Cập nhật hint W sau khi hết phạt
+State.bailed=false; State.lineupMode=false;
 setTimeout(()=>{ State._penalizing=false; }, 3000);
 }
 
-/* ================ LOOP ================ */
 _loop(ts){
 if(!this._lastTs) this._lastTs=ts;
 let dt=Math.min((ts-this._lastTs)/1000, CFG.DT_MAX);
-this._lastTs=ts;
-this.update(dt);
-this.draw(dt);
+this._lastTs=ts; this.update(dt); this.draw(dt);
 requestAnimationFrame(this._loop);
 }
 
 update(dt){
 if(State.PHASE==="idle"||State.PHASE==="won"||State.PHASE==="failed") return;
-
-/* --- 1. Cooldown quay --- */
 if(State.yawLock>0) State.yawLock-=dt;
 if(State._wDisabled>0) State._wDisabled-=dt;
 
-/* --- 2. Quay mũi (smooth 1.5s / nấc) --- */
 if(State.yawRingActive){
 const el=(performance.now()-State.yawRingStart)/1000;
 const t=clamp(el/CFG.YAW_ROT_TIME,0,1);
-// Easing
 const et = t<0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
 const fromA=this._clockToAngle(State.yawRingFromClock);
 const toA=this._clockToAngle(State.yawRingToClock);
 let diff=toA-fromA;
-while(diff>Math.PI) diff-=Math.PI*2;
-while(diff<-Math.PI) diff+=Math.PI*2;
-State.yaw=fromA+diff*et;
-State.yawClock=this._angleToClock(State.yaw);
-if(t>=1){
-State.yawRingActive=false;
-State.yawLock=CFG.YAW_COOLDOWN;
-State.yawClock=State.yawRingToClock;
-State.yaw=this._clockToAngle(State.yawRingToClock);
-}
+while(diff>Math.PI) diff-=Math.PI*2; while(diff<-Math.PI) diff+=Math.PI*2;
+State.yaw=fromA+diff*et; State.yawClock=this._angleToClock(State.yaw);
+if(t>=1){ State.yawRingActive=false; State.yawLock=CFG.YAW_COOLDOWN; State.yawClock=State.yawRingToClock; State.yaw=this._clockToAngle(State.yawRingToClock); }
 }
 
-/* --- 3. Tốc độ --- */
-const Wdown=this._isKeyDown("W");
 const Sdown=this._isKeyDown("S");
-
 let targetSpd;
-if(State.bailed){
-targetSpd = Math.min(CFG.SPD_MAX, Math.max(State.speed, State.speed + (State.gaNotch>=2?30:6)*dt));
-} else {
+if(State.bailed){ targetSpd = Math.min(CFG.SPD_MAX, Math.max(State.speed, State.speed + (State.gaNotch>=2?30:6)*dt)); }
+else {
 const n=State.gaNotch;
-if(n<=0) targetSpd=0;
-else if(n===1) targetSpd=CFG.SPD_N1;
-else if(n===2) targetSpd=lerp(CFG.SPD_N1,CFG.SPD_N2,0.5);
-else targetSpd=CFG.SPD_N3;
+if(n<=0) targetSpd=0; else if(n===1) targetSpd=CFG.SPD_N1; else if(n===2) targetSpd=lerp(CFG.SPD_N1,CFG.SPD_N2,0.5); else targetSpd=CFG.SPD_N3;
 }
 
 if(State.lineupMode && !State.bailed){
-// Trôi chậm tới vạch xuất phát
-const dx=(CFG.RW_START_X - State.posX);
-const dy=(CFG.RW_START_Y - State.posY);
-const d=Math.hypot(dx,dy);
-if(d>0.5){
-const step=6*dt;
-State.posX+=dx/d*step; State.posY+=dy/d*step;
-State.yaw=Math.atan2(dy,dx);
-State.yawClock=this._angleToClock(State.yaw);
-} else {
-State.lineupMode=false;
-State.PHASE="ready";
-State.yaw=CFG.RW_ANGLE; State.yawClock=1;
-this._startLineupTalk();
-}
+const dx=(CFG.RW_START_X - State.posX), dy=(CFG.RW_START_Y - State.posY), d=Math.hypot(dx,dy);
+if(d>0.5){ const step=6*dt; State.posX+=dx/d*step; State.posY+=dy/d*step; State.yaw=Math.atan2(dy,dx); State.yawClock=this._angleToClock(State.yaw); }
+else { State.lineupMode=false; State.PHASE="ready"; State.yaw=CFG.RW_ANGLE; State.yawClock=1; this._startLineupTalk(); }
 State.speed=Math.min(State.speed, 8);
 } else {
-// Tăng/giảm tốc bình thường
-if(State._wDisabled>0){
-// W bị phạt → đứng yên / trôi nhẹ
-State.speed=Math.max(0, State.speed-8*dt);
-} else if(State.speed<targetSpd){
-const s=Math.abs(State.speed);
-let acc;
-if(State.bailed) acc=25;
-else if(s<CFG.SPD_N2) acc=3.5;
-else if(s<CFG.SPD_LIFT_START) acc=2.2;
-else acc=6;
-State.speed=Math.min(targetSpd, State.speed+acc*dt);
-} else if(State.speed>targetSpd){
-// nếu nhấn S khi tốc thấp → lùi
-if(Sdown && State.gaNotch===0 && Math.abs(State.speed)<CFG.SPD_REVERSE_MAX){
-State.speed=Math.max(-CFG.SPD_REVERSE_MAX, State.speed-4*dt);
-} else {
-State.speed=Math.max(targetSpd, State.speed-10*dt);
-}
-} else if(Sdown && State.gaNotch===0 && State.speed>=0 && State.speed<CFG.SPD_REVERSE_MAX){
-// Từ đứng yên và nhấn S → lùi
-State.speed=Math.max(-CFG.SPD_REVERSE_MAX, State.speed-4*dt);
-}
+if(State._wDisabled>0){ State.speed=Math.max(0, State.speed-8*dt); }
+else if(State.speed<targetSpd){ let acc=State.bailed?25:(Math.abs(State.speed)<CFG.SPD_N2?3.5:(Math.abs(State.speed)<CFG.SPD_LIFT_START?2.2:6)); State.speed=Math.min(targetSpd, State.speed+acc*dt); }
+else if(State.speed>targetSpd){
+if(Sdown && State.gaNotch===0 && Math.abs(State.speed)<CFG.SPD_REVERSE_MAX){ State.speed=Math.max(-CFG.SPD_REVERSE_MAX, State.speed-4*dt); }
+else { State.speed=Math.max(targetSpd, State.speed-10*dt); }
+} else if(Sdown && State.gaNotch===0 && State.speed>=0 && State.speed<CFG.SPD_REVERSE_MAX){ State.speed=Math.max(-CFG.SPD_REVERSE_MAX, State.speed-4*dt); }
 }
 
-/* --- 4. Di chuyển --- */
 if(!State.lineupMode){
-const PX_M=this.W2/CFG.TOP_VIEW_SPAN;
-const vpx=kmhToPxs(State.speed, PX_M);
-const dx=Math.cos(State.yaw)*vpx*dt;
-const dy=Math.sin(State.yaw)*vpx*dt;
-State.posX += dx/PX_M;
-State.posY += dy/PX_M;
+const PX_M=this.W2/CFG.TOP_VIEW_SPAN; const vpx=kmhToPxs(State.speed, PX_M);
+State.posX += Math.cos(State.yaw)*vpx*dt/PX_M; State.posY += Math.sin(State.yaw)*vpx*dt/PX_M;
 }
 
-/* --- 5. Kiểm tra vị trí băng --- */
-const chk=this._pointOnRunway(State.posX, State.posY);
-
-/* --- 6. Kiểm tra vào lineup --- */
 if(!State.bailed && !State.lineupMode && State.PHASE==="taxi"){
-const dxStart=State.posX-CFG.RW_START_X;
-const dyStart=State.posY-CFG.RW_START_Y;
-const distStart=Math.hypot(dxStart,dyStart);
-// Nếu máy bay vào gần đầu băng & đúng hướng 1h (sai số 20°)
+const distStart=Math.hypot(State.posX-CFG.RW_START_X, State.posY-CFG.RW_START_Y);
 let yawErr=Math.abs(((State.yaw-CFG.RW_ANGLE+Math.PI*3)%(Math.PI*2))-Math.PI);
-if(distStart<40 && yawErr<0.35){
-State.lineupMode=true;
-this._showMsg("🛬 Đã vào đường băng — tự trôi tới vạch xuất phát", "ok");
-}
+if(distStart<40 && yawErr<0.35){ State.lineupMode=true; this._showMsg("🛬 Đã vào đường băng — tự trôi tới vạch xuất phát", "ok"); }
 }
 
-/* --- 7. Pitch + camera mượt --- */
-State.pitch += (State._pitchInput||0) * CFG.PITCH_STEP * dt * (State.bailed?1.4:1.0);
-State.pitch=clamp(State.pitch,-6,50);
-const pitchSmooth=1-Math.exp(-10*dt);
-State.viewPitch += (State.pitch-State.viewPitch)*pitchSmooth;
+State.pitch = clamp(State.pitch + (State._pitchInput||0) * CFG.PITCH_STEP * dt * (State.bailed?1.4:1.0), -6, 50);
+State.viewPitch += (State.pitch-State.viewPitch)*(1-Math.exp(-10*dt));
 
-// Khi A/D đang quay theo nấc, máy bay nghiêng nhẹ; sau đó tự cân bằng.
 let rollTarget=0;
-if(State.yawRingActive){
-  let d=State.yawRingToClock-State.yawRingFromClock;
-  if(d>6) d-=12; if(d<-6) d+=12;
-  rollTarget=clamp(d*7.5,-15,15);
-}
-const rollSmooth=1-Math.exp(-7*dt);
-State.roll += (rollTarget-State.roll)*rollSmooth;
+if(State.yawRingActive){ let d=State.yawRingToClock-State.yawRingFromClock; if(d>6) d-=12; if(d<-6) d+=12; rollTarget=clamp(d*7.5,-15,15); }
+State.roll += (rollTarget-State.roll)*(1-Math.exp(-7*dt));
 
-/* --- 8. Kiểm tra cất cánh --- */
 if(!State.bailed){
-if(State.speed>=CFG.SPD_LIFTOFF && State.pitch<5){
-this._fail("Quá tốc độ mà chưa ngóc đầu — không thể cất cánh!");
-return;
-}
-if(State.speed>=CFG.SPD_LIFTOFF && State.pitch>=5){
-State.bailed=true;
-State.PHASE="airborne";
-State._shadowOff=0; State._shadowAlpha=0.6;
-this.sfx.whoosh();
-this._showMsg("✈️ CẤT CÁNH! Nhả nút ▲ rồi tăng tới 200 km/h!", "ok");
-}
+if(State.speed>=CFG.SPD_LIFTOFF && State.pitch<5){ this._fail("Quá tốc độ mà chưa ngóc đầu — không thể cất cánh!"); return; }
+if(State.speed>=CFG.SPD_LIFTOFF && State.pitch>=5){ State.bailed=true; State.PHASE="airborne"; State._shadowOff=0; State._shadowAlpha=0.6; this.sfx.whoosh(); this._showMsg("✈️ CẤT CÁNH! Nhả nút ▲ rồi tăng tới 200 km/h!", "ok"); }
 } else {
-if(State.pitch>=CFG.PITCH_DANGER){
-this._fail("Ngóc quá cao — máy bay dựng đứng! 💥");
-return;
-}
-if(State.speed>=CFG.SPD_MAX-2){
-this._win();
-return;
-}
+if(State.pitch>=CFG.PITCH_DANGER){ this._fail("Ngóc quá cao — máy bay dựng đứng! 💥"); return; }
+if(State.speed>=CFG.SPD_MAX-2){ this._win(); return; }
 }
 
-/* --- 9. Nhiên liệu --- */
 State.fuel=Math.max(0, State.fuel-(0.12+Math.abs(State.speed)*0.004)*dt);
 if(State.fuel<=0){ this._fail("Hết nhiên liệu! 💥"); return; }
 
-/* --- 10. Sound --- */
 this.sfx.setProp(Math.abs(State.speed)/CFG.SPD_MAX);
+State._groundScrollY += (State.speed/CFG.SPD_MAX)*(State.bailed?260:90)*dt;
+State._shapeScroll += (State.speed/CFG.SPD_MAX)*(State.bailed?500:40)*dt;
+if(State.bailed){ State._shadowOff = Math.min(State._shadowOff + (State.speed/CFG.SPD_MAX)*30*dt, 80); State._shadowAlpha = Math.max(0, State._shadowAlpha - 0.35*dt); }
 
-/* --- 11. Ground scroll view ngang --- */
-if(State.bailed){
-State._groundScrollY += (State.speed/CFG.SPD_MAX)*260*dt;
-} else {
-State._groundScrollY += (State.speed/CFG.SPD_MAX)*90*dt;
-}
-
-/* --- 12. Cảnh trôi 7h (top view) --- */
-if(State.bailed){
-State._shapeScroll += (State.speed/CFG.SPD_MAX) * 500 * dt;
-} else {
-State._shapeScroll += (State.speed/CFG.SPD_MAX) * 40 * dt;
-}
-
-/* --- 13. Bóng trôi 11h + mờ dần --- */
-if(State.bailed){
-State._shadowOff += (State.speed/CFG.SPD_MAX) * 30 * dt;
-State._shadowOff = Math.min(State._shadowOff, 80);
-State._shadowAlpha = Math.max(0, State._shadowAlpha - 0.35*dt);
-// Mây trôi theo
-}
-
-/* --- 14. Mây view ngang --- */
-for(const c of this._clouds){
-c.x += c.v*dt*(1+Math.abs(State.speed)/CFG.SPD_MAX);
-if(c.x>this.W1+250) c.x=-250;
-}
-
-/* --- 15. Banner queue --- */
-if(State._banner_queue.length && State._banner_timer<=0){
-const txt=State._banner_queue.shift();
-this._pushBanner(txt);
-State._banner_timer=2.4;
-}
+for(const c of this._clouds){ c.x += c.v*dt*(1+Math.abs(State.speed)/CFG.SPD_MAX); if(c.x>this.W1+250) c.x=-250; }
+if(State._banner_queue.length && State._banner_timer<=0){ this._pushBanner(State._banner_queue.shift()); State._banner_timer=2.4; }
 if(State._banner_timer>0) State._banner_timer-=dt;
 
-/* --- 16. Hints --- */
 this._hintW = (State.PHASE==="ready"||State.PHASE==="lineup") && !State.bailed && State._wDisabled<=0;
 this._hintUP = !State.bailed && State.speed>=CFG.SPD_LIFT_START && State.speed<CFG.SPD_LIFTOFF && State.pitch<5;
 
-this._updateHUD();
-this._drawAttIndicator();
+this._updateHUD(); this._drawAttIndicator();
 }
 
-_isKeyDown(k){
-return this._keys && this._keys[k];
-}
-
+_isKeyDown(k){ return this._keys && this._keys[k]; }
 _startLineupTalk(){
-// Sau khi vào vạch xuất phát → loạt thông báo
 State._banner_queue=[
 "🎙️ Đài kiểm soát: Chuyến bay VN-123, chuẩn bị cất cánh đường băng 1 giờ.",
 "🎙️ Đài kiểm soát: Đề nghị hành khách thắt dây an toàn.",
@@ -695,160 +469,66 @@ this.sfx.radio();
 }
 
 _pushBanner(text){
-const el=document.getElementById("banner");
-const div=document.createElement("div");
-div.className="bannerLine";
-div.innerHTML=text;
-el.appendChild(div);
-this.sfx.radio();
+const el=document.getElementById("banner"); const div=document.createElement("div"); div.className="bannerLine"; div.innerHTML=text; el.appendChild(div); this.sfx.radio();
 setTimeout(()=>{ div.style.transition="opacity 0.6s"; div.style.opacity="0"; setTimeout(()=>div.remove(),700); }, 2400);
 }
 
 _getRunwayLine(){
 const x0=CFG.RW_START_X, y0=CFG.RW_START_Y;
-const x1=x0+Math.cos(CFG.RW_ANGLE)*CFG.RW_LENGTH;
-const y1=y0+Math.sin(CFG.RW_ANGLE)*CFG.RW_LENGTH;
-return {x0,y0,x1,y1};
-}
-_pointOnRunway(px,py){
-const rw=this._getRunwayLine();
-const dx=rw.x1-rw.x0, dy=rw.y1-rw.y0;
-const len2=dx*dx+dy*dy;
-const t=((px-rw.x0)*dx+(py-rw.y0)*dy)/len2;
-const between=(t>=0&&t<=1);
-const projX=rw.x0+t*dx, projY=rw.y0+t*dy;
-const d=Math.hypot(px-projX,py-projY);
-return {on:d<=CFG.RW_WIDTH/2, between, crossDist:d, t};
+return {x0,y0,x1:x0+Math.cos(CFG.RW_ANGLE)*CFG.RW_LENGTH, y1:y0+Math.sin(CFG.RW_ANGLE)*CFG.RW_LENGTH};
 }
 
 /* ================ DRAW ================ */
-draw(dt){
-this.drawSide(dt);
-this.drawTop(dt);
-}
+draw(dt){ this.drawSide(dt); this.drawTop(dt); }
 
 drawSide(dt){
 const ctx=this.sxCtx, W=this.W1, H=this.H1;
-
-// Trời
 const sky=ctx.createLinearGradient(0,0,0,H);
-if(State.bailed){
-sky.addColorStop(0,"#040a18");
-sky.addColorStop(0.4,"#2a5a90");
-sky.addColorStop(0.75,"#88b8d8");
-sky.addColorStop(1,"#c8e0f0");
-} else {
-sky.addColorStop(0,"#0a1628");
-sky.addColorStop(0.6,"#3a6a9a");
-sky.addColorStop(0.85,"#a8c8e0");
-sky.addColorStop(1,"#5a4a30");
-}
+if(State.bailed){ sky.addColorStop(0,"#040a18"); sky.addColorStop(0.4,"#2a5a90"); sky.addColorStop(0.75,"#88b8d8"); sky.addColorStop(1,"#c8e0f0"); }
+else { sky.addColorStop(0,"#0a1628"); sky.addColorStop(0.6,"#3a6a9a"); sky.addColorStop(0.85,"#a8c8e0"); sky.addColorStop(1,"#5a4a30"); }
 ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
 
-// Mây
 ctx.fillStyle="rgba(255,255,255,0.3)";
-for(const c of this._clouds){
-ctx.beginPath();
-ctx.ellipse(c.x, c.y, c.w*0.6, c.h*0.5, 0, 0, Math.PI*2);
-ctx.fill();
-}
+for(const c of this._clouds){ ctx.beginPath(); ctx.ellipse(c.x, c.y, c.w*0.6, c.h*0.5, 0, 0, Math.PI*2); ctx.fill(); }
 
-/* ===== MẶT ĐẤT + ĐƯỜNG CHÂN TRỜI ===== */
-// Ngóc đầu (pitch dương) -> đường chân trời hạ xuống.
 const groundBaseY = State.bailed ? H - H*0.08 : H - H*0.18;
 const pitchShift = State.bailed ? State.viewPitch*4.2 : State.viewPitch*2.4;
 const horizonY = clamp(H*0.58 + pitchShift, H*0.16, H*0.92);
-const groundY = horizonY + State._groundScrollY;
 const planeCY = State.bailed ? H*0.40 - State.alt*2.5 : groundBaseY - 26;
 
-if(State.bailed){
-State.alt=Math.min(40, State.alt + 0.8*dt*(Math.abs(State.speed)/CFG.SPD_MAX)*4);
-} else {
-State.alt=0;
-}
+State.alt = State.bailed ? Math.min(40, State.alt + 0.8*dt*(Math.abs(State.speed)/CFG.SPD_MAX)*4) : 0;
 
 ctx.save();
-ctx.translate(W/2,H/2);
-ctx.rotate(-State.roll*Math.PI/180);
-ctx.translate(-W/2,-H/2);
+ctx.translate(W/2,H/2); ctx.rotate(-State.roll*Math.PI/180); ctx.translate(-W/2,-H/2);
 if(horizonY < H+80){
-  const grd=ctx.createLinearGradient(0,horizonY,0,H);
-  grd.addColorStop(0,"#6a5a3a"); grd.addColorStop(1,"#3a2a10");
+  const grd=ctx.createLinearGradient(0,horizonY,0,H); grd.addColorStop(0,"#6a5a3a"); grd.addColorStop(1,"#3a2a10");
   ctx.fillStyle=grd; ctx.fillRect(-W,horizonY,W*3,H-horizonY+120);
-  ctx.strokeStyle="#d8d8d8"; ctx.lineWidth=3;
-  ctx.beginPath(); ctx.moveTo(-W,horizonY); ctx.lineTo(W*2,horizonY); ctx.stroke();
-  ctx.strokeStyle="#f0f0f0"; ctx.lineWidth=4; ctx.setLineDash([30,24]);
-  ctx.lineDashOffset=State._groundScrollY*1.5;
-  ctx.beginPath(); ctx.moveTo(-W,horizonY+10); ctx.lineTo(W*2,horizonY+10); ctx.stroke(); ctx.setLineDash([]);
-  const poleScroll=(State._groundScrollY*1.5)%60;
-  for(let i=0;i<12;i++){
-    const px=i*60-poleScroll, ph=24;
-    ctx.fillStyle="#d8d8d8"; ctx.fillRect(px,horizonY-ph,3,ph);
-    ctx.fillStyle="#e05050"; ctx.fillRect(px-1,horizonY-ph-4,5,5);
-  }
+  ctx.strokeStyle="#d8d8d8"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-W,horizonY); ctx.lineTo(W*2,horizonY); ctx.stroke();
 }
 ctx.restore();
 
-/* ===== MÁY BAY VIEW NGANG ===== */
-const pitchRad=-State.viewPitch*Math.PI/180;
+/* ===== MÁY BAY VIEW NGANG (BÊN HÔNG) ===== */
 ctx.save();
 ctx.translate(W*0.42, planeCY);
-ctx.rotate(pitchRad);
+ctx.rotate(-State.viewPitch*Math.PI/180);
 
-// Thân
-const len=100, noseR=16, tailR=5;
-ctx.fillStyle="#e8e8e8";
-ctx.beginPath();
-ctx.moveTo(-len*0.9,0);
-ctx.quadraticCurveTo(-len*0.5,-8,0,-12);
-ctx.quadraticCurveTo(len*0.6,-14,len-noseR,-noseR*0.85);
-ctx.quadraticCurveTo(len,-noseR,len,0);
-ctx.quadraticCurveTo(len,noseR,len-noseR,noseR*0.85);
-ctx.quadraticCurveTo(len*0.6,14,0,12);
-ctx.quadraticCurveTo(-len*0.5,8,-len*0.9,0);
-ctx.closePath(); ctx.fill();
-ctx.strokeStyle="#4a4a4a"; ctx.lineWidth=2; ctx.stroke();
-
-// Vạch đỏ
-ctx.strokeStyle="#e05050"; ctx.lineWidth=3;
-ctx.beginPath(); ctx.moveTo(-len*0.7,-2); ctx.lineTo(len*0.7,-2); ctx.stroke();
-
-// Buồng lái
-ctx.fillStyle="#4aa0dd";
-ctx.beginPath(); ctx.ellipse(len*0.55,-noseR*0.3,16,8,0,0,Math.PI*2); ctx.fill();
-ctx.strokeStyle="#1a3060"; ctx.stroke();
-
-// Cánh
-ctx.fillStyle="#c8c8c8";
-ctx.beginPath();
-ctx.moveTo(-10,4); ctx.lineTo(30,4); ctx.lineTo(20,30); ctx.lineTo(-15,30);
-ctx.closePath(); ctx.fill();
-ctx.strokeStyle="#666"; ctx.lineWidth=2; ctx.stroke();
-
-// Động cơ + cánh quạt
-ctx.fillStyle="#888";
-ctx.beginPath(); ctx.ellipse(10,24,14,9,0,0,Math.PI*2); ctx.fill();
-ctx.strokeStyle="#333"; ctx.stroke();
-const propAng=performance.now()/30;
-ctx.save(); ctx.translate(10,24-9); ctx.rotate(propAng);
-ctx.strokeStyle="rgba(230,230,230,0.9)"; ctx.lineWidth=3;
-ctx.beginPath(); ctx.moveTo(0,-14); ctx.lineTo(0,14); ctx.stroke();
-ctx.beginPath(); ctx.moveTo(-14,0); ctx.lineTo(14,0); ctx.stroke();
+if(imgReady && imgClean){
+  // Vẽ bằng ảnh ngoài nếu tải thành công
+  ctx.drawImage(imgClean, -75, -60, 250, 120);
+} else {
+  // Vẽ máy bay mặc định bằng Canvas nếu chưa tải xong ảnh
+  const len=100, noseR=16;
+  ctx.fillStyle="#e8e8e8"; ctx.beginPath();
+  ctx.moveTo(-len*0.9,0); ctx.quadraticCurveTo(-len*0.5,-8,0,-12); ctx.quadraticCurveTo(len*0.6,-14,len-noseR,-noseR*0.85);
+  ctx.quadraticCurveTo(len,-noseR,len,0); ctx.quadraticCurveTo(len,noseR,len-noseR,noseR*0.85);
+  ctx.quadraticCurveTo(len*0.6,14,0,12); ctx.quadraticCurveTo(-len*0.5,8,-len*0.9,0);
+  ctx.closePath(); ctx.fill(); ctx.strokeStyle="#4a4a4a"; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle="#4aa0dd"; ctx.beginPath(); ctx.ellipse(len*0.55,-noseR*0.3,16,8,0,0,Math.PI*2); ctx.fill();
+}
 ctx.restore();
 
-// Đuôi đứng
-ctx.fillStyle="#d0d0d0";
-ctx.beginPath();
-ctx.moveTo(-len*0.9,0); ctx.lineTo(-len*1.05,-22); ctx.lineTo(-len*0.85,-6);
-ctx.closePath(); ctx.fill();
-ctx.stroke();
-
-ctx.restore();
-
-// Cảnh báo pitch
 if(State.pitch>CFG.PITCH_MAX_OK && State.bailed){
-ctx.fillStyle="rgba(255,80,80,0.85)";
-ctx.font="bold 16px sans-serif"; ctx.textAlign="center";
+ctx.fillStyle="rgba(255,80,80,0.85)"; ctx.font="bold 16px sans-serif"; ctx.textAlign="center";
 ctx.fillText("⚠️ NGUY HIỂM — NGÓC QUÁ CAO!", W/2, 26);
 }
 }
@@ -857,36 +537,24 @@ drawTop(dt){
 const ctx=this.tpCtx, W=this.W2, H=this.H2;
 const PX_M=W/CFG.TOP_VIEW_SPAN;
 
-// Nền cỏ
 const g=ctx.createLinearGradient(0,0,0,H);
 g.addColorStop(0,"#2a3a2a"); g.addColorStop(1,"#1a2a1a");
 ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
 
-// Camera theo máy bay
 const camX=State.posX, camY=State.posY;
 const w2sX=(wx)=>(wx-camX)*PX_M+W/2;
 const w2sY=(wy)=>(wy-camY)*PX_M+H/2;
 
-// Cảnh vật (nhà, cây) — trôi 7h khi bay
-const flow = State._shapeScroll; // mét
-const fx = Math.cos(CFG.RW_ANGLE+Math.PI)*flow; // 7h = ngược 1h
+const flow = State._shapeScroll;
+const fx = Math.cos(CFG.RW_ANGLE+Math.PI)*flow;
 const fy = Math.sin(CFG.RW_ANGLE+Math.PI)*flow;
 for(const s of this._scenery){
-const wx = s.x + fx*0.5;
-const wy = s.y + fy*0.5;
-const px = w2sX(wx), py = w2sY(wy);
+const px = w2sX(s.x + fx*0.5), py = w2sY(s.y + fy*0.5);
 if(px<-30||px>W+30||py<-30||py>H+30) continue;
 if(s.t==="tree"){
-ctx.fillStyle=s.c;
-ctx.beginPath(); ctx.arc(px, py, 6*s.s, 0, Math.PI*2); ctx.fill();
-ctx.fillStyle="#4a3010"; ctx.fillRect(px-1, py+4*s.s, 2, 4*s.s);
+ctx.fillStyle=s.c; ctx.beginPath(); ctx.arc(px, py, 6*s.s, 0, Math.PI*2); ctx.fill();
 } else {
-ctx.fillStyle="#8a7a5a";
-ctx.fillRect(px-8*s.s, py-6*s.s, 16*s.s, 12*s.s);
-ctx.fillStyle="#a05030";
-ctx.beginPath();
-ctx.moveTo(px-9*s.s,py-6*s.s); ctx.lineTo(px,py-12*s.s); ctx.lineTo(px+9*s.s,py-6*s.s);
-ctx.closePath(); ctx.fill();
+ctx.fillStyle="#8a7a5a"; ctx.fillRect(px-8*s.s, py-6*s.s, 16*s.s, 12*s.s);
 }
 }
 
@@ -898,157 +566,54 @@ const dirX=Math.cos(CFG.RW_ANGLE), dirY=Math.sin(CFG.RW_ANGLE);
 const perpX=-dirY, perpY=dirX;
 const halfW=CFG.RW_WIDTH/2*PX_M;
 
-ctx.fillStyle="#5a5a5a";
-ctx.beginPath();
-ctx.moveTo(p0x+perpX*halfW,p0y+perpY*halfW);
-ctx.lineTo(p1x+perpX*halfW,p1y+perpY*halfW);
-ctx.lineTo(p1x-perpX*halfW,p1y-perpY*halfW);
-ctx.lineTo(p0x-perpX*halfW,p0y-perpY*halfW);
+ctx.fillStyle="#5a5a5a"; ctx.beginPath();
+ctx.moveTo(p0x+perpX*halfW,p0y+perpY*halfW); ctx.lineTo(p1x+perpX*halfW,p1y+perpY*halfW);
+ctx.lineTo(p1x-perpX*halfW,p1y-perpY*halfW); ctx.lineTo(p0x-perpX*halfW,p0y-perpY*halfW);
 ctx.closePath(); ctx.fill();
 
-// Viền vàng
-ctx.strokeStyle="#e8d060"; ctx.lineWidth=3;
-ctx.beginPath(); ctx.moveTo(p0x+perpX*halfW,p0y+perpY*halfW); ctx.lineTo(p1x+perpX*halfW,p1y+perpY*halfW); ctx.stroke();
-ctx.beginPath(); ctx.moveTo(p0x-perpX*halfW,p0y-perpY*halfW); ctx.lineTo(p1x-perpX*halfW,p1y-perpY*halfW); ctx.stroke();
+ctx.setLineDash([20,18]); ctx.strokeStyle="#e8e8e8"; ctx.lineWidth=3;
+ctx.beginPath(); ctx.moveTo(p0x,p0y); ctx.lineTo(p1x,p1y); ctx.stroke(); ctx.setLineDash([]);
 
-// Tim băng nét đứt
-ctx.setLineDash([20,18]);
-ctx.strokeStyle="#e8e8e8"; ctx.lineWidth=3;
-ctx.beginPath(); ctx.moveTo(p0x,p0y); ctx.lineTo(p1x,p1y); ctx.stroke();
-ctx.setLineDash([]);
-
-// VẠCH HOLD trước đầu băng (30m)
-const holdX=rw.x0-dirX*30*PX_M;
-const holdY=rw.y0-dirY*30*PX_M;
-ctx.save();
-ctx.translate(holdX,holdY);
-ctx.rotate(CFG.RW_ANGLE);
-ctx.fillStyle="#e8d060";
-for(let i=-2;i<=2;i++){
-ctx.fillRect(-4, i*10*PX_M, 8, 4*PX_M);
-}
-ctx.restore();
-
-// CHỮ START
-ctx.save();
-ctx.translate(p0x,p0y);
-ctx.rotate(CFG.RW_ANGLE+Math.PI/2);
-ctx.fillStyle="#ffd060";
-ctx.font="bold 30px 'Arial Black',sans-serif";
-ctx.textAlign="center"; ctx.textBaseline="middle";
-ctx.strokeStyle="#000"; ctx.lineWidth=5;
-ctx.strokeText("START", 160, 0);
-ctx.fillText("START", 160, 0);
-ctx.restore();
-
-// Tháp điều khiển + nhà ga
-ctx.fillStyle="#7a7a7a";
-ctx.fillRect(w2sX(rw.x1+80)-40, w2sY(rw.y1+80)-40, 80, 80);
-ctx.fillStyle="#4a4a4a";
-ctx.fillRect(w2sX(rw.x1+80)-32, w2sY(rw.y1+80)-32, 64, 64);
-ctx.fillStyle="#c8c8c8";
-ctx.fillRect(w2sX(rw.x1+150)-12, w2sY(rw.y1+150)-30, 24, 60);
-ctx.fillStyle="#e05050";
-ctx.beginPath(); ctx.arc(w2sX(rw.x1+150), w2sY(rw.y1+150)-30, 6, 0, Math.PI*2); ctx.fill();
-
-// Vạch biên màn hình
-ctx.strokeStyle="rgba(255,220,100,0.15)"; ctx.lineWidth=2;
-ctx.strokeRect(4,4,W-8,H-8);
-
-/* ===== BÓNG MÁY BAY (chỉ khi cất cánh) ===== */
+/* ===== BÓNG MÁY BAY ===== */
 if(State.bailed && State._shadowAlpha>0.02){
-const sx=W/2-Math.cos(State.yaw)*-State._shadowOff*PX_M;
-// Bóng trôi 11h (trên-trái)
 const shAng = this._clockToAngle(11);
 const bx = W/2 + Math.cos(shAng)*State._shadowOff*PX_M;
 const by = H/2 + Math.sin(shAng)*State._shadowOff*PX_M;
-const Lp = CFG.PLANE_LEN*PX_M;
-const Wp = CFG.PLANE_WID*PX_M;
-ctx.save();
-ctx.translate(bx,by);
-ctx.rotate(State.yaw);
+ctx.save(); ctx.translate(bx,by); ctx.rotate(State.yaw);
 ctx.fillStyle=`rgba(0,0,0,${State._shadowAlpha*0.55})`;
-ctx.beginPath();
-ctx.moveTo(Lp*0.5,0);
-ctx.quadraticCurveTo(Lp*0.35,-Wp*0.12,0,-Wp*0.18);
-ctx.quadraticCurveTo(-Lp*0.35,-Wp*0.14,-Lp*0.5,-Wp*0.04);
-ctx.quadraticCurveTo(-Lp*0.53,0,-Lp*0.5,Wp*0.04);
-ctx.quadraticCurveTo(-Lp*0.35,Wp*0.14,0,Wp*0.18);
-ctx.quadraticCurveTo(Lp*0.35,Wp*0.12,Lp*0.5,0);
-ctx.closePath(); ctx.fill();
-// Cánh bóng
-ctx.beginPath();
-ctx.moveTo(Lp*0.1,-Wp*0.14); ctx.lineTo(-Lp*0.05,-Wp*0.55); ctx.lineTo(-Lp*0.25,-Wp*0.55); ctx.lineTo(-Lp*0.10,-Wp*0.12);
-ctx.closePath(); ctx.fill();
-ctx.beginPath();
-ctx.moveTo(Lp*0.1,Wp*0.14); ctx.lineTo(-Lp*0.05,Wp*0.55); ctx.lineTo(-Lp*0.25,Wp*0.55); ctx.lineTo(-Lp*0.10,Wp*0.12);
-ctx.closePath(); ctx.fill();
+ctx.beginPath(); ctx.arc(0,0,15,0,Math.PI*2); ctx.fill();
 ctx.restore();
 }
 
-/* ===== MÁY BAY TOP VIEW ===== */
+/* ===== MÁY BAY TOP VIEW (VẼ ẢNH NGOÀI) ===== */
 const px=W/2, py=H/2;
-// Rung lắc nhẹ khi bay
 let vibX=0, vibY=0;
 if(State.bailed){
 const amp=1+State.speed/CFG.SPD_MAX*2.5;
 vibX=Math.sin(performance.now()/40)*amp;
 vibY=Math.cos(performance.now()/53)*amp;
 }
+
 ctx.save();
 ctx.translate(px+vibX, py+vibY);
-ctx.rotate(State.yaw);
+ctx.rotate(State.yaw + Math.PI/2); // Xoay thêm 90 độ để đúng chiều mũi máy bay
 
 const Lp=CFG.PLANE_LEN*PX_M;
 const Wp=CFG.PLANE_WID*PX_M;
 
-// Thân mũi TRÒN TO, đuôi THON
-ctx.fillStyle="#e8e8e8";
-ctx.beginPath();
-ctx.moveTo(Lp*0.5,0);
-ctx.quadraticCurveTo(Lp*0.35,-Wp*0.12,0,-Wp*0.18);
-ctx.quadraticCurveTo(-Lp*0.35,-Wp*0.14,-Lp*0.5,-Wp*0.04);
-ctx.quadraticCurveTo(-Lp*0.53,0,-Lp*0.5,Wp*0.04);
-ctx.quadraticCurveTo(-Lp*0.35,Wp*0.14,0,Wp*0.18);
-ctx.quadraticCurveTo(Lp*0.35,Wp*0.12,Lp*0.5,0);
-ctx.closePath(); ctx.fill();
-ctx.strokeStyle="#4a4a4a"; ctx.lineWidth=2; ctx.stroke();
-
-// Cánh
-ctx.fillStyle="#c8c8c8";
-ctx.beginPath();
-ctx.moveTo(Lp*0.1,-Wp*0.14); ctx.lineTo(-Lp*0.05,-Wp*0.55); ctx.lineTo(-Lp*0.25,-Wp*0.55); ctx.lineTo(-Lp*0.10,-Wp*0.12);
-ctx.closePath(); ctx.fill();
-ctx.strokeStyle="#666"; ctx.lineWidth=2; ctx.stroke();
-ctx.beginPath();
-ctx.moveTo(Lp*0.1,Wp*0.14); ctx.lineTo(-Lp*0.05,Wp*0.55); ctx.lineTo(-Lp*0.25,Wp*0.55); ctx.lineTo(-Lp*0.10,Wp*0.12);
-ctx.closePath(); ctx.fill();
-ctx.stroke();
-
-// Động cơ + cánh quạt
-ctx.fillStyle="#888";
-ctx.beginPath(); ctx.ellipse(Lp*0.05,-Wp*0.42,7,7,0,0,Math.PI*2); ctx.fill();
-ctx.beginPath(); ctx.ellipse(Lp*0.05,Wp*0.42,7,7,0,0,Math.PI*2); ctx.fill();
-const propAng=performance.now()/30;
-ctx.save();
-ctx.translate(Lp*0.05,-Wp*0.42); ctx.rotate(propAng);
-ctx.strokeStyle="rgba(240,240,240,0.85)"; ctx.lineWidth=2.5;
-ctx.beginPath(); ctx.moveTo(-12,0); ctx.lineTo(12,0); ctx.stroke();
-ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(0,12); ctx.stroke();
-ctx.restore();
-ctx.save();
-ctx.translate(Lp*0.05,Wp*0.42); ctx.rotate(propAng+0.4);
-ctx.beginPath(); ctx.moveTo(-12,0); ctx.lineTo(12,0); ctx.stroke();
-ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(0,12); ctx.stroke();
+if(imgReady && imgClean){
+  // Vẽ bằng ảnh ngoài tranhba3.png đã tách nền trắng
+  ctx.drawImage(imgClean, -Wp/2, -Lp/2, Wp, Lp);
+} else {
+  // Vẽ mặc định nếu ảnh chưa load kịp
+  ctx.fillStyle="#e8e8e8"; ctx.beginPath();
+  ctx.arc(0,0,12,0,Math.PI*2); ctx.fill(); ctx.stroke();
+}
 ctx.restore();
 
-// Đuôi đứng
-ctx.fillStyle="#c0c0c0";
-ctx.beginPath();
-ctx.moveTo(-Lp*0.5,0); ctx.lineTo(-Lp*0.58,-Wp*0.10); ctx.lineTo(-Lp*0.5,-Wp*0.02);
-ctx.closePath(); ctx.fill();
-
-// Vòng 12 hướng quanh máy bay
+// Dùng lại Transform gốc để vẽ Vòng 12 hướng
+ctx.save();
+ctx.translate(px+vibX, py+vibY);
 const compR=Math.min(W,H)*0.30;
 ctx.strokeStyle="rgba(255,220,100,0.2)"; ctx.lineWidth=1.5;
 ctx.beginPath(); ctx.arc(0,0,compR,0,Math.PI*2); ctx.stroke();
@@ -1057,36 +622,23 @@ const a=this._clockToAngle(i);
 const x1=Math.cos(a)*compR, y1=Math.sin(a)*compR;
 const x2=Math.cos(a)*(compR-8), y2=Math.sin(a)*(compR-8);
 const isHi=(i===State.yawTargetClock);
-ctx.strokeStyle=isHi?"rgba(255,220,100,0.95)":"rgba(255,220,100,0.3)";
-ctx.lineWidth=isHi?3:1.5;
+ctx.strokeStyle=isHi?"rgba(255,220,100,0.95)":"rgba(255,220,100,0.3)"; ctx.lineWidth=isHi?3:1.5;
 ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-// Nhãn số giờ
 if(i%3===0){
-ctx.fillStyle="rgba(255,220,100,0.5)";
-ctx.font="bold 10px 'Courier New',monospace";
+ctx.fillStyle="rgba(255,220,100,0.5)"; ctx.font="bold 10px 'Courier New',monospace";
 ctx.textAlign="center"; ctx.textBaseline="middle";
-const lx=Math.cos(a)*(compR+14), ly=Math.sin(a)*(compR+14);
-ctx.fillText(i+"h", lx, ly);
+ctx.fillText(i+"h", Math.cos(a)*(compR+14), Math.sin(a)*(compR+14));
 }
 }
-// Hiển thị cooldown
 if(State.yawLock>0){
-ctx.strokeStyle="rgba(255,100,100,0.7)"; ctx.lineWidth=4;
-ctx.beginPath();
-ctx.arc(0,0,compR+6, -Math.PI/2, -Math.PI/2 + Math.PI*2*(1-State.yawLock/CFG.YAW_COOLDOWN));
-ctx.stroke();
+ctx.strokeStyle="rgba(255,100,100,0.7)"; ctx.lineWidth=4; ctx.beginPath();
+ctx.arc(0,0,compR+6, -Math.PI/2, -Math.PI/2 + Math.PI*2*(1-State.yawLock/CFG.YAW_COOLDOWN)); ctx.stroke();
 }
 ctx.restore();
 
-// HUD text trên top view
-ctx.fillStyle="rgba(255,220,100,0.85)";
-ctx.font="bold 12px 'Courier New',monospace";
-ctx.textAlign="left";
+ctx.fillStyle="rgba(255,220,100,0.85)"; ctx.font="bold 12px 'Courier New',monospace"; ctx.textAlign="left";
 ctx.fillText("MŨI: "+State.yawClock+"h | MỤC TIÊU: "+State.yawTargetClock+"h", 12, H-12);
-if(State.yawLock>0){
-ctx.fillStyle="rgba(255,120,120,0.9)";
-ctx.fillText("⏱ Cooldown quay: "+State.yawLock.toFixed(1)+"s", 12, H-30);
-}
+if(State.yawLock>0){ ctx.fillStyle="rgba(255,120,120,0.9)"; ctx.fillText("⏱ Cooldown quay: "+State.yawLock.toFixed(1)+"s", 12, H-30); }
 }
 
 /* ================ UI ================ */
@@ -1096,152 +648,73 @@ document.getElementById("fuelTxt").innerText=Math.round(State.fuel);
 document.getElementById("attTxt").innerText=State.attempts+"/"+CFG.MAX_ATTEMPTS;
 document.getElementById("hdgTxt").innerText=State.yawClock+" giờ";
 
-const spdBox=document.getElementById("spdBox");
-spdBox.classList.toggle("good", State.speed>=CFG.SPD_LIFT_START && !State.bailed);
-const fuelBox=document.getElementById("fuelBox");
-fuelBox.classList.toggle("warnF", State.fuel<30);
+document.getElementById("spdBox").classList.toggle("good", State.speed>=CFG.SPD_LIFT_START && !State.bailed);
+document.getElementById("fuelBox").classList.toggle("warnF", State.fuel<30);
 
-// Nút hint W / ▲
 const wasd=document.getElementById("wasdPanel");
 const wBtn=wasd.querySelector('[data-key="W"]');
 const upBtn=document.getElementById("pitchUp");
-if(State._wDisabled>0){ wBtn.classList.add("disabled"); }
-else { wBtn.classList.remove("disabled"); }
-
+if(State._wDisabled>0){ wBtn.classList.add("disabled"); } else { wBtn.classList.remove("disabled"); }
 if(this._hintW) wBtn.classList.add("pulse"); else wBtn.classList.remove("pulse");
 if(this._hintUP) upBtn.classList.add("pulse"); else upBtn.classList.remove("pulse");
 }
 
 _drawAttIndicator(){
-const ctx=this.attCtx, W=110, H=110;
-ctx.clearRect(0,0,W,H);
-const cx=W/2, cy=H/2, R=W/2-3;
-ctx.save();
+const ctx=this.attCtx, W=110, H=110, cx=W/2, cy=H/2, R=W/2-3;
+ctx.clearRect(0,0,W,H); ctx.save();
 ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.clip();
-// Nền
 ctx.fillStyle="#0a0a0a"; ctx.fillRect(0,0,W,H);
 
-// ✅ FIX: pitch DƯƠNG (ngóc lên) → đường chân trời TỤT XUỐNG
-// pitch ÂM (cúi xuống) → đường chân trời VỌT LÊN
-const off = State.pitch * R * 0.055; // pixel/độ — hệ số hợp lý
-
-// Trời (xanh) — nửa trên
+const off = State.pitch * R * 0.055;
 ctx.fillStyle="#4aa0dd"; ctx.fillRect(0, cy+off-R*2, W, R*2);
-// Đất (nâu) — nửa dưới
 ctx.fillStyle="#8a6a30"; ctx.fillRect(0, cy+off, W, R*2);
-// Đường chân trời (trắng)
-ctx.strokeStyle="#fff"; ctx.lineWidth=2;
-ctx.beginPath(); ctx.moveTo(0,cy+off); ctx.lineTo(W,cy+off); ctx.stroke();
-// Vạch chia độ cao (mỗi 10°)
-ctx.strokeStyle="rgba(255,255,255,0.55)"; ctx.lineWidth=1;
-for(let i=-3;i<=3;i++){
-if(i===0) continue;
-const y=cy+off+i*9;
-const wHalf = (i%2===0) ? 14 : 8;
-ctx.beginPath(); ctx.moveTo(cx-wHalf,y); ctx.lineTo(cx+wHalf,y); ctx.stroke();
-}
+ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,cy+off); ctx.lineTo(W,cy+off); ctx.stroke();
 ctx.restore();
 
-// Máy bay ở giữa (hình chữ T ngược)
-ctx.strokeStyle="#ffcc55"; ctx.lineWidth=3;
-ctx.beginPath();
-ctx.moveTo(cx-22, cy); ctx.lineTo(cx-8, cy);
-ctx.moveTo(cx+8, cy); ctx.lineTo(cx+22, cy);
-ctx.moveTo(cx, cy-3); ctx.lineTo(cx, cy+3);
-ctx.stroke();
-// Viền đồng hồ
-ctx.strokeStyle="#4aa0dd"; ctx.lineWidth=2;
-ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
-// Chấm đỏ báo hiệu khi pitch vượt ngưỡng nguy hiểm
-if(State.pitch>=CFG.PITCH_MAX_OK){
-ctx.fillStyle="rgba(255,80,80,0.9)";
-ctx.beginPath(); ctx.arc(cx+R-14, cy-R+14, 5, 0, Math.PI*2); ctx.fill();
+ctx.strokeStyle="#ffcc55"; ctx.lineWidth=3; ctx.beginPath();
+ctx.moveTo(cx-22, cy); ctx.lineTo(cx-8, cy); ctx.moveTo(cx+8, cy); ctx.lineTo(cx+22, cy); ctx.moveTo(cx, cy-3); ctx.lineTo(cx, cy+3); ctx.stroke();
+ctx.strokeStyle="#4aa0dd"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
 }
-}
+
 _showMsg(text, type){
-const el=document.getElementById("msg");
-el.innerText=text;
+const el=document.getElementById("msg"); el.innerText=text;
 el.className="show"+(type==="ok"?" ok":"")+(type==="warn"?" warn":"");
-clearTimeout(this._mt);
-this._mt=setTimeout(()=>el.className="", 2400);
+clearTimeout(this._mt); this._mt=setTimeout(()=>el.className="", 2400);
 }
 
 _fail(reason){
-State.PHASE="failed";
-this.sfx.fail();
-State.fuel-=CFG.FUEL_PER_ATT;
+State.PHASE="failed"; this.sfx.fail(); State.fuel-=CFG.FUEL_PER_ATT;
 const noFuel=State.attempts>=CFG.MAX_ATTEMPTS || State.fuel<=0;
 this._updateHUD();
-const ov=document.getElementById("overlay");
-ov.style.opacity="1";
+const ov=document.getElementById("overlay"); ov.style.opacity="1";
 if(noFuel){
-ov.innerHTML=`
-<h1 style="color:#ff5555">💥 GAME OVER</h1>
-<h2>— HẾT NHIÊN LIỆU —</h2>
-<p>${reason}</p>
-<p class="warn">Bạn đã thử cất cánh ${CFG.MAX_ATTEMPTS} lần không thành công.</p>
-<p style="margin-top:8px;">🔄 Game sẽ reset để bạn luyện lại từ đầu.</p>
-<button id="retryBtn">🔄 CHƠI LẠI</button>`;
+ov.innerHTML=`<h1 style="color:#ff5555">💥 GAME OVER</h1><h2>— HẾT NHIÊN LIỆU —</h2><p>${reason}</p><p class="warn">Bạn đã thử cất cánh ${CFG.MAX_ATTEMPTS} lần không thành công.</p><button id="retryBtn">🔄 CHƠI LẠI</button>`;
 ov.style.display="flex";
-setTimeout(()=>{
-const b=document.getElementById("retryBtn");
-if(b) b.onclick=()=>{ State.attempts=1; State.fuel=CFG.FUEL_START; this._hideOverlay(); this.newAttempt(); this.start(); };
-},30);
+setTimeout(()=>{ const b=document.getElementById("retryBtn"); if(b) b.onclick=()=>{ State.attempts=1; State.fuel=CFG.FUEL_START; this._hideOverlay(); this.newAttempt(); this.start(); }; },30);
 return;
 }
-ov.innerHTML=`
-<h1 style="color:#ff8844">⚠️ LỖI PILOT</h1>
-<h2>— LẦN THỬ ${State.attempts}/${CFG.MAX_ATTEMPTS} —</h2>
-<p class="warn">${reason}</p>
-<p style="margin-top:8px;">⛽ Nhiên liệu còn: <b>${Math.round(Math.max(0,State.fuel))}%</b></p>
-<button id="retryBtn">🔄 THỬ LẠI</button>`;
+ov.innerHTML=`<h1 style="color:#ff8844">⚠️ LỖI PILOT</h1><h2>— LẦN THỬ ${State.attempts}/${CFG.MAX_ATTEMPTS} —</h2><p class="warn">${reason}</p><button id="retryBtn">🔄 THỬ LẠI</button>`;
 ov.style.display="flex";
-setTimeout(()=>{
-const b=document.getElementById("retryBtn");
-if(b) b.onclick=()=>{ State.attempts++; this._hideOverlay(); this.newAttempt(); this.start(); };
-},30);
+setTimeout(()=>{ const b=document.getElementById("retryBtn"); if(b) b.onclick=()=>{ State.attempts++; this._hideOverlay(); this.newAttempt(); this.start(); }; },30);
 }
 
 _win(){
-State.PHASE="won";
-this.sfx.success();
-// Loạt banner chúc mừng
-const cheer=[
-"🎉 Chúc mừng! Máy bay đã an toàn cất cánh.",
-"🎙️ Tiếp viên Tân sẽ phục vụ đồ ăn uống cho quý khách.",
-"🎙️ Quý khách vui lòng thắt dây an toàn trong suốt chuyến bay.",
-"🎙️ Chúc quý khách một chuyến bay vui vẻ!"
-];
-cheer.forEach((t,i)=>this._pushBanner(t));
-// Mờ dần màn hình
+State.PHASE="won"; this.sfx.success();
+["🎉 Chúc mừng! Máy bay đã an toàn cất cánh.","🎙️ Chúc quý khách một chuyến bay vui vẻ!"].forEach((t,i)=>this._pushBanner(t));
 setTimeout(()=>{
 const ov=document.getElementById("overlay");
-ov.innerHTML=`
-<h1 style="color:#4aff88">✈️ CẤT CÁNH THÀNH CÔNG!</h1>
-<h2>— QUA MÀN 1 —</h2>
-<p>Tốc độ cuối: <b>${Math.round(State.speed)} km/h</b></p>
-<p>⛽ Nhiên liệu còn: <b>${Math.round(State.fuel)}%</b></p>
-<p>🎯 Số lần thử: <b>${State.attempts}</b></p>
-<p style="margin-top:12px;color:#ffcc55;">🎓 Bạn đã hoàn thành khóa huấn luyện cất cánh!</p>
-<p style="color:#88aacc;font-size:12px;">(Màn 2 đang được phát triển...)</p>
-<button id="againBtn">🔄 CHƠI LẠI</button>`;
-ov.style.display="flex"; ov.style.opacity="0.6";
-setTimeout(()=>{ ov.style.opacity="1"; }, 100);
-const b=document.getElementById("againBtn");
-if(b) b.onclick=()=>{ State.attempts=1; State.fuel=CFG.FUEL_START; this._hideOverlay(); this.newAttempt(); this.start(); };
+ov.innerHTML=`<h1 style="color:#4aff88">✈️ CẤT CÁNH THÀNH CÔNG!</h1><h2>— QUA MÀN 1 —</h2><button id="againBtn">🔄 CHƠI LẠI</button>`;
+ov.style.display="flex"; ov.style.opacity="1";
+const b=document.getElementById("againBtn"); if(b) b.onclick=()=>{ State.attempts=1; State.fuel=CFG.FUEL_START; this._hideOverlay(); this.newAttempt(); this.start(); };
 }, 3200);
 }
 
-_hideOverlay(){
-const ov=document.getElementById("overlay");
-ov.style.display="none"; ov.innerHTML=""; ov.style.opacity="1";
-}
+_hideOverlay(){ const ov=document.getElementById("overlay"); ov.style.display="none"; ov.innerHTML=""; ov.style.opacity="1"; }
 }
 
 /* ================== BOOT ================== */
 const game=new Game();
-window._g=game;
-game._keys={};
+window._g=game; game._keys={};
 
 document.getElementById("startBtn").onclick=()=>{
 game._hideOverlay();
@@ -1249,82 +722,46 @@ document.getElementById("wasdPanel").classList.add("show");
 document.getElementById("rightPanel").classList.add("show");
 document.getElementById("menuBtn").classList.add("show");
 document.getElementById("soundBtn").classList.add("show");
-game.newAttempt();
-game.start();
+game.newAttempt(); game.start();
 };
 
-/* ===== WASD Buttons ===== */
 document.querySelectorAll("#wasdPanel .wasdBtn").forEach(btn=>{
 const k=btn.dataset.key;
-const down=(e)=>{ e.preventDefault(); game._keys[k]=true; if(k==="W") game.keyW(); if(k==="S") game.keyS(); if(k==="A") game.keyA(); if(k==="D") game.keyD();
-btn.classList.add("tapped"); setTimeout(()=>btn.classList.remove("tapped"),120); };
+const down=(e)=>{ e.preventDefault(); game._keys[k]=true; if(k==="W") game.keyW(); if(k==="S") game.keyS(); if(k==="A") game.keyA(); if(k==="D") game.keyD(); btn.classList.add("tapped"); setTimeout(()=>btn.classList.remove("tapped"),120); };
 const up=(e)=>{ e.preventDefault(); game._keys[k]=false; };
-btn.addEventListener("touchstart", down, {passive:false});
-btn.addEventListener("touchend", up);
-btn.addEventListener("touchcancel", up);
-btn.addEventListener("mousedown", down);
-btn.addEventListener("mouseup", up);
-btn.addEventListener("mouseleave", up);
+btn.addEventListener("touchstart", down, {passive:false}); btn.addEventListener("touchend", up); btn.addEventListener("mousedown", down); btn.addEventListener("mouseup", up);
 });
 
-/* ===== Pitch buttons ===== */
-const pUp=document.getElementById("pitchUp");
-const pDn=document.getElementById("pitchDown");
+const pUp=document.getElementById("pitchUp"), pDn=document.getElementById("pitchDown");
 const pUpS=(e)=>{ e.preventDefault(); game.setPitch(1); pUp.classList.add("tapped"); };
 const pUpE=()=>{ game.clearPitch(); pUp.classList.remove("tapped"); };
 const pDnS=(e)=>{ e.preventDefault(); game.setPitch(-1); pDn.classList.add("tapped"); };
 const pDnE=()=>{ game.clearPitch(); pDn.classList.remove("tapped"); };
-pUp.addEventListener("touchstart",pUpS,{passive:false});
-pUp.addEventListener("touchend",pUpE);
-pUp.addEventListener("mousedown",pUpS);
-pUp.addEventListener("mouseup",pUpE);
-pUp.addEventListener("mouseleave",pUpE);
-pDn.addEventListener("touchstart",pDnS,{passive:false});
-pDn.addEventListener("touchend",pDnE);
-pDn.addEventListener("mousedown",pDnS);
-pDn.addEventListener("mouseup",pDnE);
-pDn.addEventListener("mouseleave",pDnE);
+pUp.addEventListener("touchstart",pUpS,{passive:false}); pUp.addEventListener("touchend",pUpE); pUp.addEventListener("mousedown",pUpS); pUp.addEventListener("mouseup",pUpE);
+pDn.addEventListener("touchstart",pDnS,{passive:false}); pDn.addEventListener("touchend",pDnE); pDn.addEventListener("mousedown",pDnS); pDn.addEventListener("mouseup",pDnE);
 
-/* ===== Landing button (chỉ để cảnh) ===== */
-document.getElementById("landingBtn").addEventListener("click", ()=>{
-game._showMsg("🛬 Màn hạ cánh chưa mở khoá — hoàn thành màn 1 để tiếp tục!", "warn");
-});
+document.getElementById("landingBtn").addEventListener("click", ()=>game._showMsg("🛬 Màn hạ cánh chưa mở khoá!", "warn"));
 
-/* ===== Keyboard ===== */
 window.addEventListener("keydown", (e)=>{
 const k=e.key.toUpperCase();
 if(k==="W" && !game._keys.W){ game._keys.W=true; game.keyW(); }
 if(k==="S" && !game._keys.S){ game._keys.S=true; game.keyS(); }
 if(k==="A" && !game._keys.A){ game._keys.A=true; game.keyA(); }
 if(k==="D" && !game._keys.D){ game._keys.D=true; game.keyD(); }
-if(k==="ARROWUP"){ game.setPitch(1); }
-if(k==="ARROWDOWN"){ game.setPitch(-1); }
+if(k==="ARROWUP"){ game.setPitch(1); } if(k==="ARROWDOWN"){ game.setPitch(-1); }
 });
 window.addEventListener("keyup", (e)=>{
 const k=e.key.toUpperCase();
-if(k==="W") game._keys.W=false;
-if(k==="S") game._keys.S=false;
-if(k==="A") game._keys.A=false;
-if(k==="D") game._keys.D=false;
+if(k==="W") game._keys.W=false; if(k==="S") game._keys.S=false; if(k==="A") game._keys.A=false; if(k==="D") game._keys.D=false;
 if(k==="ARROWUP"||k==="ARROWDOWN") game.clearPitch();
 });
 
-/* ===== Sound toggle ===== */
 const sndBtn=document.getElementById("soundBtn");
-sndBtn.onclick=()=>{
-const on=sndBtn.innerText==="🔊";
-sndBtn.innerText=on?"🔇":"🔊";
-game.sfx.setEnabled(!on);
-};
-
-/* ===== Menu khám phá ===== */
+sndBtn.onclick=()=>{ const on=sndBtn.innerText==="🔊"; sndBtn.innerText=on?"🔇":"🔊"; game.sfx.setEnabled(!on); };
 document.getElementById("menuBtn").onclick=()=>document.getElementById("bottomLinks").classList.add("show");
 document.getElementById("closeMenu").onclick=()=>document.getElementById("bottomLinks").classList.remove("show");
 
-/* Unlock audio */
-["touchstart","mousedown","click"].forEach(evt=>{
-window.addEventListener(evt, ()=>{ game.sfx.init(); game.sfx.resume(); }, {once:true});
-});
+["touchstart","mousedown","click"].forEach(evt=>{ window.addEventListener(evt, ()=>{ game.sfx.init(); game.sfx.resume(); }, {once:true}); });
 </script>
 </body>
 </html>
