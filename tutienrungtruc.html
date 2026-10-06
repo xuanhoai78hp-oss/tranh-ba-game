@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tu Tiên Trừ Ma V2.0 - Ra-đa & Audio API</title>
+<style>
+* { box-sizing: border-box; touch-action: none; user-select: none; margin: 0; padding: 0; }
+body { background: #050505; color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
+
+#gameContainer { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+canvas#gameCanvas { background: #0a0a0a; box-shadow: 0 0 20px rgba(0,255,150,0.2); }
+
+/* UI Panel (Trái) */
+.ui-panel { position: absolute; top: 10px; left: 10px; z-index: 10; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 8px; border: 1px solid #00f2ff; font-size: 13px; box-shadow: 0 0 10px rgba(0,242,255,0.3); }
+.hp-bar { width: 130px; height: 10px; background: #333; border-radius: 5px; overflow: hidden; margin-top: 4px; border: 1px solid #555; }
+.hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ff0055, #ff5500); transition: width 0.2s; }
+
+/* Ra-đa & Nút Khám Phá (Phải) */
+.radar-box { position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+#radarCanvas { background: rgba(0, 20, 10, 0.85); border: 2px solid #00ff88; border-radius: 8px; box-shadow: 0 0 12px rgba(0,255,136,0.4); }
+
+.btn-explore {
+width: 100px; padding: 6px 0; text-align: center;
+background: linear-gradient(180deg, #7000ff, #00f2ff);
+border: 1px solid #fff; border-radius: 20px;
+color: #fff; font-weight: bold; font-size: 11px;
+text-decoration: none; text-transform: uppercase;
+box-shadow: 0 0 10px #00f2ff; transition: 0.2s;
+display: block;
+}
+.btn-explore:active { transform: scale(0.95); filter: brightness(1.2); }
+
+/* Controls */
+#joystickZone { position: absolute; bottom: 20px; left: 20px; width: 110px; height: 110px; background: rgba(255,255,255,0.08); border-radius: 50%; border: 2px dashed #00f2ff; z-index: 10; }
+#joystickKnob { position: absolute; top: 32px; left: 32px; width: 46px; height: 46px; background: rgba(0,242,255,0.6); border-radius: 50%; box-shadow: 0 0 10px #00f2ff; }
+
+#btnThrow { position: absolute; bottom: 25px; right: 25px; width: 75px; height: 75px; background: radial-gradient(circle, #ff9900, #ff3300); border-radius: 50%; border: 2px solid #fff; color: #fff; font-weight: bold; font-size: 15px; z-index: 10; box-shadow: 0 0 15px #ff5500; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+#btnThrow.disabled { filter: grayscale(1); opacity: 0.4; box-shadow: none; }
+
+/* Dialogs */
+.modal { display: none; position: absolute; z-index: 100; background: rgba(0,0,0,0.9); width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+.modal h1 { font-size: 28px; margin-bottom: 10px; }
+.modal button { padding: 10px 25px; font-size: 16px; background: #00f2ff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: #000; }
+</style>
+</head>
+<body>
+
+<div id="gameContainer">
+<canvas id="gameCanvas"></canvas>
+
+<!-- UI Thông Số (Trái) -->
+<div class="ui-panel">
+<div>Cảnh Giới: <b id="txtLevel" style="color: #00ff88;">Luyện Khí Tầng 3</b></div>
+<div>Máu: <span id="txtHP">100/100</span></div>
+<div class="hp-bar"><div id="hpFill" class="hp-fill"></div></div>
+<div style="margin-top:4px">Linh Thạch: <b id="txtStones" style="color: #00f2ff;">0/5</b></div>
+</div>
+
+<!-- Ra-đa & Nút Khám Phá (Phải) -->
+<div class="radar-box">
+<canvas id="radarCanvas" width="100" height="187"></canvas>
+<a href="tuongzalo.html" class="btn-explore">KHÁM PHÁ</a>
+</div>
+
+<!-- Nút Di Động -->
+<div id="joystickZone"><div id="joystickKnob"></div></div>
+<div id="btnThrow" class="disabled">NÉM<small id="txtCd" style="font-size:10px; margin-top:2px"></small></div>
+
+<!-- Màn Hình Thắng / Thua -->
+<div id="modalWin" class="modal">
+<h1 style="color: #00ff88;">CHÚC MỪNG ĐẠI HIỆP!</h1>
+<p style="font-size: 16px; margin-bottom: 20px;">Vượt qua Luyện Khí Tầng 9! Đột phá cấp <b style="color: #00f2ff;">TRÚC CƠ</b> thành công!</p>
+<button onclick="location.reload()">Chơi Lại</button>
+</div>
+
+<div id="modalLose" class="modal">
+<h1 style="color: #ff0055;">LỊCH LUYỆN THẤT BẠI!</h1>
+<p style="font-size: 16px; margin-bottom: 20px;">Đã bị Côn Trùng Đột Biến đánh gục...</p>
+<button onclick="location.reload()">Tái Sinh</button>
+</div>
+</div>
+
+<script>
+// ==========================================
+// 🔊 HỆ THỐNG ÂM THANH WEB AUDIO API SYNTHESIZER
+// ==========================================
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function initAudio() {
+if (!audioCtx) audioCtx = new AudioContext();
+if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playSound(type) {
+if (!audioCtx) return;
+
+const now = audioCtx.currentTime;
+const osc = audioCtx.createOscillator();
+const gain = audioCtx.createGain();
+osc.connect(gain);
+gain.connect(audioCtx.destination);
+
+if (type === 'throw') {
+// Tiếng Xé Gió (Whoosh)
+osc.type = 'sine';
+osc.frequency.setValueAtTime(400, now);
+osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+gain.gain.setValueAtTime(0.3, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+osc.start(now); osc.stop(now + 0.15);
+}
+else if (type === 'hit') {
+// Tiếng Đập Trúng (Hit/Impact)
+osc.type = 'triangle';
+osc.frequency.setValueAtTime(150, now);
+osc.frequency.exponentialRampToValueAtTime(30, now + 0.1);
+gain.gain.setValueAtTime(0.5, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+osc.start(now); osc.stop(now + 0.1);
+}
+else if (type === 'pickup') {
+// Tiếng Nhặt Linh Thạch (Leng keng - Chime)
+osc.type = 'sine';
+osc.frequency.setValueAtTime(800, now);
+osc.frequency.setValueAtTime(1200, now + 0.08);
+gain.gain.setValueAtTime(0.2, now);
+gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+osc.start(now); osc.stop(now + 0.25);
+}
+else if (type === 'levelup') {
+// Tiếng Thăng Cảnh Giới (Power Up)
+osc.type = 'square';
+osc.frequency.setValueAtTime(300, now);
+osc.frequency.exponentialRampToValueAtTime(800, now + 0.4);
+gain.gain.setValueAtTime(0.3, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+osc.start(now); osc.stop(now + 0.4);
+}
+else if (type === 'teleport') {
+// Tiếng Xoáy Truyền Tống Trận
+osc.type = 'sawtooth';
+osc.frequency.setValueAtTime(100, now);
+osc.frequency.linearRampToValueAtTime(500, now + 2);
+gain.gain.setValueAtTime(0.1, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 2);
+osc.start(now); osc.stop(now + 2);
+}
+}
+
+// ==========================================
+// 🗺️ TỌA ĐỘ BẢN ĐỒ & CANVAS
+// ==========================================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const radarCanvas = document.getElementById('radarCanvas');
+const radarCtx = radarCanvas.getContext('2d');
+
+const M2P = 20; // 1m = 20px
+const MAP_W = 80 * M2P; // 80m
+const MAP_H = 150 * M2P; // 150m
+const VIEW_W = 20 * M2P; // 20m
+const VIEW_H = 40 * M2P; // 40m
+
+canvas.width = VIEW_W;
+canvas.height = VIEW_H;
+
+// Load Spritesheet
+const spriteImg = new Image();
+spriteImg.src = 'anh.png';
+spriteImg.onerror = () => {
+// Canvas giả lập nếu thiếu file anh.png
+const dummy = document.createElement('canvas');
+dummy.width = 320; dummy.height = 200;
+const dCtx = dummy.getContext('2d');
+dCtx.fillStyle = '#00f2ff'; dCtx.fillRect(0,0,320,200);
+spriteImg.src = dummy.toDataURL();
+};
+
+let gameState = 'INTRO';
+let introTimer = 0;
+
+const player = {
+x: 40 * M2P, y: 75 * M2P,
+speed: 4 * M2P, hp: 100,
+level: 3, spiritStones: 0,
+dir: 'SE', action: 'walk',
+frame: 0, frameTimer: 0,
+scale: 2.0, throwCharges: 2, cooldownTimer: 0
+};
+
+let insects = [];
+let items = [];
+let boomerangs = [];
+
+function spawnInsect(type) {
+const angle = Math.random() * Math.PI * 2;
+const dist = 20 * M2P;
+return {
+id: Math.random(), type: type,
+x: player.x + Math.cos(angle) * dist,
+y: player.y + Math.sin(angle) * dist,
+hp: 100, speed: (10 / 3.6) * M2P,
+state: 'wander', dir: 'SE',
+frame: 0, frameTimer: 0, scale: 2.5, attackTimer: 0,
+wanderAngle: Math.random() * Math.PI * 2
+};
+}
+
+function initGame() {
+insects = [spawnInsect(1), spawnInsect(2)];
+}
+
+// Controls Logic
+const keys = {};
+window.addEventListener('keydown', e => { initAudio(); keys[e.key.toLowerCase()] = true; });
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+let joyVector = { x: 0, y: 0 };
+const joyZone = document.getElementById('joystickZone');
+const joyKnob = document.getElementById('joystickKnob');
+
+joyZone.addEventListener('touchmove', e => {
+initAudio(); e.preventDefault();
+const touch = e.touches[0];
+const rect = joyZone.getBoundingClientRect();
+let dx = touch.clientX - (rect.left + rect.width/2);
+let dy = touch.clientY - (rect.top + rect.height/2);
+const dist = Math.hypot(dx, dy);
+if (dist > 35) { dx = (dx/dist)*35; dy = (dy/dist)*35; }
+joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+joyVector = { x: dx / 35, y: dy / 35 };
+});
+joyZone.addEventListener('touchend', () => {
+joyKnob.style.transform = `translate(0px, 0px)`;
+joyVector = { x: 0, y: 0 };
+});
+
+function drawSprite(row, col, x, y, scale, flipX, camera) {
+const spriteSize = 40;
+const screenX = x - camera.x;
+const screenY = y - camera.y;
+ctx.save();
+ctx.translate(screenX, screenY);
+if (flipX) ctx.scale(-1, 1);
+ctx.drawImage(
+spriteImg,
+col * spriteSize, row * spriteSize, spriteSize, spriteSize,
+- (spriteSize * scale) / 2, - (spriteSize * scale) / 2,
+spriteSize * scale, spriteSize * scale
+);
+ctx.restore();
+}
+
+function drawMap(camera) {
+ctx.fillStyle = '#7a8035'; // Cỏ úa
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+ctx.fillStyle = '#1b3b14'; // Rừng trúc hình thoi
+const rhW = 10 * M2P, rhH = 15 * M2P, gap = 5 * M2P;
+for (let x = 0; x < MAP_W; x += rhW + gap) {
+for (let y = 0; y < MAP_H; y += rhH + gap) {
+const drawX = x - camera.x, drawY = y - camera.y;
+ctx.beginPath();
+ctx.moveTo(drawX + rhW/2, drawY);
+ctx.lineTo(drawX + rhW, drawY + rhH/2);
+ctx.lineTo(drawX + rhW/2, drawY + rhH);
+ctx.lineTo(drawX, drawY + rhH/2);
+ctx.closePath(); ctx.fill();
+}
+}
+}
+
+// ==========================================
+// 🛰️ HÀM VẼ RA-ĐA (MINI-MAP) QUÉT TRẬN ĐỒ
+// ==========================================
+function drawRadar() {
+const rW = radarCanvas.width;
+const rH = radarCanvas.height;
+const scaleX = rW / MAP_W;
+const scaleY = rH / MAP_H;
+
+radarCtx.clearRect(0, 0, rW, rH);
+
+// Lưới quét Ra-đa
+radarCtx.strokeStyle = 'rgba(0, 255, 136, 0.15)';
+radarCtx.lineWidth = 1;
+for (let i = 0; i < rW; i += 20) { radarCtx.beginPath(); radarCtx.moveTo(i, 0); radarCtx.lineTo(i, rH); radarCtx.stroke(); }
+for (let j = 0; j < rH; j += 20) { radarCtx.beginPath(); radarCtx.moveTo(0, j); radarCtx.lineTo(rW, j); radarCtx.stroke(); }
+
+// Vẽ Vật phẩm rớt
+items.forEach(it => {
+radarCtx.fillStyle = it.type === 'spirit' ? '#00f2ff' : '#ff00ff';
+radarCtx.fillRect(it.x * scaleX - 1, it.y * scaleY - 1, 3, 3);
+});
+
+// Vẽ Côn Trùng (Đốm Đỏ)
+insects.forEach(ins => {
+radarCtx.fillStyle = ins.state === 'attack' ? '#ff0055' : '#ffaa00';
+radarCtx.beginPath();
+radarCtx.arc(ins.x * scaleX, ins.y * scaleY, 2.5, 0, Math.PI * 2);
+radarCtx.fill();
+});
+
+// Vẽ Nhân Vật (Đốm Xanh Lá Phát Sáng)
+const px = player.x * scaleX;
+const py = player.y * scaleY;
+radarCtx.fillStyle = '#00ff88';
+radarCtx.beginPath();
+radarCtx.arc(px, py, 3, 0, Math.PI * 2);
+radarCtx.fill();
+
+// Vòng sóng ra-đa nhấp nháy xung quanh nhân vật
+radarCtx.strokeStyle = 'rgba(0, 255, 136, 0.5)';
+radarCtx.beginPath();
+radarCtx.arc(px, py, (Date.now() / 30) % 12, 0, Math.PI * 2);
+radarCtx.stroke();
+}
+
+// Game Loop Main
+let lastTime = performance.now();
+
+function gameLoop(now) {
+const dt = (now - lastTime) / 1000;
+lastTime = now;
+
+const camera = {
+x: Math.max(0, Math.min(MAP_W - VIEW_W, player.x - VIEW_W / 2)),
+y: Math.max(0, Math.min(MAP_H - VIEW_H, player.y - VIEW_H / 2))
+};
+
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+drawMap(camera);
+
+if (gameState === 'INTRO') {
+introTimer += 0.05;
+if (introTimer === 0.05) playSound('teleport');
+
+// Xoáy màu Truyền Tống Trận
+const screenX = player.x - camera.x, screenY = player.y - camera.y;
+ctx.save();
+ctx.translate(screenX, screenY);
+['#00f2ff', '#7000ff', '#ff0055'].forEach((col, i) => {
+ctx.save();
+ctx.rotate((introTimer * (i % 2 === 0 ? 0.08 : -0.08)));
+ctx.beginPath(); ctx.arc(0, 0, (35 - i * 8), 0, Math.PI * 1.5);
+ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.stroke();
+ctx.restore();
+});
+ctx.restore();
+
+ctx.globalAlpha = Math.min(1, introTimer / 3);
+drawSprite(4, 0, player.x, player.y, player.scale, false, camera);
+ctx.globalAlpha = 1.0;
+
+if (introTimer > 3.5) { gameState = 'PLAYING'; initGame(); }
+requestAnimationFrame(gameLoop);
+return;
+}
+
+if (gameState === 'PLAYING') {
+// Player Input
+let moveX = joyVector.x, moveY = joyVector.y;
+if (keys['w'] || keys['arrowup']) moveY = -1;
+if (keys['s'] || keys['arrowdown']) moveY = 1;
+if (keys['a'] || keys['arrowleft']) moveX = -1;
+if (keys['d'] || keys['arrowright']) moveX = 1;
+
+if (moveX !== 0 || moveY !== 0) {
+const len = Math.hypot(moveX, moveY);
+player.x = Math.max(0, Math.min(MAP_W, player.x + (moveX / len) * player.speed * dt));
+player.y = Math.max(0, Math.min(MAP_H, player.y + (moveY / len) * player.speed * dt));
+
+if (moveY < 0) player.dir = moveX >= 0 ? 'NE' : 'NW';
+else player.dir = moveX >= 0 ? 'SE' : 'SW';
+
+player.action = 'walk';
+player.frameTimer += dt;
+if (player.frameTimer > 0.1) { player.frame = (player.frame + 1) % 4; player.frameTimer = 0; }
+} else { player.action = 'idle'; player.frame = 0; }
+
+if (player.cooldownTimer > 0) {
+player.cooldownTimer -= dt;
+if (player.cooldownTimer <= 0) player.throwCharges = 2;
+}
+
+// Check Phạm vi Ném
+let minDist = Infinity;
+insects.forEach(ins => {
+const d = Math.hypot(ins.x - player.x, ins.y - player.y);
+if (d < minDist) minDist = d;
+});
+
+const btnThrow = document.getElementById('btnThrow');
+if (minDist <= 15 * M2P && player.throwCharges > 0) btnThrow.classList.remove('disabled');
+else btnThrow.classList.add('disabled');
+
+document.getElementById('txtCd').innerText = player.cooldownTimer > 0 ? `${Math.ceil(player.cooldownTimer)}s` : `${player.throwCharges}/2`;
+
+// Insect AI
+insects.forEach((ins) => {
+const distToPlayer = Math.hypot(player.x - ins.x, player.y - ins.y);
+if (ins.state === 'wander') {
+ins.x += Math.cos(ins.wanderAngle) * ins.speed * dt;
+ins.y += Math.sin(ins.wanderAngle) * ins.speed * dt;
+if (Math.random() < 0.02) ins.wanderAngle = Math.random() * Math.PI * 2;
+ins.dir = Math.cos(ins.wanderAngle) >= 0 ? 'SE' : 'SW';
+} else {
+const angle = Math.atan2(player.y - ins.y, player.x - ins.x);
+ins.x += Math.cos(angle) * (ins.speed * 1.4) * dt;
+ins.y += Math.sin(angle) * (ins.speed * 1.4) * dt;
+ins.dir = Math.cos(angle) >= 0 ? 'SE' : 'SW';
+
+if (distToPlayer <= 3 * M2P) {
+ins.attackTimer += dt;
+if (ins.attackTimer >= 2.0) {
+player.hp = Math.max(0, player.hp - 5);
+playSound('hit');
+ins.attackTimer = 0;
+updateUI();
+if (player.hp <= 0) gameOver(false);
+}
+}
+}
+
+ins.frameTimer += dt;
+if (ins.frameTimer > 0.1) { ins.frame = (ins.frame + 1) % 4; ins.frameTimer = 0; }
+drawSprite(ins.type, (ins.state === 'wander' ? 0 : 4) + ins.frame, ins.x, ins.y, ins.scale, (ins.dir==='NW'||ins.dir==='SW'), camera);
+});
+
+// Boomerang Logic
+boomerangs.forEach((bm, bIdx) => {
+const angle = Math.atan2(bm.target.y - bm.y, bm.target.x - bm.x);
+bm.x += Math.cos(angle) * 16 * M2P * dt;
+bm.y += Math.sin(angle) * 16 * M2P * dt;
+bm.rotation += 0.3;
+
+ctx.save();
+ctx.translate(bm.x - camera.x, bm.y - camera.y);
+ctx.rotate(bm.rotation);
+ctx.fillStyle = '#ff9900'; ctx.fillRect(-8, -2, 16, 4);
+ctx.restore();
+
+if (Math.hypot(bm.target.x - bm.x, bm.target.y - bm.y) < 1 * M2P) {
+playSound('hit');
+bm.target.hp -= 25;
+bm.target.state = 'attack';
+
+// Đẩy lùi -2m
+const pAngle = Math.atan2(bm.target.y - player.y, bm.target.x - player.x);
+bm.target.x += Math.cos(pAngle) * 2 * M2P;
+bm.target.y += Math.sin(pAngle) * 2 * M2P;
+
+if (bm.target.hp <= 0) {
+items.push({ x: bm.target.x, y: bm.target.y, type: Math.random() < 0.7 ? 'spirit' : 'essence' });
+insects[insects.indexOf(bm.target)] = spawnInsect(bm.target.type);
+}
+boomerangs.splice(bIdx, 1);
+}
+});
+
+// Item Logic
+items.forEach((it, iIdx) => {
+ctx.fillStyle = it.type === 'spirit' ? '#00f2ff' : '#ff00ff';
+ctx.beginPath(); ctx.arc(it.x - camera.x, it.y - camera.y, 5, 0, Math.PI * 2); ctx.fill();
+
+if (Math.hypot(player.x - it.x, player.y - it.y) < 1.5 * M2P) {
+playSound('pickup');
+if (it.type === 'spirit') {
+player.spiritStones++;
+if (player.spiritStones >= 5) {
+player.spiritStones = 0; player.level++;
+playSound('levelup');
+if (player.level > 9) gameOver(true);
+}
+}
+updateUI();
+items.splice(iIdx, 1);
+}
+});
+
+// Draw Player
+let pRow = (player.dir === 'NE' || player.dir === 'NW') ? 0 : 4;
+let pCol = (player.action === 'attack' ? 4 : 0) + player.frame;
+drawSprite(pRow, pCol, player.x, player.y, player.scale, (player.dir==='NW'||player.dir==='SW'), camera);
+
+// Render Ra-đa
+drawRadar();
+}
+
+requestAnimationFrame(gameLoop);
+}
+
+function doThrow() {
+initAudio();
+if (gameState !== 'PLAYING' || player.throwCharges <= 0) return;
+
+let nearest = null, minDist = Infinity;
+insects.forEach(ins => {
+const d = Math.hypot(ins.x - player.x, ins.y - player.y);
+if (d < minDist) { minDist = d; nearest = ins; }
+});
+
+if (nearest && minDist <= 15 * M2P) {
+playSound('throw');
+const dx = nearest.x - player.x, dy = nearest.y - player.y;
+player.dir = dy < 0 ? (dx >= 0 ? 'NE' : 'NW') : (dx >= 0 ? 'SE' : 'SW');
+player.action = 'attack';
+player.throwCharges--;
+
+boomerangs.push({ x: player.x, y: player.y, target: nearest, rotation: 0 });
+if (player.throwCharges === 0) player.cooldownTimer = 2.0;
+}
+}
+
+document.getElementById('btnThrow').addEventListener('click', doThrow);
+window.addEventListener('keydown', e => { if (e.key === ' ') doThrow(); });
+
+function updateUI() {
+document.getElementById('txtLevel').innerText = `Luyện Khí Tầng ${player.level}`;
+document.getElementById('txtHP').innerText = `${player.hp}/100`;
+document.getElementById('hpFill').style.width = `${player.hp}%`;
+document.getElementById('txtStones').innerText = `${player.spiritStones}/5`;
+}
+
+function gameOver(isWin) {
+gameState = isWin ? 'WIN' : 'LOSE';
+document.getElementById(isWin ? 'modalWin' : 'modalLose').style.display = 'flex';
+}
+
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
