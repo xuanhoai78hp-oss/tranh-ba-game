@@ -1,1406 +1,531 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>🏗️ XE NÂNG — Nhất Tín Logistics</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tu Tiên Trừ Ma V2.1 - Giết Côn Trùng Đột Biến</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{width:100%;height:100%;overflow:hidden;background:#000;
-color:#f0d8b0;font-family:system-ui,sans-serif;
-user-select:none;touch-action:none;position:fixed;inset:0}
-#game{position:relative;width:100%;height:100%;overflow:hidden}
-canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block}
+* { box-sizing: border-box; touch-action: none; user-select: none; margin: 0; padding: 0; }
+body { background: #050505; color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
 
-#hudTop{position:absolute;top:8px;left:8px;z-index:30;
-display:flex;flex-direction:column;gap:6px;pointer-events:none}
-.chip{background:linear-gradient(135deg,#5a3a18,#3a2408);
-border:1.5px solid #c88a30;border-radius:8px;padding:6px 14px;
-font-weight:900;font-size:13px;color:#ffb84a;letter-spacing:1px;
-width:fit-content;box-shadow:0 2px 8px rgba(0,0,0,.6);
-text-shadow:0 1px 2px #000}
-#chipTimer{font-family:ui-monospace,monospace;font-size:16px;color:#ffee60}
-#chipTimer.warn{color:#ff6060;animation:pulse .5s infinite}
-@keyframes pulse{50%{opacity:.5}}
-#chipTask{font-size:12px;max-width:75vw;white-space:normal;line-height:1.4}
+#gameContainer { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+canvas#gameCanvas { background: #0a0a0a; box-shadow: 0 0 20px rgba(0,255,150,0.2); }
 
-#btnMute{position:absolute;top:8px;right:130px;z-index:30;
-background:linear-gradient(135deg,#5a3a18,#3a2408);
-border:2px solid #c88a30;border-radius:10px;
-padding:10px 12px;color:#ffb84a;font-weight:900;font-size:15px;
-cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.6)}
-#btnExplore{position:absolute;top:8px;right:8px;z-index:30;
-background:linear-gradient(135deg,#5a3a18,#3a2408);
-border:2px solid #c88a30;border-radius:10px;
-padding:10px 14px;color:#ffb84a;font-weight:900;font-size:13px;
-cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.6)}
+/* UI Panel (Góc Trái) */
+.ui-panel { position: absolute; top: 10px; left: 10px; z-index: 10; background: rgba(0,0,0,0.75); padding: 10px; border-radius: 8px; border: 1px solid #00f2ff; font-size: 13px; box-shadow: 0 0 10px rgba(0,242,255,0.3); }
+.hp-bar { width: 130px; height: 10px; background: #333; border-radius: 5px; overflow: hidden; margin-top: 4px; border: 1px solid #555; }
+.hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ff0055, #ff5500); transition: width 0.2s; }
 
-#hintBar{position:absolute;top:170px;left:50%;transform:translateX(-50%);z-index:25;
-padding:10px 20px;border-radius:10px;font-weight:800;font-size:14px;
-text-align:center;max-width:90%;opacity:0;transition:opacity .25s;
-pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.6)}
-#hintBar.show{opacity:1}
-#hintBar.info{background:rgba(30,80,140,.95);color:#a8d8ff;border:1.5px solid #4a9adb}
-#hintBar.success{background:rgba(20,120,60,.95);color:#b0ffc8;border:1.5px solid #50e080}
-#hintBar.warn{background:rgba(140,60,20,.95);color:#ffc890;border:1.5px solid #e0a050}
+/* Ra-đa & Nút Khám Phá (Góc Phải) */
+.radar-box { position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+#radarCanvas { background: rgba(0, 20, 10, 0.85); border: 2px solid #00ff88; border-radius: 8px; box-shadow: 0 0 12px rgba(0,255,136,0.4); }
 
-.pad{position:absolute;bottom:20px;z-index:25;display:grid;gap:6px}
-#padKeys{left:16px;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(2,54px)}
-.pbtn{background:linear-gradient(135deg,#5a3a18,#3a2408);
-border:2px solid #c88a30;border-radius:10px;color:#ffd080;
-font-weight:900;font-size:16px;display:flex;align-items:center;
-justify-content:center;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.5)}
-.pbtn:active,.pbtn.on{transform:scale(.93);
-background:linear-gradient(135deg,#d8a040,#a87020);color:#1a1410}
+.btn-explore {
+width: 100px; padding: 6px 0; text-align: center;
+background: linear-gradient(180deg, #7000ff, #00f2ff);
+border: 1px solid #fff; border-radius: 20px;
+color: #fff; font-weight: bold; font-size: 11px;
+text-decoration: none; text-transform: uppercase;
+box-shadow: 0 0 10px #00f2ff; transition: 0.2s;
+display: block;
+}
+.btn-explore:active { transform: scale(0.95); filter: brightness(1.2); }
 
-#gearBox{position:absolute;bottom:32px;left:50%;
-transform:translateX(calc(-50% + 26px));z-index:25;
-display:flex;flex-direction:column;align-items:center;gap:2px}
-#gearLbl{font-size:11px;color:#c0a070;font-weight:700;letter-spacing:1px}
-#gearVal{font-size:32px;font-weight:900;color:#ffb84a;
-text-shadow:0 0 12px #ff8020,0 2px 4px #000;
-min-width:52px;text-align:center;line-height:1;
-background:linear-gradient(135deg,#3a2408,#1a1004);
-border:2px solid #c88a30;border-radius:10px;padding:5px 12px}
-#gearVal.neg{color:#ff6060;text-shadow:0 0 12px #ff2020}
+/* Nut Điều Khiển Mobile */
+#joystickZone { position: absolute; bottom: 20px; left: 20px; width: 110px; height: 110px; background: rgba(255,255,255,0.08); border-radius: 50%; border: 2px dashed #00f2ff; z-index: 10; }
+#joystickKnob { position: absolute; top: 32px; left: 32px; width: 46px; height: 46px; background: rgba(0,242,255,0.6); border-radius: 50%; box-shadow: 0 0 10px #00f2ff; }
 
-#padDrive{position:absolute;bottom:20px;right:16px;z-index:25;
-display:flex;flex-direction:column;align-items:flex-end;gap:8px}
-#padDriveRow{display:grid;grid-template-columns:66px 66px;
-grid-auto-rows:82px;gap:8px}
-.dbtn{border-radius:12px;font-weight:900;font-size:13px;letter-spacing:.5px;
-display:flex;align-items:center;justify-content:center;cursor:pointer;
-border:2px solid #fff3;color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.6);
-text-shadow:0 1px 2px #000}
-.dbtn:active{transform:scale(.94)}
-#btnGas{background:linear-gradient(135deg,#30c050,#106020);border-color:#80ffa0;font-size:17px}
-#btnBrake{background:linear-gradient(135deg,#e04030,#801010);border-color:#ff9080;font-size:16px}
+#btnThrow { position: absolute; bottom: 25px; right: 25px; width: 75px; height: 75px; background: radial-gradient(circle, #ff9900, #ff3300); border-radius: 50%; border: 2px solid #fff; color: #fff; font-weight: bold; font-size: 15px; z-index: 10; box-shadow: 0 0 15px #ff5500; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+#btnThrow.disabled { filter: grayscale(1); opacity: 0.4; box-shadow: none; }
 
-#actionRow{display:none;gap:8px}
-#actionRow.show{display:flex}
-.abtn{border-radius:12px;padding:14px 18px;color:#fff;font-weight:900;font-size:14px;
-cursor:pointer;display:flex;align-items:center;justify-content:center;
-box-shadow:0 4px 10px rgba(0,0,0,.6);letter-spacing:.5px;
-min-width:110px;border:2px solid #fff5;text-shadow:0 1px 2px #000;
-transition:opacity .2s}
-#btnPick{background:linear-gradient(135deg,#20b0e0,#0a6080);border-color:#a0e0ff}
-#btnRelease{background:linear-gradient(135deg,#e08020,#a05010);border-color:#ffc060}
-.abtn:active{transform:scale(.95)}
-.abtn.disabled{opacity:.35;filter:grayscale(.7);pointer-events:none}
-
-.overlay{position:absolute;inset:0;z-index:100;
-background:rgba(0,0,0,.94);
-display:flex;flex-direction:column;align-items:center;justify-content:center;
-padding:24px;text-align:center;color:#fff}
-.overlay.hidden{display:none}
-.overlay h2{font-size:30px;color:#ffb84a;margin-bottom:16px;
-text-shadow:0 3px 10px #000;letter-spacing:2px;font-weight:900}
-.overlay p{font-size:15px;line-height:1.7;max-width:560px;
-margin-bottom:10px;color:#e0c890}
-.overlay .btnStart{margin-top:24px;
-background:linear-gradient(135deg,#ffb84a,#a06020);
-border:2px solid #ffd080;border-radius:14px;
-padding:14px 40px;color:#1a1410;font-weight:900;font-size:18px;
-letter-spacing:2px;cursor:pointer;
-box-shadow:0 0 20px rgba(255,150,40,.5),0 4px 12px rgba(0,0,0,.6)}
-.overlay .btnStart:active{transform:scale(.96)}
-.overlay .btnRow{margin-top:20px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
-.overlay .btnRow button{
-border:2px solid #c88a30;border-radius:12px;
-padding:12px 24px;font-weight:900;font-size:14px;
-cursor:pointer;color:#1a1410;letter-spacing:1px;
-box-shadow:0 4px 10px rgba(0,0,0,.5)}
-.overlay .btnRow button.primary{background:linear-gradient(135deg,#70e090,#308040)}
-.overlay .btnRow button.secondary{background:linear-gradient(135deg,#e0c060,#a08030)}
-.overlay .btnRow button:active{transform:scale(.95)}
+/* Màn Hình Kết Thúc */
+.modal { display: none; position: absolute; z-index: 100; background: rgba(0,0,0,0.9); width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+.modal h1 { font-size: 28px; margin-bottom: 10px; }
+.modal button { padding: 10px 25px; font-size: 16px; background: #00f2ff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: #000; }
 </style>
 </head>
 <body>
-<div id="game">
-<canvas id="cv"></canvas>
 
-<div id="hudTop">
-<div class="chip" id="chipLevel">🏗️ MÀN 1</div>
-<div class="chip" id="chipTask">🎯 Gắp cont 1 → vùng xanh → NHẢ</div>
-<div class="chip" id="chipTimer">⏱️ ∞</div>
-</div>
+<div id="gameContainer">
+<canvas id="gameCanvas"></canvas>
 
-<button id="btnMute" title="Bật/tắt âm thanh">🔊</button>
-<button id="btnExplore">☰ KHÁM PHÁ</button>
-<div id="hintBar"></div>
-
-<div class="pad" id="padKeys">
-<button class="pbtn" data-key="w" style="grid-column:2;grid-row:1">W</button>
-<button class="pbtn" data-key="a" style="grid-column:1;grid-row:2">A</button>
-<button class="pbtn" data-key="s" style="grid-column:2;grid-row:2">S</button>
-<button class="pbtn" data-key="d" style="grid-column:3;grid-row:2">D</button>
+<!-- UI Thông Số Nhân Vật -->
+<div class="ui-panel">
+<div>Cảnh Giới: <b id="txtLevel" style="color: #00ff88;">Luyện Khí Tầng 3</b></div>
+<div>Máu: <span id="txtHP">100/100</span></div>
+<div class="hp-bar"><div id="hpFill" class="hp-fill"></div></div>
+<div style="margin-top:4px">Linh Thạch: <b id="txtStones" style="color: #00f2ff;">0/5</b></div>
 </div>
 
-<div id="gearBox">
-<div id="gearLbl">SỐ</div>
-<div id="gearVal">0</div>
+<!-- Ra-đa & Nút Khám Phá tuongzalo.html -->
+<div class="radar-box">
+<canvas id="radarCanvas" width="100" height="187"></canvas>
+<a href="tuongzalo.html" class="btn-explore">KHÁM PHÁ</a>
 </div>
 
-<div id="padDrive">
-<div id="actionRow">
-<button class="abtn" id="btnPick">🔗 GẮP</button>
-<button class="abtn" id="btnRelease">🔓 NHẢ</button>
-</div>
-<div id="padDriveRow">
-<button class="dbtn" id="btnBrake">PHANH</button>
-<button class="dbtn" id="btnGas">GA</button>
-</div>
+<!-- Controls Joystick & Nút Ném -->
+<div id="joystickZone"><div id="joystickKnob"></div></div>
+<div id="btnThrow" class="disabled">NÉM<small id="txtCd" style="font-size:10px; margin-top:2px"></small></div>
+
+<!-- Thông Báo Thắng / Thua -->
+<div id="modalWin" class="modal">
+<h1 style="color: #00ff88;">CHÚC MỪNG ĐẠI HIỆP!</h1>
+<p style="font-size: 16px; margin-bottom: 20px;">Vượt qua Luyện Khí Tầng 9! Đột phá cấp <b style="color: #00f2ff;">TRÚC CƠ</b> thành công!</p>
+<button onclick="location.reload()">Chơi Lại</button>
 </div>
 
-<div class="overlay" id="overlayIntro">
-<h2>🏗️ XE NÂNG — NHẤT TÍN</h2>
-<p><b>Điều khiển:</b> W/S = số • A/D = lái • GA = chạy • PHANH = dừng</p>
-<p><b>GẮP / NHẢ:</b> Chỉ dùng được khi về <b>SỐ 0</b></p>
-<p><b>Nhiệm vụ:</b> Gắp cont → chở sang vùng <b style="color:#80ffa0">XANH</b> → NHẢ</p>
-<p style="color:#ff8080">⚠️ Đụng tường, cây hoặc hết giờ → chơi lại từ MÀN 1!</p>
-<button class="btnStart" id="btnStart">🚀 BẮT ĐẦU</button>
-</div>
-
-<div class="overlay hidden" id="overlayLevelClear">
-<h2 id="levelClearTitle">✅ QUA MÀN!</h2>
-<p id="levelClearMsg">Bạn đã hoàn thành màn này!</p>
-<button class="btnStart" id="btnNextLevel">➡️ MÀN TIẾP</button>
-</div>
-
-<div class="overlay hidden" id="overlayWin">
-<h2 style="color:#ffe060">🏆 CHÚC MỪNG!</h2>
-<p style="font-size:17px;color:#ffd080;line-height:1.8">
-Bạn đã xuất sắc vượt qua vòng tuyển dụng!<br>
-<b style="color:#ffe080;font-size:20px">ĐƯỢC NHẬN VÀO LÀM<br>
-NHÂN VIÊN KHO BÃI<br>
-CÔNG TY NHẤT TÍN 🎉</b>
-</p>
-<div class="btnRow">
-<button class="primary" id="btnReplayWin">🔄 CHƠI LẠI TỪ ĐẦU</button>
-</div>
-</div>
-
-<div class="overlay hidden" id="overlayLose">
-<h2 style="color:#ff8080" id="loseTitle">💔 CHƯA ĐƯỢC RỒI</h2>
-<p id="loseMsg" style="font-size:16px;color:#ffc0c0;line-height:1.8">
-Bạn chưa có duyên với kho Nhất Tín rồi,<br>
-tháng sau gặp lại nhé! 🍀
-</p>
-<div class="btnRow">
-<button class="primary" id="btnRetryLose">🔄 CHƠI LẠI TỪ MÀN 1</button>
-</div>
+<div id="modalLose" class="modal">
+<h1 style="color: #ff0055;">LỊCH LUYỆN THẤT BẠI!</h1>
+<p style="font-size: 16px; margin-bottom: 20px;">Đã bị Côn Trùng Đột Biến đánh gục...</p>
+<button onclick="location.reload()">Tái Sinh</button>
 </div>
 </div>
 
 <script>
-/* ============================================================
-CONFIG
-============================================================ */
-const CFG = {
-PX_PER_M: 12,
+// ==========================================
+// 🔊 HỆ THỐNG ÂM THANH WEB AUDIO API SYNTHESIZER
+// ==========================================
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
 
-// Xe nâng (xe 3)
-XE3_LEN: 6, XE3_W: 3.4,
-XE3_AXLE_STATIC: 1, XE3_AXLE_STEER: 5, XE3_WHEELBASE: 4,
-XE3_SPRITE: { sx:0, sy:202, sw:34, sh:34 },
-XE3_RADIUS: 3.2,
+function initAudio() {
+if (!audioCtx) audioCtx = new AudioContext();
+if (audioCtx.state === 'suspended') audioCtx.resume();
+}
 
-// Khung H
-HFRAME_W: 12.2, HFRAME_D: 3.4, HFRAME_ARM_LEN: 0.6,
+function playSound(type) {
+if (!audioCtx) return;
+const now = audioCtx.currentTime;
+const osc = audioCtx.createOscillator();
+const gain = audioCtx.createGain();
+osc.connect(gain);
+gain.connect(audioCtx.destination);
 
-// Xe 1 — đầu kéo 6m x 3.4m, sprite (2,2)-(58,32)
-XE1_LEN: 6, XE1_W: 3.4,
-XE1_SPRITE: { sx:2, sy:2, sw:58, sh:32 },
+if (type === 'throw') {
+osc.type = 'sine';
+osc.frequency.setValueAtTime(400, now);
+osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+gain.gain.setValueAtTime(0.3, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+osc.start(now); osc.stop(now + 0.15);
+}
+else if (type === 'hit') {
+osc.type = 'triangle';
+osc.frequency.setValueAtTime(150, now);
+osc.frequency.exponentialRampToValueAtTime(30, now + 0.1);
+gain.gain.setValueAtTime(0.5, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+osc.start(now); osc.stop(now + 0.1);
+}
+else if (type === 'pickup') {
+osc.type = 'sine';
+osc.frequency.setValueAtTime(800, now);
+osc.frequency.setValueAtTime(1200, now + 0.08);
+gain.gain.setValueAtTime(0.2, now);
+gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+osc.start(now); osc.stop(now + 0.25);
+}
+else if (type === 'levelup') {
+osc.type = 'square';
+osc.frequency.setValueAtTime(300, now);
+osc.frequency.exponentialRampToValueAtTime(800, now + 0.4);
+gain.gain.setValueAtTime(0.3, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+osc.start(now); osc.stop(now + 0.4);
+}
+else if (type === 'teleport') {
+osc.type = 'sawtooth';
+osc.frequency.setValueAtTime(100, now);
+osc.frequency.linearRampToValueAtTime(500, now + 2);
+gain.gain.setValueAtTime(0.1, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 2);
+osc.start(now); osc.stop(now + 2);
+}
+}
 
-// Xe 2 — rơ-mooc 12m x 3.2m, sprite (2,72)-(32,190)
-XE2_LEN: 12, XE2_W: 3.2,
-XE2_SPRITE: { sx:2, sy:72, sw:32, sh:190 },
-XE2_WHEELS_FROM_TAIL: [2, 3.2],
-XE2_WHEEL_DIA: 0.9,
+// ==========================================
+// 🗺️ CẤU HÌNH MAP & KHÔNG GIAN (1m = 20px)
+// ==========================================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const radarCanvas = document.getElementById('radarCanvas');
+const radarCtx = radarCanvas.getContext('2d');
 
-// Cont — sprite (1,71)-(191,33)
-CONT_SPRITE: { sx:1, sy:71, sw:190, sh:33 },
-CONT_LEN: 12, CONT_W: 3.0,
+const M2P = 20;
+const MAP_W = 80 * M2P; // Map rộng 80m
+const MAP_H = 150 * M2P; // Map dài 150m
+const VIEW_W = 20 * M2P; // Khung hiển thị ngang 20m
+const VIEW_H = 40 * M2P; // Khung hiển thị dọc 40m
 
-// Xe 1 gác đuôi lên xen kẽ — xe 2 che 2m đuôi xe 1
-XE1_XE2_OVERLAP: 2,
-XE1_XE2_GAP: 5, // khoảng cách tâm xe 1 → tâm xe 2 trước khi trừ overlap
+const MAX_INSECTS = 5;
+const MIN_INSECTS = 3;
 
-// Vị trí sân
-FIELD_W: 500, FIELD_H: 120,
+canvas.width = VIEW_W;
+canvas.height = VIEW_H;
 
-// Vị trí khởi đầu (m, từ trái sang phải)
-START_XE2_X: 40, // tâm xe 2
-START_XE3_OFFSET: 15, // xe 3 cách xe 1 bao nhiêu
-START_CONT2_OFFSET: 45, // cont 2 cách xe 1 bao nhiêu
-
-// Động cơ
-GEAR_KMH: {'-2':-15,'-1':-8,'0':0,'1':5,'2':10,'3':20,'4':30},
-DRIFT_KMH: 2,
-MAX_STEER: 40,
-ACCEL: 6, BRAKE: 12,
-
-// Gắp / nhả
-PICK_DIST: 3.0,
-PICK_ANGLE_TOL: 45, // độ lệch cho phép so với vuông góc
-CONT_CARRIED_OFFSET: 0.2,
-
-// Cửa / đích
-DROP_ZONE_W: 14, DROP_ZONE_H: 14, // vùng xanh màn 1 (14x14)
-DROP_ZONE_OFFSET_X: 55, // cách xe 1 bao xa
-
-// Thời gian
-LEVEL_TIME: {1: Infinity, 2: 300, 3: 180, 4: 60, 5: 30},
-TOTAL_LEVELS: 5,
-
-// Chuyển màn 2+
-MOVE_AWAY_DIST: 15, // lùi xa xe 2 15m để qua màn
-
-// Tường & cây
-WALL_Y_TOP: 15, WALL_Y_BOT: 105, // tường trên/dưới
-WALL_THICKNESS: 1.0,
-TREE_OFFSET_WALL: 2, // cây cách tường 2m
-TREE_MIN_GAP: 20, // 2 cây cách nhau >20m
-TREE_MIN_FROM_XE1: 20, // cây cách xe 1 >20m
-TREE_RADIUS: 2.5,
+// Tải Spritesheet anh.png
+const spriteImg = new Image();
+spriteImg.src = 'anh.png';
+spriteImg.onerror = () => {
+const dummy = document.createElement('canvas');
+dummy.width = 320; dummy.height = 200;
+const dCtx = dummy.getContext('2d');
+dCtx.fillStyle = '#00f2ff'; dCtx.fillRect(0,0,320,200);
+spriteImg.src = dummy.toDataURL();
 };
 
-/* ============================================================
-CANVAS
-============================================================ */
-const cv = document.getElementById('cv');
-const ctx = cv.getContext('2d');
-let W=0, H=0, DPR=1;
-function resize(){
-DPR = Math.min(window.devicePixelRatio || 1, 2);
-W = window.innerWidth; H = window.innerHeight;
-cv.width = W*DPR; cv.height = H*DPR;
-ctx.setTransform(DPR,0,0,DPR,0,0);
-ctx.imageSmoothingEnabled = true;
-}
-window.addEventListener('resize', resize);
-resize();
+let gameState = 'INTRO';
+let introTimer = 0;
 
-const cam = { x:0, y:0, shakeT:0 };
-
-/* ============================================================
-LOAD ẢNH
-============================================================ */
-const img = new Image();
-img.src = 'tranhba.jpg';
-let imgReady = false;
-img.onload = () => { imgReady = true; console.log('✅ tranhba.jpg OK:', img.naturalWidth+'x'+img.naturalHeight); };
-img.onerror = () => { imgReady = false; console.warn('⚠️ Không load được tranhba.jpg'); };
-
-/* ============================================================
-ÂM THANH
-============================================================ */
-let audioCtx=null, engineOsc=null, engineGain=null, engineLFO=null, engineLFOGain=null;
-let audioMuted = false;
-
-function initAudio(){
-if(audioCtx) return;
-try{
-audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-engineOsc = audioCtx.createOscillator();
-engineOsc.type = 'sawtooth'; engineOsc.frequency.value = 40;
-const filt = audioCtx.createBiquadFilter();
-filt.type = 'lowpass'; filt.frequency.value = 400;
-engineGain = audioCtx.createGain(); engineGain.gain.value = 0;
-engineLFO = audioCtx.createOscillator(); engineLFO.type='sine'; engineLFO.frequency.value=18;
-engineLFOGain = audioCtx.createGain(); engineLFOGain.gain.value=6;
-engineLFO.connect(engineLFOGain); engineLFOGain.connect(engineOsc.frequency);
-engineOsc.connect(filt); filt.connect(engineGain); engineGain.connect(audioCtx.destination);
-engineOsc.start(); engineLFO.start();
-}catch(e){ console.warn('Audio fail:', e); }
-}
-function playBeep(freq=880, dur=0.12, type='square', vol=0.18){
-if(!audioCtx || audioMuted) return;
-const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-o.type=type; o.frequency.value=freq;
-const t0=audioCtx.currentTime;
-g.gain.setValueAtTime(0.0001,t0);
-g.gain.exponentialRampToValueAtTime(vol,t0+0.01);
-g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-o.connect(g); g.connect(audioCtx.destination);
-o.start(); o.stop(t0+dur+0.02);
-}
-function playBump(){
-playBeep(120, 0.18, 'sawtooth', 0.25);
-setTimeout(()=>playBeep(80, 0.22, 'square', 0.2), 60);
-}
-function updateEngineSound(){
-if(!audioCtx || !engineOsc){ if(engineGain) engineGain.gain.value=0; return; }
-const absSpeed = Math.abs(xe3.speed);
-const targetFreq = 38 + Math.abs(xe3.gear)*12 + absSpeed*6;
-engineOsc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.1);
-let vol = 0.02;
-if(gameState==='playing'){
-vol = 0.04 + Math.min(0.10, absSpeed*0.03);
-if(xe3.gasHeld) vol += 0.03;
-}
-engineGain.gain.setTargetAtTime(audioMuted?0:vol, audioCtx.currentTime, 0.1);
-}
-
-/* ============================================================
-HELPERS
-============================================================ */
-function d2r(d){ return d*Math.PI/180; }
-function dir(a){ return { x:Math.sin(d2r(a)), y:-Math.cos(d2r(a)) }; }
-function angleDiffMod180(a,b){
-let d = Math.abs(a-b)%180;
-if(d>90) d = 180-d;
-return d;
-}
-function dist(ax,ay,bx,by){ return Math.hypot(ax-bx, ay-by); }
-
-/* ============================================================
-STATE
-============================================================ */
-let gameState='intro';
-let cutsceneT=0, blinkTime=0;
-let currentLevel=1;
-let timeLeft=Infinity;
-let startTime=0;
-
-const xe3 = { x:0, y:0, angle:90, speed:0, steer:0, gear:0,
-gasHeld:false, braking:false, bumpFlash:0 };
-
-const xe2 = { x:0, y:0, angle:90, wheelSpin:0 };
-const xe1 = { x:0, y:0, angle:90 };
-
-const cont = {
-x:0, y:0, angle:90,
-hitched:false, onXe2:true, delivered:false,
-// onXe2 = đang nằm trên xe 2 (chưa gắp)
-// delivered = đã nhả vào vùng xanh (màn 1) hoặc đã ở ngoài
-startX: null,
+const player = {
+x: 40 * M2P, y: 75 * M2P,
+speed: 4 * M2P, hp: 100,
+level: 3, spiritStones: 0,
+dir: 'SE', action: 'walk',
+frame: 0, frameTimer: 0,
+scale: 2.0, throwCharges: 2, cooldownTimer: 0
 };
 
-const cont2 = {
-x:0, y:0, angle:90,
-active:false,
-hitched:false,
-onXe2:false,
-delivered:false,
-picked:false,
-startX:null,
-homeX:0,
-};
+let insects = [];
+let items = [];
+let boomerangs = [];
 
-let walls=[], trees=[];
-let dropZone = { x:0, y:0, w:0, h:0 };
-
-let hintTimer=null;
-let lastBumpTime=0;
-
-/* ============================================================
-INPUT
-============================================================ */
-const keys = { a:false, d:false, gas:false, brake:false };
-
-function changeGear(d){
-if(gameState !== 'playing') return;
-const g = xe3.gear + d;
-if(g < -2 || g > 4) return;
-xe3.gear = g;
-document.getElementById('gearVal').textContent = g;
-document.getElementById('gearVal').classList.toggle('neg', g < 0);
-updateActionButtons();
-}
-
-window.addEventListener('keydown', e => {
-const k = e.key.toLowerCase();
-if(k === 'w') changeGear(1);
-if(k === 's') changeGear(-1);
-if(k === 'a') keys.a = true;
-if(k === 'd') keys.d = true;
-if(k === ' ') { keys.gas = true; e.preventDefault(); }
-if(k === 'shift') keys.brake = true;
-if(k === 'q') doPick();
-if(k === 'e') doRelease();
-});
-window.addEventListener('keyup', e => {
-const k = e.key.toLowerCase();
-if(k === 'a') keys.a = false;
-if(k === 'd') keys.d = false;
-if(k === ' ') keys.gas = false;
-if(k === 'shift') keys.brake = false;
-});
-
-function bindHold(el, on, off){
-el.addEventListener('touchstart', e=>{e.preventDefault();on();},{passive:false});
-el.addEventListener('touchend', e=>{e.preventDefault();off();},{passive:false});
-el.addEventListener('touchcancel',e=>{e.preventDefault();off();},{passive:false});
-el.addEventListener('mousedown', on);
-el.addEventListener('mouseup', off);
-el.addEventListener('mouseleave', off);
-el.addEventListener('blur', off); // mất focus → nhả
-}
-document.querySelectorAll('#padKeys .pbtn').forEach(btn=>{
-const key = btn.dataset.key;
-bindHold(btn,
-()=>{ btn.classList.add('on');
-if(key==='w') changeGear(1);
-if(key==='s') changeGear(-1);
-if(key==='a') keys.a=true;
-if(key==='d') keys.d=true; },
-()=>{ btn.classList.remove('on');
-if(key==='a') keys.a=false;
-if(key==='d') keys.d=false; }
-);
-});
-bindHold(document.getElementById('btnGas'), ()=>keys.gas=true, ()=>keys.gas=false);
-bindHold(document.getElementById('btnBrake'), ()=>keys.brake=true, ()=>keys.brake=false);
-
-
-/* ============================================================
-TRỤC XE 3
-============================================================ */
-function getNose(){
-const o = CFG.XE3_LEN/2 - CFG.XE3_AXLE_STATIC;
-const d = dir(xe3.angle);
-return { x: xe3.x + d.x*o, y: xe3.y + d.y*o };
-}
-function getHFrameCenter(){
-const nose = getNose();
-const d = dir(xe3.angle);
+function spawnInsect(type) {
+const angle = Math.random() * Math.PI * 2;
+const dist = 20 * M2P;
 return {
-x: nose.x + d.x*(CFG.HFRAME_D/2 + CFG.CONT_CARRIED_OFFSET),
-y: nose.y + d.y*(CFG.HFRAME_D/2 + CFG.CONT_CARRIED_OFFSET),
-angle: xe3.angle,
+id: Math.random(), type: type,
+x: player.x + Math.cos(angle) * dist,
+y: player.y + Math.sin(angle) * dist,
+hp: 100, speed: (10 / 3.6) * M2P,
+state: 'wander', dir: 'SE',
+frame: 0, frameTimer: 0, scale: 2.5, attackTimer: 0,
+wanderAngle: Math.random() * Math.PI * 2
 };
 }
 
-/* ============================================================
-GẮP / NHẢ
-============================================================ */
-function doPick(){
-if(gameState !== 'playing') return;
-if(xe3.gear !== 0){ showHint('warn','⚠️ Phải về SỐ 0 mới GẮP được!'); return; }
-
-// Ưu tiên: nếu có cont đang chờ gắp (cont chính hoặc cont2)
-const targets = [];
-if(currentLevel === 1){
-if(cont.onXe2){ targets.push({ c:cont, tag:'cont' }); }
-} else {
-// Màn 2+: cont1 còn trên xe 2, cont2 đang chờ ngoài sân
-if(cont.onXe2 && !cont.hitched) targets.push({ c:cont, tag:'cont' });
-if(cont2.active && !cont2.hitched && !cont2.onXe2) targets.push({ c:cont2, tag:'cont2' });
-}
-
-if(targets.length === 0){ showHint('warn','⚠️ Không có cont nào để gắp gần đây!'); return; }
-
-for(const t of targets){
-const hf = getHFrameCenter();
-const dd = Math.hypot(hf.x - t.c.x, hf.y - t.c.y);
-const dAng = angleDiffMod180(hf.angle, t.c.angle);
-const perp = Math.abs(dAng - 90);
-
-if(dd <= CFG.PICK_DIST && perp <= CFG.PICK_ANGLE_TOL){
-t.c.hitched = true;
-t.c.angle = t.c.angle; // giữ nguyên hướng cont
-t.c.startX = xe3.x;
-
-// Nếu là cont trên xe 2 → bỏ khỏi xe 2
-if(t.tag === 'cont') cont.onXe2 = false;
-
-showHint('success','🔗 ĐÃ GẮP CONT!');
-playBeep(660, 0.08);
-setTimeout(()=>playBeep(990, 0.12), 90);
-updateActionButtons();
-return;
-}
-}
-showHint('warn','⚠️ Chưa tới gần hoặc chưa đúng hướng cont!');
-}
-
-function doRelease(){
-if(gameState !== 'playing') return;
-if(xe3.gear !== 0){ showHint('warn','⚠️ Phải về SỐ 0 mới NHẢ được!'); return; }
-
-if(cont.hitched){
-releaseCont(cont, 'cont');
-return;
-}
-if(cont2.hitched){
-releaseCont(cont2, 'cont2');
-return;
-}
-showHint('warn','⚠️ Chưa gắp cont nào!');
-}
-
-function releaseCont(c, tag){
-const hf = getHFrameCenter();
-
-// Xác định đích: vùng xanh (cont1) hoặc vị trí xe 2 (cont2)
-if(tag === 'cont'){
-// Cont 1 → thả tự do tại vị trí khung H
-c.hitched = false;
-c.delivered = true;
-c.x = hf.x;
-c.y = hf.y;
-// Chek vùng xanh?
-if(pointInRect(c.x, c.y, dropZone)){
-showHint('success','✅ ĐÃ NHẢ VÀO VÙNG XANH!');
-playBeep(990,0.1);
-setTimeout(()=>playBeep(660,0.1),100);
-setTimeout(()=>playBeep(440,0.2),200);
-if(currentLevel === 1){
-setTimeout(()=>levelClear(), 900);
-} else {
-// Màn 2+: cont 1 xong → nhiệm vụ cont 2
-setTaskTextForLevel();
-}
-} else {
-showHint('info','📦 Đã nhả cont 1 — hãy nhả ĐÚNG vùng XANH nhé!');
-}
-} else {
-// cont 2 → phải nhả gần xe 2
-const nearXe2 = dist(xe3.x, xe3.y, xe2.x, xe2.y) < 10;
-c.hitched = false;
-c.x = hf.x;
-c.y = hf.y;
-if(nearXe2){
-c.onXe2 = true;
-c.delivered = true;
-showHint('success','✅ ĐÃ GẮN CONT 2 LÊN XE 2!');
-playBeep(990,0.1);
-setTimeout(()=>playBeep(660,0.1),100);
-setTimeout(()=>playBeep(440,0.2),200);
-// Bắt đầu pha 2: lùi xa xe 2 15m
-showHint('info',`🏁 Giờ lùi xa xe 2 ${CFG.MOVE_AWAY_DIST}m để qua màn!`);
-} else {
-showHint('warn','⚠️ Chưa đúng chỗ! Hãy nhả gần xe 2!');
-}
-}
-updateActionButtons();
-}
-
-function pointInRect(px, py, r){
-return px >= r.x - r.w/2 && px <= r.x + r.w/2
-&& py >= r.y - r.h/2 && py <= r.y + r.h/2;
-}
-
-function updateActionButtons(){
-const row = document.getElementById('actionRow');
-const bPick = document.getElementById('btnPick');
-const bRel = document.getElementById('btnRelease');
-
-const showRow = (gameState === 'playing');
-row.classList.toggle('show', showRow);
-if(!showRow) return;
-
-const atZero = (xe3.gear === 0);
-
-// GẮP: có cont để gắp + số 0
-let canPick = false;
-if(atZero){
-if(currentLevel === 1 && cont.onXe2) canPick = true;
-if(currentLevel > 1){
-if(cont.onXe2) canPick = true;
-if(cont2.active && !cont2.onXe2 && !cont2.delivered) canPick = true;
-}
-}
-bPick.classList.toggle('disabled', !canPick || cont.hitched || cont2.hitched);
-
-// NHẢ: đang gắp cont + số 0
-const canRelease = atZero && (cont.hitched || cont2.hitched);
-bRel.classList.toggle('disabled', !canRelease);
-}
-
-document.getElementById('btnPick').addEventListener('click', doPick);
-document.getElementById('btnRelease').addEventListener('click', doRelease);
-
-/* ============================================================
-UPDATE XE 3
-============================================================ */
-function updateXe3(dt){
-const maxKmh = CFG.GEAR_KMH[String(xe3.gear)] ?? 0;
-const maxV = maxKmh / 3.6;
-let targetV;
-if(xe3.gear === 0 || xe3.braking) targetV = 0;
-else if(xe3.gasHeld) targetV = maxV;
-else {
-const drift = (xe3.gear > 0 ? CFG.DRIFT_KMH : -CFG.DRIFT_KMH) / 3.6;
-targetV = xe3.gear > 0 ? Math.max(xe3.speed, drift) : Math.min(xe3.speed, drift);
-}
-const diff = targetV - xe3.speed;
-if(Math.abs(diff) < 0.02) xe3.speed = targetV;
-else {
-const acc = (xe3.braking ? CFG.BRAKE : CFG.ACCEL) * dt;
-xe3.speed += (diff > 0 ? 1 : -1) * Math.min(acc, Math.abs(diff));
-}
-const pxPrev = xe3.x, pyPrev = xe3.y;
-if(Math.abs(xe3.speed) > 0.02){
-const omega = -xe3.speed * Math.tan(d2r(xe3.steer)) / CFG.XE3_WHEELBASE;
-xe3.angle = ((xe3.angle + omega * 180/Math.PI * dt) % 360 + 360) % 360;
-}
-const d = dir(xe3.angle);
-xe3.x += d.x * xe3.speed * dt;
-xe3.y += d.y * xe3.speed * dt;
-
-// Va chạm
-checkCollisions(pxPrev, pyPrev);
-
-if(xe3.bumpFlash > 0) xe3.bumpFlash -= dt*2;
-}
-
-/* ============================================================
-VA CHẠM TƯỜNG & CÂY
-============================================================ */
-function checkCollisions(pxPrev, pyPrev){
-// Tường
-for(const wall of walls){
-// AABB vs circle
-const closestX = Math.max(wall.x, Math.min(xe3.x, wall.x + wall.w));
-const closestY = Math.max(wall.y, Math.min(xe3.y, wall.y + wall.h));
-const d = Math.hypot(xe3.x - closestX, xe3.y - closestY);
-if(d < CFG.XE3_RADIUS){
-// Đâm tường → thua
-triggerLose('wall');
-return;
-}
-}
-// Cây
-for(const t of trees){
-const d = Math.hypot(xe3.x - t.x, xe3.y - t.y);
-if(d < CFG.XE3_RADIUS + t.r){
-// Đâm cây → thua
-triggerLose('tree');
-return;
-}
+function initGame() {
+insects = [];
+for(let i = 0; i < MIN_INSECTS; i++) {
+insects.push(spawnInsect(1 + Math.floor(Math.random() * 2)));
 }
 }
 
-function triggerLose(reason){
-if(gameState !== 'playing') return;
-gameState = 'lose';
-playBump();
-shakeCamera(0.4);
-const titleMap = {
-wall: '💥 ĐÂM TƯỜNG RỒI!',
-tree: '🌳 ĐÂM CÂY RỒI!',
-timeout: '⏰ HẾT THỜI GIAN!',
-bounce: '💥 BẠN KHÔNG HỢP...',
-};
-const msgMap = {
-wall: 'Bạn đâm vào tường — làm sao làm nhân viên kho được đây? 😅',
-tree: 'Bạn đâm vào cây — cần cẩn thận hơn nhé! 🌳',
-timeout: 'Hết thời gian rồi — cần nhanh tay hơn! ⏰',
-};
-document.getElementById('loseTitle').textContent = titleMap[reason] || '💔 CHƯA ĐƯỢC RỒI';
-document.getElementById('loseMsg').innerHTML = (msgMap[reason] || '') +
-'<br><br>Bạn chưa có duyên với kho Nhất Tín rồi,<br>tháng sau gặp lại nhé! 🍀';
-document.getElementById('overlayLose').classList.remove('hidden');
-updateActionButtons();
-}
+// Xử lý Phím / Cảm ứng
+const keys = {};
+window.addEventListener('keydown', e => { initAudio(); keys[e.key.toLowerCase()] = true; });
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-function shakeCamera(dur){
-cam.shakeT = dur;
-}
+let joyVector = { x: 0, y: 0 };
+const joyZone = document.getElementById('joystickZone');
+const joyKnob = document.getElementById('joystickKnob');
 
-/* ============================================================
-HINT
-============================================================ */
-function showHint(level, text){
-const el = document.getElementById('hintBar');
-el.className = 'show ' + level;
-el.textContent = text;
-clearTimeout(hintTimer);
-hintTimer = setTimeout(()=>{ el.className=''; }, 2400);
-}
+joyZone.addEventListener('touchmove', e => {
+initAudio(); e.preventDefault();
+const touch = e.touches[0];
+const rect = joyZone.getBoundingClientRect();
+let dx = touch.clientX - (rect.left + rect.width/2);
+let dy = touch.clientY - (rect.top + rect.height/2);
+const dist = Math.hypot(dx, dy);
+if (dist > 35) { dx = (dx/dist)*35; dy = (dy/dist)*35; }
+joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+joyVector = { x: dx / 35, y: dy / 35 };
+});
+joyZone.addEventListener('touchend', () => {
+joyKnob.style.transform = `translate(0px, 0px)`;
+joyVector = { x: 0, y: 0 };
+});
 
-/* ============================================================
-SETUP SÂN & MÀN CHƠI
-============================================================ */
-function buildObstacles(){
-walls = [];
-trees = [];
-
-const FT = CFG.FIELD_W;
-const yTop = CFG.WALL_Y_TOP;
-const yBot = CFG.WALL_Y_BOT;
-
-// Tường trên & dưới (dài cố định hết sân)
-walls.push({ x: 0, y: yTop, w: FT, h: CFG.WALL_THICKNESS });
-walls.push({ x: 0, y: yBot, w: FT, h: CFG.WALL_THICKNESS });
-
-// Cây: cách tường 2m, cách xe 1 >20m, 2 cây cách nhau >20m
-const treeY = yTop + CFG.TREE_OFFSET_WALL; // cây trên
-const treeY2 = yBot - CFG.TREE_OFFSET_WALL; // cây dưới
-const xe1X = CFG.START_XE2_X - CFG.XE1_XE2_GAP; // tâm xe 1
-
-const treeXs = [];
-let x = xe1X + CFG.TREE_MIN_FROM_XE1 + 8;
-const maxX = FT - 20;
-while(x < maxX){
-treeXs.push(x);
-x += CFG.TREE_MIN_GAP + 5 + Math.random()*15; // >20m
-}
-
-for(const tx of treeXs){
-trees.push({ x: tx, y: treeY, r: CFG.TREE_RADIUS, top: true });
-trees.push({ x: tx + 8, y: treeY2, r: CFG.TREE_RADIUS, top: false });
-}
-}
-
-function buildLevel(level){
-currentLevel = level;
-stopTimer();
-
-// Xây chướng ngại
-buildObstacles();
-
-// Đặt xe 2 (tâm)
-xe2.x = CFG.START_XE2_X;
-xe2.y = CFG.FIELD_H/2;
-xe2.angle = 90;
-xe2.wheelSpin = 0;
-
-// Xe 1: đứng SAU xe 2 (bên trái), mũi hướng Đông
-xe1.x = CFG.START_XE2_X - CFG.XE1_XE2_GAP;
-xe1.y = CFG.FIELD_H/2;
-xe1.angle = 90;
-
-// Cont 1: nằm trên xe 2
-cont.x = xe2.x;
-cont.y = xe2.y;
-cont.angle = 90;
-cont.hitched = false;
-cont.onXe2 = true;
-cont.delivered = false;
-cont.startX = null;
-
-// Cont 2: chỉ có ở màn 2+
-cont2.active = (level >= 2);
-cont2.x = xe1.x + CFG.START_CONT2_OFFSET;
-cont2.homeX = cont2.x;
-cont2.y = CFG.FIELD_H/2;
-cont2.angle = 90;
-cont2.hitched = false;
-cont2.onXe2 = false;
-cont2.delivered = false;
-cont2.picked = false;
-cont2.startX = null;
-
-// Vùng xanh (màn 1) — cách xe 1 CFG.DROP_ZONE_OFFSET_X
-dropZone.w = CFG.DROP_ZONE_W;
-dropZone.h = CFG.DROP_ZONE_H;
-dropZone.x = xe1.x + CFG.DROP_ZONE_OFFSET_X;
-dropZone.y = CFG.FIELD_H/2;
-
-// Xe nâng: cách xe 1 START_XE3_OFFSET
-xe3.x = xe1.x + CFG.START_XE3_OFFSET;
-xe3.y = CFG.FIELD_H/2;
-xe3.angle = 90;
-xe3.speed = 0; xe3.steer = 0; xe3.gear = 0;
-xe3.bumpFlash = 0;
-document.getElementById('gearVal').textContent = '0';
-document.getElementById('gearVal').classList.remove('neg');
-
-// Camera bám xe 3
-cam.x = xe3.x * CFG.PX_PER_M;
-cam.y = xe3.y * CFG.PX_PER_M;
-
-// HUD
-document.getElementById('chipLevel').textContent = `🏗️ MÀN ${level}`;
-setTaskTextForLevel();
-updateTimerHUD();
-
-// Trạng thái
-gameState = 'cutscene';
-cutsceneT = 0;
-
-document.getElementById('overlayIntro').classList.add('hidden');
-document.getElementById('overlayLevelClear').classList.add('hidden');
-document.getElementById('overlayWin').classList.add('hidden');
-document.getElementById('overlayLose').classList.add('hidden');
-
-updateActionButtons();
-}
-
-function setTaskTextForLevel(){
-const chipTask = document.getElementById('chipTask');
-if(currentLevel === 1){
-chipTask.textContent = '🎯 Gắp cont 1 → vùng XANH → NHẢ';
-} else if(!cont.delivered){
-chipTask.textContent = '🎯 Bước 1/2: Gắp cont 1 → vùng XANH → NHẢ';
-} else if(!cont2.delivered){
-chipTask.textContent = `🎯 Bước 2/2: Gắp cont 2 (cách xe1 ${CFG.START_CONT2_OFFSET}m) → gắn lên xe 2`;
-} else {
-chipTask.textContent = `🚗 LÙI XE XA XE 2 ĐÚNG ${CFG.MOVE_AWAY_DIST}m ĐỂ QUA MÀN!`;
-}
-}
-
-/* ============================================================
-ĐẾM THỜI GIAN
-============================================================ */
-function startTimer(){
-const t = CFG.LEVEL_TIME[currentLevel];
-if(t === Infinity){ timeLeft = Infinity; }
-else { timeLeft = t; startTime = performance.now(); }
-}
-function stopTimer(){ timeLeft = Infinity; }
-
-function tickTimer(dt){
-if(gameState !== 'playing') return;
-const t = CFG.LEVEL_TIME[currentLevel];
-if(t === Infinity) return;
-timeLeft -= dt;
-if(timeLeft <= 0){
-timeLeft = 0;
-triggerLose('timeout');
-}
-updateTimerHUD();
-}
-
-function updateTimerHUD(){
-const el = document.getElementById('chipTimer');
-const t = CFG.LEVEL_TIME[currentLevel];
-if(t === Infinity){
-el.textContent = '⏱️ ∞';
-el.classList.remove('warn');
-return;
-}
-const total = Math.max(0, Math.ceil(timeLeft));
-const mm = String(Math.floor(total/60)).padStart(2,'0');
-const ss = String(total%60).padStart(2,'0');
-el.textContent = `⏱️ ${mm}:${ss}`;
-el.classList.toggle('warn', total <= 10);
-}
-
-/* ============================================================
-CUTSCENE (2 xe đứng yên, chờ go)
-============================================================ */
-function updateCutscene(dt){
-cutsceneT += dt;
-if(cutsceneT > 1.8){
-gameState = 'playing';
-startTimer();
-if(currentLevel === 1) showHint('info','🏁 GO! Lái xe nâng lại gần cont trên xe 2!');
-else showHint('info','🏁 GO! Bắt đầu màn tính giờ!');
-updateActionButtons();
-}
-}
-
-/* ============================================================
-UPDATE
-============================================================ */
-function update(dt){
-blinkTime += dt;
-
-if(gameState === 'cutscene'){ updateCutscene(dt); updateEngineSound(); return; }
-
-if(gameState === 'playing'){
-tickTimer(dt);
-
-xe3.gasHeld = keys.gas;
-xe3.braking = keys.brake;
-
-const st = (keys.a?1:0) - (keys.d?1:0);
-if(st !== 0) xe3.steer = st * CFG.MAX_STEER;
-else xe3.steer *= 0.85;
-
-updateXe3(dt);
-
-// Cont đang gắp đi theo xe
-if(cont.hitched){
-const hf = getHFrameCenter();
-cont.x = hf.x; cont.y = hf.y;
-cont.angle = hf.angle + 90;
-}
-if(cont2.hitched){
-const hf = getHFrameCenter();
-cont2.x = hf.x; cont2.y = hf.y;
-cont2.angle = hf.angle + 90;
-}
-
-// Kiểm tra qua màn 2+ : đã gắn cont2 lên xe2 và lùi xa xe2 >= 15m
-if(currentLevel >= 2 && cont.delivered && cont2.delivered){
-const awayDist = dist(xe3.x, xe3.y, xe2.x, xe2.y);
-if(awayDist >= CFG.MOVE_AWAY_DIST){
-levelClear();
-}
-}
-if(cont2.onXe2){
-cont2.x = xe2.x;
-cont2.y = xe2.y;
-cont2.angle = xe2.angle;
-}
-updateEngineSound();
-updateActionButtons();
-}
-}
-
-/* ============================================================
-QUA MÀN / KẾT THÚC
-============================================================ */
-function levelClear(){
-if(gameState !== 'playing') return;
-gameState = 'levelclear';
-stopTimer();
-playBeep(880,0.1);
-setTimeout(()=>playBeep(1100,0.12),100);
-setTimeout(()=>playBeep(1320,0.15),220);
-
-if(currentLevel === 5 || currentLevel === 4){
-// Qua màn 4 hoặc 5 → ĐƯỢC TUYỂN
-setTimeout(()=>showWin(), 1200);
-} else {
-const title = `✅ QUA MÀN ${currentLevel}!`;
-const msg = currentLevel === 1
-? 'Giỏi lắm! Chuẩn bị bước vào vòng có giới hạn thời gian.'
-: `Tuyệt vời! Màn ${currentLevel+1} có ${formatTime(CFG.LEVEL_TIME[currentLevel+1])} để chinh phục.`;
-document.getElementById('levelClearTitle').textContent = title;
-document.getElementById('levelClearMsg').innerHTML = msg;
-document.getElementById('overlayLevelClear').classList.remove('hidden');
-}
-}
-
-function showWin(){
-gameState = 'win';
-document.getElementById('overlayWin').classList.remove('hidden');
-updateActionButtons();
-}
-
-function formatTime(s){
-if(s === Infinity) return 'không giới hạn';
-const m = Math.floor(s/60), ss = s%60;
-return m > 0 ? `${m} phút ${ss ? ss+'s' : ''}` : `${ss} giây`;
-}
-
-function nextLevel(){
-if(currentLevel >= 5){ showWin(); return; }
-buildLevel(currentLevel + 1);
-}
-
-/* ============================================================
-VẼ — helper vẽ sprite với kiểm tra biên
-============================================================ */
-function drawSprite(sp, dstX, dstY, dstW, dstH){
-if(!imgReady
-|| img.naturalWidth < sp.sx + sp.sw
-|| img.naturalHeight < sp.sy + sp.sh) return false;
-try{
-ctx.drawImage(img, sp.sx, sp.sy, sp.sw, sp.sh, dstX, dstY, dstW, dstH);
-return true;
-}catch(e){ return false; }
-}
-
-/* ============================================================
-VẼ XE 1
-============================================================ */
-function drawXe1(){
-const PX = CFG.PX_PER_M;
-const cx = xe1.x * PX, cy = xe1.y * PX;
-const lenPx = CFG.XE1_LEN * PX, widPx = CFG.XE1_W * PX;
-
+function drawSprite(row, col, x, y, scale, flipX, camera) {
+const spriteSize = 40;
+const screenX = x - camera.x;
+const screenY = y - camera.y;
 ctx.save();
-ctx.translate(cx, cy);
-ctx.rotate(d2r(xe1.angle));
-
-// Sprite gốc 58x32 (ngang) → xoay -90 để thành dọc
-ctx.save();
-ctx.rotate(-Math.PI/2);
-const ok = drawSprite(CFG.XE1_SPRITE, -lenPx/2, -widPx/2, lenPx, widPx);
+ctx.translate(screenX, screenY);
+if (flipX) ctx.scale(-1, 1);
+ctx.drawImage(
+spriteImg,
+col * spriteSize, row * spriteSize, spriteSize, spriteSize,
+- (spriteSize * scale) / 2, - (spriteSize * scale) / 2,
+spriteSize * scale, spriteSize * scale
+);
 ctx.restore();
-
-if(!ok){
-ctx.fillStyle = '#c85030';
-ctx.fillRect(-widPx/2, -lenPx/2, widPx, lenPx);
-ctx.strokeStyle = '#1a1410'; ctx.lineWidth = 2;
-ctx.strokeRect(-widPx/2, -lenPx/2, widPx, lenPx);
 }
 
-// Đèn pha mũi xe 1 (hướng Đông)
-ctx.fillStyle = '#fff8c0';
+function drawMap(camera) {
+ctx.fillStyle = '#7a8035';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+ctx.fillStyle = '#1b3b14';
+const rhW = 10 * M2P, rhH = 15 * M2P, gap = 5 * M2P;
+for (let x = 0; x < MAP_W; x += rhW + gap) {
+for (let y = 0; y < MAP_H; y += rhH + gap) {
+const drawX = x - camera.x, drawY = y - camera.y;
 ctx.beginPath();
-ctx.arc(-widPx*0.3, -lenPx/2 - 2, 2.5, 0, 7);
-ctx.arc( widPx*0.3, -lenPx/2 - 2, 2.5, 0, 7);
-ctx.fill();
-
-ctx.restore();
-}
-
-/* ============================================================
-VẼ XE 2 (chassis + cont 1 mặc định) + đèn đuôi
-============================================================ */
-function drawXe2(){
-const PX = CFG.PX_PER_M;
-const cx = xe2.x * PX, cy = xe2.y * PX;
-const lenPx = CFG.XE2_LEN * PX, widPx = CFG.XE2_W * PX;
-
-ctx.save();
-ctx.translate(cx, cy);
-ctx.rotate(d2r(xe2.angle));
-
-// Sprite 32x190 (dọc) → xoay +90 để thành ngang
-ctx.save();
-ctx.rotate(Math.PI/2);
-const ok = drawSprite(CFG.XE2_SPRITE, -lenPx/2, -widPx/2, lenPx, widPx);
-ctx.restore();
-
-if(!ok){
-ctx.fillStyle = '#4a4a50';
-ctx.fillRect(-widPx/2, -lenPx/2, widPx, lenPx);
-ctx.strokeStyle = '#1a1a1c'; ctx.lineWidth = 2;
-ctx.strokeRect(-widPx/2, -lenPx/2, widPx, lenPx);
-}
-
-// Đèn đỏ đuôi xe 2 (phía Tây, tức -lenPx/2 trong hệ xoay)
-ctx.fillStyle = '#ff3030';
-ctx.shadowColor = '#ff6060'; ctx.shadowBlur = 8;
-ctx.beginPath();
-ctx.arc(-widPx*0.35, lenPx/2 - 3, 3, 0, 7);
-ctx.arc( widPx*0.35, lenPx/2 - 3, 3, 0, 7);
-ctx.fill();
-ctx.shadowBlur = 0;
-
-ctx.restore();
-}
-
-/* ============================================================
-VẼ XE 3 (xe nâng) + đèn nháy
-============================================================ */
-function drawXe3(){
-const PX = CFG.PX_PER_M;
-const cx = xe3.x * PX, cy = xe3.y * PX;
-const lenPx = CFG.XE3_LEN * PX, widPx = CFG.XE3_W * PX;
-
-// Bump flash (nhấp nháy đỏ khi va chạm)
-const flash = xe3.bumpFlash > 0;
-
-ctx.save();
-ctx.translate(cx, cy);
-ctx.rotate(d2r(xe3.angle));
-
-// Nền
-ctx.fillStyle = flash ? '#ff6060' : '#d0a020';
-ctx.fillRect(-widPx/2, -lenPx/2, widPx, lenPx);
-
-// Sprite
-drawSprite(CFG.XE3_SPRITE, -widPx/2, -lenPx/2, widPx, lenPx);
-
-ctx.strokeStyle = '#1a1410'; ctx.lineWidth = 2;
-ctx.strokeRect(-widPx/2, -lenPx/2, widPx, lenPx);
-
-// Đèn nháy 4 góc
-drawBlinkLights(lenPx, widPx);
-
-ctx.restore();
-
-// Nhãn bánh lái
-const tailOff = CFG.XE3_LEN/2 - CFG.XE3_AXLE_STEER;
-const d = dir(xe3.angle);
-const tx = (xe3.x + d.x*tailOff) * PX;
-const ty = (xe3.y + d.y*tailOff) * PX;
-ctx.save();
-ctx.translate(tx, ty);
-ctx.rotate(d2r(xe3.angle));
-ctx.fillStyle = '#ff5050';
-ctx.font = 'bold 11px sans-serif';
-ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-ctx.fillText('↺ BÁNH LÁI', 0, 14);
-ctx.restore();
-}
-
-function drawBlinkLights(lenPx, widPx){
-const blink = (Math.floor(blinkTime*3) % 2 === 0);
-const color = blink ? '#ffe040' : '#804000';
-ctx.save();
-ctx.shadowColor = blink ? '#ffd000' : 'transparent';
-ctx.shadowBlur = blink ? 14 : 0;
-const pos = [
-[-widPx/2 + 3, -lenPx/2 + 3],
-[ widPx/2 - 3, -lenPx/2 + 3],
-[-widPx/2 + 3, lenPx/2 - 3],
-[ widPx/2 - 3, lenPx/2 - 3],
-];
-for(const [px, py] of pos){
-ctx.fillStyle = color;
-ctx.beginPath(); ctx.arc(px, py, 3, 0, 7); ctx.fill();
-}
-const rot = (blinkTime * 6) % (Math.PI*2);
-const beamX = Math.cos(rot) * 6;
-ctx.fillStyle = blink ? 'rgba(255,220,60,0.35)' : 'rgba(255,220,60,0.08)';
-ctx.beginPath();
-ctx.moveTo(beamX, 0);
-ctx.lineTo(beamX + 22, -16);
-ctx.lineTo(beamX + 22, 16);
+ctx.moveTo(drawX + rhW/2, drawY);
+ctx.lineTo(drawX + rhW, drawY + rhH/2);
+ctx.lineTo(drawX + rhW/2, drawY + rhH);
+ctx.lineTo(drawX, drawY + rhH/2);
 ctx.closePath(); ctx.fill();
-ctx.fillStyle = blink ? '#fff8b0' : '#806020';
-ctx.beginPath(); ctx.arc(0, 0, 4, 0, 7); ctx.fill();
-ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
-ctx.restore();
+}
+}
 }
 
-/* ============================================================
-VẼ CONT (sprite ngang 190x33)
-============================================================ */
-function drawCont(c){
-const PX = CFG.PX_PER_M;
-const cx = c.x * PX, cy = c.y * PX;
-const lenPx = CFG.CONT_LEN * PX, widPx = CFG.CONT_W * PX;
+// 🛰️ Vẽ Mini-map Ra-đa
+function drawRadar() {
+const rW = radarCanvas.width;
+const rH = radarCanvas.height;
+const scaleX = rW / MAP_W;
+const scaleY = rH / MAP_H;
 
+radarCtx.clearRect(0, 0, rW, rH);
+
+radarCtx.strokeStyle = 'rgba(0, 255, 136, 0.15)';
+radarCtx.lineWidth = 1;
+for (let i = 0; i < rW; i += 20) { radarCtx.beginPath(); radarCtx.moveTo(i, 0); radarCtx.lineTo(i, rH); radarCtx.stroke(); }
+for (let j = 0; j < rH; j += 20) { radarCtx.beginPath(); radarCtx.moveTo(0, j); radarCtx.lineTo(rW, j); radarCtx.stroke(); }
+
+items.forEach(it => {
+radarCtx.fillStyle = it.type === 'spirit' ? '#00f2ff' : '#ff00ff';
+radarCtx.fillRect(it.x * scaleX - 1, it.y * scaleY - 1, 3, 3);
+});
+
+insects.forEach(ins => {
+radarCtx.fillStyle = ins.state === 'attack' ? '#ff0055' : '#ffaa00';
+radarCtx.beginPath();
+radarCtx.arc(ins.x * scaleX, ins.y * scaleY, 2.5, 0, Math.PI * 2);
+radarCtx.fill();
+});
+
+const px = player.x * scaleX;
+const py = player.y * scaleY;
+radarCtx.fillStyle = '#00ff88';
+radarCtx.beginPath();
+radarCtx.arc(px, py, 3, 0, Math.PI * 2);
+radarCtx.fill();
+
+radarCtx.strokeStyle = 'rgba(0, 255, 136, 0.5)';
+radarCtx.beginPath();
+radarCtx.arc(px, py, (Date.now() / 30) % 12, 0, Math.PI * 2);
+radarCtx.stroke();
+}
+
+// Vòng lặp Game Loop chính
+let lastTime = performance.now();
+
+function gameLoop(now) {
+const dt = (now - lastTime) / 1000;
+lastTime = now;
+
+const camera = {
+x: Math.max(0, Math.min(MAP_W - VIEW_W, player.x - VIEW_W / 2)),
+y: Math.max(0, Math.min(MAP_H - VIEW_H, player.y - VIEW_H / 2))
+};
+
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+drawMap(camera);
+
+if (gameState === 'INTRO') {
+introTimer += 0.05;
+if (introTimer === 0.05) playSound('teleport');
+
+const screenX = player.x - camera.x, screenY = player.y - camera.y;
 ctx.save();
-ctx.translate(cx, cy);
-ctx.rotate(d2r(c.angle));
-// Sprite 190x33 (ngang) → xoay -90 để thành dọc theo trục Y cục bộ
+ctx.translate(screenX, screenY);
+['#00f2ff', '#7000ff', '#ff0055'].forEach((col, i) => {
 ctx.save();
-ctx.rotate(-Math.PI/2);
-const ok = drawSprite(CFG.CONT_SPRITE, -lenPx/2, -widPx/2, lenPx, widPx);
+ctx.rotate((introTimer * (i % 2 === 0 ? 0.08 : -0.08)));
+ctx.beginPath(); ctx.arc(0, 0, (35 - i * 8), 0, Math.PI * 1.5);
+ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.stroke();
+ctx.restore();
+});
 ctx.restore();
 
-if(!ok){
-ctx.fillStyle = c.hitched ? '#3a8040' : '#808088';
-ctx.fillRect(-widPx/2, -lenPx/2, widPx, lenPx);
-ctx.strokeStyle = '#1a1410'; ctx.lineWidth = 2;
-ctx.strokeRect(-widPx/2, -lenPx/2, widPx, lenPx);
-}
-ctx.restore();
-}
+ctx.globalAlpha = Math.min(1, introTimer / 3);
+drawSprite(4, 0, player.x, player.y, player.scale, false, camera);
+ctx.globalAlpha = 1.0;
 
-/* ============================================================
-VẼ KHUNG CHỮ H
-============================================================ */
-function drawHFrame(){
-const hf = getHFrameCenter();
-const cx = hf.x * CFG.PX_PER_M, cy = hf.y * CFG.PX_PER_M;
-const widPx = CFG.HFRAME_W * CFG.PX_PER_M;
-const depPx = CFG.HFRAME_D * CFG.PX_PER_M;
-const armPx = CFG.HFRAME_ARM_LEN * CFG.PX_PER_M;
-
-ctx.save();
-ctx.translate(cx, cy);
-ctx.rotate(d2r(hf.angle));
-
-const cDark = (cont.hitched||cont2.hitched) ? '#1e5020' : '#2a2a2e';
-const cMid = (cont.hitched||cont2.hitched) ? '#3a8030' : '#3e3e44';
-const cLight = (cont.hitched||cont2.hitched) ? '#7ee060' : '#8a8a92';
-
-function bar(x, y, w, h){
-ctx.fillStyle = cMid;
-ctx.fillRect(x, y, w, h);
-ctx.strokeStyle = cDark; ctx.lineWidth = 1.5;
-ctx.strokeRect(x, y, w, h);
-}
-bar(-widPx/2, -depPx/2, armPx, depPx);
-bar( widPx/2 - armPx, -depPx/2, armPx, depPx);
-bar(-widPx/2, -armPx/2, widPx, armPx);
-
-ctx.fillStyle = cLight;
-const rivets = [
-[-widPx/2+armPx/2, -depPx/2+armPx/2],
-[ widPx/2-armPx/2, -depPx/2+armPx/2],
-[-widPx/2+armPx/2, depPx/2-armPx/2],
-[ widPx/2-armPx/2, depPx/2-armPx/2],
-];
-for(const [rx, ry] of rivets){
-ctx.beginPath(); ctx.arc(rx, ry, 2.5, 0, 7); ctx.fill();
-}
-ctx.fillStyle = '#ffd040';
-ctx.beginPath(); ctx.arc(0, 0, 2.5, 0, 7); ctx.fill();
-ctx.restore();
+if (introTimer > 3.5) { gameState = 'PLAYING'; initGame(); }
+requestAnimationFrame(gameLoop);
+return;
 }
 
-/* ============================================================
-VẼ SÂN, TƯỜNG, CÂY, VÙNG XANH
-============================================================ */
-function drawField(){
-const PX = CFG.PX_PER_M;
-const W_m = CFG.FIELD_W, H_m = CFG.FIELD_H;
+if (gameState === 'PLAYING') {
+let moveX = joyVector.x, moveY = joyVector.y;
+if (keys['w'] || keys['arrowup']) moveY = -1;
+if (keys['s'] || keys['arrowdown']) moveY = 1;
+if (keys['a'] || keys['arrowleft']) moveX = -1;
+if (keys['d'] || keys['arrowright']) moveX = 1;
 
-// Nền
-ctx.fillStyle = '#4a4a48';
-ctx.fillRect(0, 0, W_m*PX, H_m*PX);
+if (moveX !== 0 || moveY !== 0) {
+const len = Math.hypot(moveX, moveY);
+player.x = Math.max(0, Math.min(MAP_W, player.x + (moveX / len) * player.speed * dt));
+player.y = Math.max(0, Math.min(MAP_H, player.y + (moveY / len) * player.speed * dt));
 
-// Lưới
-ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-ctx.lineWidth = 1;
-for(let i = 0; i <= W_m; i += 5){
-ctx.beginPath(); ctx.moveTo(i*PX, 0); ctx.lineTo(i*PX, H_m*PX); ctx.stroke();
-}
-for(let j = 0; j <= H_m; j += 5){
-ctx.beginPath(); ctx.moveTo(0, j*PX); ctx.lineTo(W_m*PX, j*PX); ctx.stroke();
-}
+if (moveY < 0) player.dir = moveX >= 0 ? 'NE' : 'NW';
+else player.dir = moveX >= 0 ? 'SE' : 'SW';
 
-// Vạch vàng giữa sân
-ctx.strokeStyle = 'rgba(255,220,64,0.35)';
-ctx.lineWidth = 2;
-ctx.setLineDash([15, 10]);
-ctx.beginPath();
-ctx.moveTo(0, (CFG.FIELD_H/2)*PX);
-ctx.lineTo(W_m*PX, (CFG.FIELD_H/2)*PX);
-ctx.stroke();
-ctx.setLineDash([]);
+player.action = 'walk';
+player.frameTimer += dt;
+if (player.frameTimer > 0.1) { player.frame = (player.frame + 1) % 4; player.frameTimer = 0; }
+} else { player.action = 'idle'; player.frame = 0; }
 
-// Vùng XANH (đích thả cont 1)
-if(dropZone.w > 0){
-const dx = (dropZone.x - dropZone.w/2) * PX;
-const dy = (dropZone.y - dropZone.h/2) * PX;
-const dw = dropZone.w * PX, dh = dropZone.h * PX;
-const grd = ctx.createRadialGradient(dropZone.x*PX, dropZone.y*PX, 0,
-dropZone.x*PX, dropZone.y*PX, dw/2);
-grd.addColorStop(0, 'rgba(80,255,120,0.35)');
-grd.addColorStop(1, 'rgba(80,255,120,0.10)');
-ctx.fillStyle = grd;
-ctx.fillRect(dx, dy, dw, dh);
-ctx.strokeStyle = 'rgba(120,255,140,0.9)';
-ctx.lineWidth = 2;
-ctx.setLineDash([6, 4]);
-ctx.strokeRect(dx, dy, dw, dh);
-ctx.setLineDash([]);
-// Chữ "XANH"
-ctx.fillStyle = 'rgba(180,255,200,0.7)';
-ctx.font = 'bold 12px sans-serif';
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
-ctx.fillText('VÙNG XANH', dropZone.x*PX, dy - 8);
+if (player.cooldownTimer > 0) {
+player.cooldownTimer -= dt;
+if (player.cooldownTimer <= 0) player.throwCharges = 2;
 }
 
-// Tường
-for(const wal of walls){
-ctx.fillStyle = '#6a4830';
-ctx.fillRect(wal.x*PX, wal.y*PX, wal.w*PX, wal.h*PX);
-// gạch
-ctx.strokeStyle = '#3a2818';
-ctx.lineWidth = 1;
-const cell = 2*PX;
-for(let gx = wal.x*PX; gx < (wal.x+wal.w)*PX; gx += cell){
-ctx.beginPath();
-ctx.moveTo(gx, wal.y*PX);
-ctx.lineTo(gx, (wal.y+wal.h)*PX);
-ctx.stroke();
-}
-ctx.strokeStyle = '#2a1a08';
-ctx.lineWidth = 2;
-ctx.strokeRect(wal.x*PX, wal.y*PX, wal.w*PX, wal.h*PX);
-}
+// Tầm ném 15m
+let minDist = Infinity;
+insects.forEach(ins => {
+const d = Math.hypot(ins.x - player.x, ins.y - player.y);
+if (d < minDist) minDist = d;
+});
 
-// Cây
-for(const t of trees){
-const tx = t.x*PX, ty = t.y*PX, tr = t.r*PX;
-// tán cây
-const g = ctx.createRadialGradient(tx - tr*0.3, ty - tr*0.3, tr*0.1, tx, ty, tr*1.2);
-g.addColorStop(0, '#7ec860');
-g.addColorStop(1, '#2a6018');
-ctx.fillStyle = g;
-ctx.beginPath(); ctx.arc(tx, ty, tr, 0, 7); ctx.fill();
-// thân
-ctx.fillStyle = '#3a2010';
-ctx.beginPath(); ctx.arc(tx, ty, tr*0.25, 0, 7); ctx.fill();
-// viền
-ctx.strokeStyle = '#1a3808'; ctx.lineWidth = 1.5;
-ctx.beginPath(); ctx.arc(tx, ty, tr, 0, 7); ctx.stroke();
-}
+const btnThrow = document.getElementById('btnThrow');
+if (minDist <= 15 * M2P && player.throwCharges > 0) btnThrow.classList.remove('disabled');
+else btnThrow.classList.add('disabled');
 
-// Biên sân
-ctx.strokeStyle = '#2a1a08'; ctx.lineWidth = 4;
-ctx.strokeRect(0, 0, W_m*PX, H_m*PX);
-}
+document.getElementById('txtCd').innerText = player.cooldownTimer > 0 ? `${Math.ceil(player.cooldownTimer)}s` : `${player.throwCharges}/2`;
 
-/* ============================================================
-DRAW
-============================================================ */
-function updateCam(dt){
-const tx = xe3.x * CFG.PX_PER_M;
-const ty = xe3.y * CFG.PX_PER_M;
-cam.x += (tx - cam.x) * Math.min(1, dt*4);
-cam.y += (ty - cam.y) * Math.min(1, dt*4);
-if(cam.shakeT > 0){
-cam.shakeT -= dt;
-cam.shakeOffsetX = (Math.random()-0.5) * 20;
-cam.shakeOffsetY = (Math.random()-0.5) * 20;
+// Logic Côn Trùng
+insects.forEach((ins) => {
+const distToPlayer = Math.hypot(player.x - ins.x, player.y - ins.y);
+if (ins.state === 'wander') {
+ins.x += Math.cos(ins.wanderAngle) * ins.speed * dt;
+ins.y += Math.sin(ins.wanderAngle) * ins.speed * dt;
+if (Math.random() < 0.02) ins.wanderAngle = Math.random() * Math.PI * 2;
+ins.dir = Math.cos(ins.wanderAngle) >= 0 ? 'SE' : 'SW';
 } else {
-cam.shakeOffsetX = 0; cam.shakeOffsetY = 0;
+const angle = Math.atan2(player.y - ins.y, player.x - ins.x);
+ins.x += Math.cos(angle) * (ins.speed * 1.4) * dt;
+ins.y += Math.sin(angle) * (ins.speed * 1.4) * dt;
+ins.dir = Math.cos(angle) >= 0 ? 'SE' : 'SW';
+
+if (distToPlayer <= 3 * M2P) {
+ins.attackTimer += dt;
+if (ins.attackTimer >= 2.0) {
+player.hp = Math.max(0, player.hp - 5);
+playSound('hit');
+ins.attackTimer = 0;
+updateUI();
+if (player.hp <= 0) gameOver(false);
+}
 }
 }
 
-function draw(){
-ctx.fillStyle = '#1a1a18';
-ctx.fillRect(0, 0, W, H);
+ins.frameTimer += dt;
+if (ins.frameTimer > 0.1) { ins.frame = (ins.frame + 1) % 4; ins.frameTimer = 0; }
+drawSprite(ins.type, (ins.state === 'wander' ? 0 : 4) + ins.frame, ins.x, ins.y, ins.scale, (ins.dir==='NW'||ins.dir==='SW'), camera);
+});
+
+// Xử lý Boomerang & Tái sinh quái duy trì tối thiểu 3 con
+boomerangs.forEach((bm, bIdx) => {
+const angle = Math.atan2(bm.target.y - bm.y, bm.target.x - bm.x);
+bm.x += Math.cos(angle) * 16 * M2P * dt;
+bm.y += Math.sin(angle) * 16 * M2P * dt;
+bm.rotation += 0.3;
 
 ctx.save();
-ctx.translate(W/2 + (cam.shakeOffsetX||0), H/2 + (cam.shakeOffsetY||0));
-ctx.translate(-cam.x, -cam.y);
-
-drawField();
-
-// Vẽ theo thứ tự từ xa → gần
-drawXe1();
-drawXe2();
-
-// Cont 1: nếu không gắp → vẽ ở vị trí cont (trên xe 2 nếu onXe2)
-if(!cont.hitched && !cont.delivered) drawCont(cont);
-if(cont.delivered && !cont.hitched) drawCont(cont); // đã nhả, nằm tại chỗ nhả
-
-// Cont 2
-if(cont2.active && !cont2.hitched){
-if(cont2.onXe2){
-// Nếu đã gắn lên xe 2 → vẽ cùng xe 2 (kéo theo xe 2)
-// Đơn giản: đặt cont2.x/y = xe2.x/y khi onXe2 → ở đây vẽ
-}
-drawCont(cont2);
-}
-
-drawHFrame();
-drawXe3();
-
-if(cont.hitched) drawCont(cont);
-if(cont2.hitched) drawCont(cont2);
-
+ctx.translate(bm.x - camera.x, bm.y - camera.y);
+ctx.rotate(bm.rotation);
+ctx.fillStyle = '#ff9900'; ctx.fillRect(-8, -2, 16, 4);
 ctx.restore();
+
+if (Math.hypot(bm.target.x - bm.x, bm.target.y - bm.y) < 1 * M2P) {
+playSound('hit');
+bm.target.hp -= 25;
+bm.target.state = 'attack';
+
+// Đẩy lùi -2m
+const pAngle = Math.atan2(bm.target.y - player.y, bm.target.x - player.x);
+bm.target.x += Math.cos(pAngle) * 2 * M2P;
+bm.target.y += Math.sin(pAngle) * 2 * M2P;
+
+if (bm.target.hp <= 0) {
+items.push({ x: bm.target.x, y: bm.target.y, type: Math.random() < 0.7 ? 'spirit' : 'essence' });
+
+const idx = insects.indexOf(bm.target);
+if (idx !== -1) insects.splice(idx, 1);
+
+while (insects.length < MIN_INSECTS) {
+insects.push(spawnInsect(1 + Math.floor(Math.random() * 2)));
+}
+}
+boomerangs.splice(bIdx, 1);
+}
+});
+
+// Nhặt Linh Thạch
+items.forEach((it, iIdx) => {
+ctx.fillStyle = it.type === 'spirit' ? '#00f2ff' : '#ff00ff';
+ctx.beginPath(); ctx.arc(it.x - camera.x, it.y - camera.y, 5, 0, Math.PI * 2); ctx.fill();
+
+if (Math.hypot(player.x - it.x, player.y - it.y) < 1.5 * M2P) {
+playSound('pickup');
+if (it.type === 'spirit') {
+player.spiritStones++;
+if (player.spiritStones >= 5) {
+player.spiritStones = 0; player.level++;
+playSound('levelup');
+if (player.level > 9) gameOver(true);
+}
+}
+updateUI();
+items.splice(iIdx, 1);
+}
+});
+
+// Vẽ Nhân vật
+let pRow = (player.dir === 'NE' || player.dir === 'NW') ? 0 : 4;
+let pCol = (player.action === 'attack' ? 4 : 0) + player.frame;
+drawSprite(pRow, pCol, player.x, player.y, player.scale, (player.dir==='NW'||player.dir==='SW'), camera);
+
+// Render Ra-đa
+drawRadar();
 }
 
-/* ============================================================
-LOOP
-============================================================ */
-let lastFrame = performance.now();
-function loop(now){
-let dt = (now - lastFrame) / 1000;
-if(dt > 0.05) dt = 0.05;
-lastFrame = now;
-
-update(dt);
-updateCam(dt);
-draw();
-
-requestAnimationFrame(loop);
+requestAnimationFrame(gameLoop);
 }
-requestAnimationFrame(loop);
 
-/* ============================================================
-BUTTONS
-============================================================ */
-document.getElementById('btnStart').addEventListener('click', ()=>{
+function doThrow() {
 initAudio();
-if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-playBeep(880, 0.08);
-buildLevel(1);
-});
-document.getElementById('btnNextLevel').addEventListener('click', nextLevel);
-document.getElementById('btnReplayWin').addEventListener('click', ()=>{
-buildLevel(1);
-});
-document.getElementById('btnRetryLose').addEventListener('click', ()=>{
-buildLevel(1);
-});
-document.getElementById('btnExplore').addEventListener('click', ()=>{
-window.open('https://tranh-ba-game-gw3q.vercel.app/xecontainer.html', '_blank');
-});
-document.getElementById('btnMute').addEventListener('click', ()=>{
-audioMuted = !audioMuted;
-document.getElementById('btnMute').textContent = audioMuted ? '🔇' : '🔊';
-if(audioMuted && engineGain) engineGain.gain.value = 0;
+if (gameState !== 'PLAYING' || player.throwCharges <= 0) return;
+
+let nearest = null, minDist = Infinity;
+insects.forEach(ins => {
+const d = Math.hypot(ins.x - player.x, ins.y - player.y);
+if (d < minDist) { minDist = d; nearest = ins; }
 });
 
-/* ============================================================
-BOOT
-============================================================ */
-buildLevel(1);
-gameState = 'intro';
-document.getElementById('overlayIntro').classList.remove('hidden');
+if (nearest && minDist <= 15 * M2P) {
+playSound('throw');
+const dx = nearest.x - player.x, dy = nearest.y - player.y;
+player.dir = dy < 0 ? (dx >= 0 ? 'NE' : 'NW') : (dx >= 0 ? 'SE' : 'SW');
+player.action = 'attack';
+player.throwCharges--;
+
+boomerangs.push({ x: player.x, y: player.y, target: nearest, rotation: 0 });
+if (player.throwCharges === 0) player.cooldownTimer = 2.0;
+}
+}
+
+document.getElementById('btnThrow').addEventListener('click', doThrow);
+window.addEventListener('keydown', e => { if (e.key === ' ') doThrow(); });
+
+function updateUI() {
+document.getElementById('txtLevel').innerText = `Luyện Khí Tầng ${player.level}`;
+document.getElementById('txtHP').innerText = `${player.hp}/100`;
+document.getElementById('hpFill').style.width = `${player.hp}%`;
+document.getElementById('txtStones').innerText = `${player.spiritStones}/5`;
+}
+
+function gameOver(isWin) {
+gameState = isWin ? 'WIN' : 'LOSE';
+document.getElementById(isWin ? 'modalWin' : 'modalLose').style.display = 'flex';
+}
+
+requestAnimationFrame(gameLoop);
 </script>
 </body>
 </html>
