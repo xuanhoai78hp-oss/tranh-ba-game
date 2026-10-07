@@ -6,8 +6,6 @@
 <title>Piano Rhythm Game</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-
-/* === BODY ĐÃ ĐƯỢC XOAY NGANG 90 ĐỘ === */
 body {
   background-color: #111; 
   color: white; 
@@ -15,48 +13,53 @@ body {
   overflow: hidden;
   touch-action: none;
 
-  /* Cố định kích thước theo khung nhìn màn hình */
+  /* Đặt kích thước theo màn hình */
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+
+  /* Cố định khung chứa và xoay quanh tâm */
+  position: absolute;
+  top: 50%;
+  left: 50%;
   width: 100vh;
   height: 100vw;
-
-  /* Xoay 90 độ sang trái và tịnh tiến vào màn hình */
-  transform-origin: top left;
-  transform: rotate(-90deg) translateY(100vh);
+  transform: translate(-50%, -50%) rotate(-90deg);
 
   display: flex; 
   flex-direction: column;
 }
-
 #toolbar {
-  height: 10%; display: flex; align-items: center; justify-content: space-evenly;
-  background: linear-gradient(90deg, #1a1a1a, #333, #1a1a1a);
-  border-bottom: 2px solid #555;
+height: 10%; display: flex; align-items: center; justify-content: space-evenly;
+background: linear-gradient(90deg, #1a1a1a, #333, #1a1a1a);
+border-bottom: 2px solid #555;
 }
 .btn, .ctrl { background: #444; padding: 5px 10px; border-radius: 5px; font-weight: bold; display: flex; gap: 5px; align-items: center; }
 .btn:active { background: #666; }
 .ctrl button { background: #222; color: #fff; border: none; width: 25px; height: 25px; border-radius: 3px;}
 
 #game-area {
-  height: 70%; position: relative; background: #000;
-  border-left: 2px solid gold; border-right: 2px solid gold; overflow: hidden;
+height: 70%; position: relative; background: #000;
+border-left: 2px solid gold; border-right: 2px solid gold; overflow: hidden;
 }
 canvas { width: 100%; height: 100%; display: block; }
 
 #piano { height: 20%; display: flex; position: relative; background: #222; }
 .key-white {
-  flex: 1; border: 1px solid #ccc; background: linear-gradient(to bottom, #fff 0%, #eee 100%);
-  border-radius: 0 0 5px 5px; position: relative; display: flex; align-items: flex-end;
-  justify-content: center; padding-bottom: 5px; color: #333; font-weight: bold; font-size: 12px;
+flex: 1; border: 1px solid #ccc; background: linear-gradient(to bottom, #fff 0%, #eee 100%);
+border-radius: 0 0 5px 5px; position: relative; display: flex; align-items: flex-end;
+justify-content: center; padding-bottom: 5px; color: #333; font-weight: bold; font-size: 12px;
 }
 .key-white.active { background: linear-gradient(to bottom, #aaa 0%, #888 100%); }
 .key-black {
-  position: absolute; width: calc(100% / 24 * 0.6); height: 60%;
-  background: linear-gradient(to bottom, #333 0%, #000 100%); border-radius: 0 0 3px 3px; z-index: 2; pointer-events: none;
+position: absolute; width: calc(100% / 24 * 0.6); height: 60%;
+background: linear-gradient(to bottom, #333 0%, #000 100%); border-radius: 0 0 3px 3px; z-index: 2; pointer-events: none;
 }
 
 #popup {
-  display: none; position: absolute; top: 15%; left: 10%; width: 80%; height: 70%;
-  background: rgba(0,0,0,0.9); border: 2px solid gold; z-index: 10; padding: 10px; flex-direction: column;
+display: none; position: absolute; top: 15%; left: 10%; width: 80%; height: 70%;
+background: rgba(0,0,0,0.9); border: 2px solid gold; z-index: 10; padding: 10px; flex-direction: column;
 }
 #popup textarea { flex: 1; background: #222; color: #0f0; padding: 10px; font-family: monospace; }
 #popup button { margin-top: 10px; padding: 10px; background: gold; color: black; font-weight: bold; border: none;}
@@ -65,34 +68,34 @@ canvas { width: 100%; height: 100%; display: block; }
 <body>
 
 <div id="toolbar">
-  <div class="ctrl">Tempo <button id="btn-t-">-</button> <span id="val-tempo">120</span> <button id="btn-t+">+</button></div>
-  <div class="ctrl">Vol <button id="btn-v-">-</button> <span id="val-vol">70</span> <button id="btn-v+">+</button></div>
-  <div class="btn" id="btn-code">Nhập Code</div>
-  <div class="btn" id="btn-rec" style="color: #ff4d4d;">Thu</div>
-  <div class="btn" id="btn-play">Phát</div>
+<div class="ctrl">Tempo <button id="btn-t-">-</button> <span id="val-tempo">120</span> <button id="btn-t+">+</button></div>
+<div class="ctrl">Vol <button id="btn-v-">-</button> <span id="val-vol">70</span> <button id="btn-v+">+</button></div>
+<div class="btn" id="btn-code">📝 Nhập Code</div>
+<div class="btn" id="btn-rec" style="color: #ff4d4d;">🔴 Thu</div>
+<div class="btn" id="btn-play">▶ Phát</div>
 </div>
 
 <div id="game-area">
-  <canvas id="canvas"></canvas>
+<canvas id="canvas"></canvas>
 </div>
 
 <div id="piano"></div>
 
 <div id="popup">
-  <textarea id="song-code">1/2G4 1/2G4 A4 G4 C5 2B4, 1/2G4 1/2G4 A4 G4 D5 2C5, 1/2G4 1/2G4 G5 E5 C5 B4 2A4, 1/2F5 1/2F5 E5 C5 D5 4C5</textarea>
-  <button id="btn-apply">OK & Chơi Bài Này</button>
+<textarea id="song-code">1/2G4 1/2G4 A4 G4 C5 2B4, 1/2G4 1/2G4 A4 G4 D5 2C5, 1/2G4 1/2G4 G5 E5 C5 B4 2A4, 1/2F5 1/2F5 E5 C5 D5 4C5</textarea>
+<button id="btn-apply">OK & Chơi Bài Này</button>
 </div>
 
 <script>
 // === THÔNG SỐ CƠ BẢN ===
 const whiteNotes = ["C3","D3","E3","F3","G3","A3","B3", "C4","D4","E4","F4","G4","A4","B4", "C5","D5","E5","F5","G5","A5","B5", "C6","D6","E6"];
 const frequencies = {
-  "C3": 130.81, "D3": 146.83, "E3": 164.81, "F3": 174.61, "G3": 196.00, "A3": 220.00, "B3": 246.94,
-  "C4": 261.63, "D4": 293.66, "E4": 329.63, "F4": 349.23, "G4": 392.00, "A4": 440.00, "B4": 493.88,
-  "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "A5": 880.00, "B5": 987.77,
-  "C6": 1046.50, "D6": 1174.66, "E6": 1318.51
+"C3": 130.81, "D3": 146.83, "E3": 164.81, "F3": 174.61, "G3": 196.00, "A3": 220.00, "B3": 246.94,
+"C4": 261.63, "D4": 293.66, "E4": 329.63, "F4": 349.23, "G4": 392.00, "A4": 440.00, "B4": 493.88,
+"C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "A5": 880.00, "B5": 987.77,
+"C6": 1046.50, "D6": 1174.66, "E6": 1318.51
 };
-const colors = ["#ff0000", "#ff7f00", "#ffff00", "#00ff00", "#0000ff", "#4b0082", "#9400d3"];
+const colors = ["#ff0000", "#ff7f00", "#ffff00", "#00ff00", "#0000ff", "#4b0082", "#9400d3"]; // 7 màu cầu vồng
 
 let volume = 0.7;
 let tempo = 120;
@@ -103,193 +106,191 @@ const pianoDiv = document.getElementById("piano");
 const blackKeyIndices = [0,1,3,4,5,7,8,10,11,12,14,15,17,18,19,21,22];
 
 whiteNotes.forEach((note, index) => {
-  let key = document.createElement("div");
-  key.className = "key-white";
-  key.id = "key-" + note;
-  key.innerText = note.replace(/\d/, "");
-  key.addEventListener("touchstart", (e) => { e.preventDefault(); pressKey(note); });
-  pianoDiv.appendChild(key);
+let key = document.createElement("div");
+key.className = "key-white";
+key.id = "key-" + note;
+key.innerText = note.replace(/\d/, "");
+key.addEventListener("touchstart", (e) => { e.preventDefault(); pressKey(note); });
+pianoDiv.appendChild(key);
 
-  if (blackKeyIndices.includes(index)) {
-    let bKey = document.createElement("div");
-    bKey.className = "key-black";
-    bKey.style.left = `calc(${(index + 1) * (100 / 24)}% - ${100 / 24 * 0.3}%)`;
-    pianoDiv.appendChild(bKey);
-  }
+if (blackKeyIndices.includes(index)) {
+let bKey = document.createElement("div");
+bKey.className = "key-black";
+bKey.style.left = `calc(${(index + 1) * (100 / 24)}% - ${100 / 24 * 0.3}%)`;
+pianoDiv.appendChild(bKey);
+}
 });
 
-// === AUDIO ===
+// === AUDIO YÊU CẦU CHẠM ĐỂ KÍCH HOẠT TRÊN ĐIỆN THOẠI ===
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playSound(freq) {
-  if(audioCtx.state === 'suspended') audioCtx.resume();
-  let osc = audioCtx.createOscillator();
-  let gain = audioCtx.createGain();
-  osc.type = "sine";
-  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 1);
+if(audioCtx.state === 'suspended') audioCtx.resume();
+let osc = audioCtx.createOscillator();
+let gain = audioCtx.createGain();
+osc.type = "sine";
+osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+osc.connect(gain);
+gain.connect(audioCtx.destination);
+osc.start();
+osc.stop(audioCtx.currentTime + 1);
 }
 
-// === TEMPO & VOLUME ===
+// === NÚT TEMPO & VOLUME (ĐÃ FIX) ===
 document.getElementById("btn-t+").addEventListener("click", () => { tempo += 10; document.getElementById("val-tempo").innerText = tempo; });
 document.getElementById("btn-t-").addEventListener("click", () => { if(tempo>10) tempo -= 10; document.getElementById("val-tempo").innerText = tempo; });
 document.getElementById("btn-v+").addEventListener("click", () => { if(volume<1) volume+=0.1; document.getElementById("val-vol").innerText = Math.round(volume*100); });
 document.getElementById("btn-v-").addEventListener("click", () => { if(volume>0.1) volume-=0.1; document.getElementById("val-vol").innerText = Math.round(volume*100); });
 
-// === GHI ÂM & PHÁT LẠI ===
+// === GHI ÂM & PHÁT LẠI (ĐÃ FIX TRÁNH ĐÈ TIẾNG) ===
 let isRecording = false;
 let recordData = [];
 let startTime = 0;
-let playTimeouts = [];
+let playTimeouts = []; // Mảng chứa các timeout để có thể xóa
 
 function pressKey(note) {
-  if(frequencies[note]) playSound(frequencies[note]);
-  let el = document.getElementById("key-" + note);
-  if(el) {
-    el.classList.add("active");
-    setTimeout(() => el.classList.remove("active"), 200);
-  }
-  if (isRecording) recordData.push({ note: note, time: Date.now() - startTime });
+if(frequencies[note]) playSound(frequencies[note]);
+let el = document.getElementById("key-" + note);
+if(el) {
+el.classList.add("active");
+setTimeout(() => el.classList.remove("active"), 200);
+}
+if (isRecording) recordData.push({ note: note, time: Date.now() - startTime });
 }
 
 document.getElementById("btn-rec").addEventListener("click", () => {
-  isRecording = !isRecording;
-  if (isRecording) {
-    document.getElementById("btn-rec").style.color = "lime";
-    document.getElementById("btn-rec").innerText = " Dừng";
-    recordData = [];
-    startTime = Date.now();
-  } else {
-    document.getElementById("btn-rec").style.color = "#ff4d4d";
-    document.getElementById("btn-rec").innerText = " Thu";
-  }
+isRecording = !isRecording;
+if (isRecording) {
+document.getElementById("btn-rec").style.color = "lime";
+document.getElementById("btn-rec").innerText = "⏹ Dừng";
+recordData = [];
+startTime = Date.now();
+} else {
+document.getElementById("btn-rec").style.color = "#ff4d4d";
+document.getElementById("btn-rec").innerText = "🔴 Thu";
+}
 });
 
 document.getElementById("btn-play").addEventListener("click", () => {
-  if (isPlaying) return;
-  if (recordData.length === 0) { alert("Chưa thu gì cả!"); return; }
+if (isPlaying) return; // Chống bấm 2 lần đè lên nhau
+if (recordData.length === 0) { alert("Chưa thu gì cả!"); return; }
 
-  isPlaying = true;
-  document.getElementById("btn-play").style.color = "lime";
+isPlaying = true;
+document.getElementById("btn-play").style.color = "lime";
 
-  recordData.forEach(event => {
-    let t = setTimeout(() => pressKey(event.note), event.time);
-    playTimeouts.push(t);
-  });
-
-  setTimeout(() => {
-    isPlaying = false;
-    document.getElementById("btn-play").style.color = "white";
-  }, recordData[recordData.length - 1].time + 500);
+recordData.forEach(event => {
+let t = setTimeout(() => pressKey(event.note), event.time);
+playTimeouts.push(t);
 });
 
-// === ENGINE GAME RƠI NỐT ===
+setTimeout(() => {
+isPlaying = false;
+document.getElementById("btn-play").style.color = "white";
+}, recordData[recordData.length - 1].time + 500);
+});
+
+// === ENGINE GAME RƠI NỐT THEO BÀI HÁT ===
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 let activeNotes = [];
 let gameStartTime = 0;
 
-function parseDuration(str) {
-  if (str.includes('/')) {
-    const [num, den] = str.split('/');
-    return parseFloat(num) / parseFloat(den);
-  }
-  return parseFloat(str) || 1;
-}
-
 function parseSong(code) {
-  let tokens = code.replace(/,/g, ' ').split(/\s+/).filter(t => t);
-  let parsed = [];
-  let currentTime = 0;
-  let beatDurationMs = (60 / tempo) * 1000;
+let tokens = code.replace(/,/g, ' ').split(/\s+/).filter(t => t);
+let parsed = [];
+let currentTime = 0;
+let beatDurationMs = (60 / tempo) * 1000;
 
-  tokens.forEach(token => {
-    let durMatch = token.match(/^(\d+\/\d+|\d+)?/);
-    let noteMatch = token.match(/([A-G]\d)/);
+tokens.forEach(token => {
+let durMatch = token.match(/^(\d+\/\d+|\d+)?/);
+let noteMatch = token.match(/([A-G]\d)/);
 
-    if(noteMatch) {
-      let note = noteMatch[1];
-      let durStr = durMatch[1] || "1";
-      let beats = parseDuration(durStr);
+if(noteMatch) {
+let note = noteMatch[1];
+let durStr = durMatch[1] || "1";
+let beats = eval(durStr); // 1/2 -> 0.5
 
-      parsed.push({
-        note: note,
-        spawnTime: currentTime,
-        durationBeats: beats,
-        hasPlayed: false
-      });
+parsed.push({
+note: note,
+spawnTime: currentTime,
+durationBeats: beats,
+hasPlayed: false
+});
 
-      currentTime += (beats * beatDurationMs);
-    }
-  });
-  return parsed;
+currentTime += (beats * beatDurationMs);
+}
+});
+return parsed;
 }
 
 const popup = document.getElementById("popup");
 document.getElementById("btn-code").addEventListener("click", () => popup.style.display = "flex");
 
-// === SỰ KIỆN BTN-APPLY ĐÃ CẬP NHẬT KÍCH THƯỚC CANVAS KHI XOAY ===
 document.getElementById("btn-apply").addEventListener("click", () => {
-  popup.style.display = "none";
-  let code = document.getElementById("song-code").value;
+popup.style.display = "none";
+let code = document.getElementById("song-code").value;
 
-  activeNotes = parseSong(code);
-  gameStartTime = Date.now();
+// Bắt đầu game Rhythm
+activeNotes = parseSong(code);
+gameStartTime = Date.now();
 
-  const gameArea = document.getElementById("game-area");
-  canvas.width = gameArea.offsetWidth;
-  canvas.height = gameArea.offsetHeight;
+// Sửa lại kích thước canvas chuẩn
+canvas.width = canvas.parentElement.clientWidth;
+canvas.height = canvas.parentElement.clientHeight;
 
-  if(audioCtx.state === 'suspended') audioCtx.resume();
+if(audioCtx.state === 'suspended') audioCtx.resume();
 });
 
 // Vòng lặp vẽ
 function drawGame() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  let now = Date.now();
-  let colWidth = canvas.width / 24;
-  let speed = (canvas.height / 2000) * (tempo / 60);
+let now = Date.now();
+let colWidth = canvas.width / 24;
+let speed = (canvas.height / 2000) * (tempo / 60); // Tốc độ rơi phụ thuộc tempo
 
-  if (activeNotes.length > 0 && gameStartTime > 0) {
-    let elapsedTime = now - gameStartTime;
+if (activeNotes.length > 0 && gameStartTime > 0) {
+let elapsedTime = now - gameStartTime;
 
-    activeNotes.forEach((n) => {
-      let colIndex = whiteNotes.indexOf(n.note);
-      if (colIndex === -1) return;
+activeNotes.forEach((n) => {
+let colIndex = whiteNotes.indexOf(n.note);
+if (colIndex === -1) return;
 
-      let timeSinceSpawn = elapsedTime - n.spawnTime;
-      let currentY = timeSinceSpawn * speed;
-      let tailLength = n.durationBeats * speed * 800;
+// Tính vị trí Y
+let timeSinceSpawn = elapsedTime - n.spawnTime;
+let currentY = timeSinceSpawn * speed;
+let tailLength = n.durationBeats * speed * 800; // Độ dài đuôi màu
 
-      if (currentY > -tailLength && currentY - tailLength < canvas.height) {
-        let x = colIndex * colWidth;
-        let c = colors[colIndex % colors.length];
+// Nếu nốt đang trên màn hình
+if (currentY > -tailLength && currentY - tailLength < canvas.height) {
+let x = colIndex * colWidth;
+let c = colors[colIndex % colors.length];
 
-        let grad = ctx.createLinearGradient(x, currentY, x, currentY - tailLength);
-        grad.addColorStop(0, c);
-        grad.addColorStop(1, "transparent");
+// Vẽ dải màu gradient mờ dần lên trên
+let grad = ctx.createLinearGradient(x, currentY, x, currentY - tailLength);
+grad.addColorStop(0, c); // Dưới cùng sáng
+grad.addColorStop(1, "transparent"); // Trên cùng mờ
 
-        ctx.fillStyle = grad;
-        ctx.fillRect(x, currentY - tailLength, colWidth, tailLength);
+ctx.fillStyle = grad;
+ctx.fillRect(x, currentY - tailLength, colWidth, tailLength);
 
-        ctx.fillStyle = "white";
-        ctx.fillRect(x, currentY - 5, colWidth, 5);
+// Vẽ đầu nốt sáng rực
+ctx.fillStyle = "white";
+ctx.fillRect(x, currentY - 5, colWidth, 5);
 
-        if (currentY >= canvas.height && !n.hasPlayed) {
-          n.hasPlayed = true;
-          pressKey(n.note);
-        }
-      }
-    });
-  }
-  requestAnimationFrame(drawGame);
+// Auto-play khi chạm đáy
+if (currentY >= canvas.height && !n.hasPlayed) {
+n.hasPlayed = true;
+pressKey(n.note);
+}
+}
+});
+}
+requestAnimationFrame(drawGame);
 }
 drawGame();
+
 </script>
 </body>
 </html>
