@@ -1,88 +1,1069 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Sinh quả bóng G-code</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sinh Mẫu In 3D — Copy G-code nhanh</title>
+
+<meta property="og:title" content="🖨️ Sinh Mẫu In 3D — Copy G-code nhanh">
+<meta property="og:description" content="10 mẫu in 3D: Bóng, Xoắn ốc, Kim tự tháp, Tim, Bình, Đồng hồ, Hoa sen, Lục giác, Chữ nổi. Copy G-code dán vào máy in!">
+<meta property="og:image" content="https://tranh-ba-game-gw3q.vercel.app/tuongzalo.gif">
+<meta property="og:type" content="website">
+
 <style>
-  body { background:#0b1020; color:#eef3ff; font-family:monospace; padding:20px; }
-  button { padding:10px 15px; font-size:14px; background:#67e8c4; border:0; border-radius:8px; cursor:pointer; }
-  textarea { width:100%; height:60vh; margin-top:12px; padding:10px; background:#0a1020; color:#c8d6eb; border:1px solid #27334d; font-family:monospace; font-size:11px; }
-  #info { margin-top:10px; color:#94a3bd; font-size:12px; }
+:root {
+--bg: #0b1020;
+--panel: #11182b;
+--border: #27334d;
+--text: #eef3ff;
+--muted: #94a3bd;
+--accent: #67e8c4;
+--blue: #69a7ff;
+--yellow: #ffd166;
+--red: #ff6b7a;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+margin: 0;
+min-height: 100vh;
+background: radial-gradient(ellipse at 20% 0%, #172340 0%, transparent 45%), var(--bg);
+color: var(--text);
+font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+padding-bottom: 20px;
+}
+button, textarea, input { font: inherit; }
+.app {
+width: min(900px, 100%);
+margin: auto;
+padding: 14px;
+display: flex;
+flex-direction: column;
+gap: 12px;
+}
+
+/* ===== HEADER ===== */
+.topbar {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.home-btn {
+width: 48px; height: 48px;
+display: grid; place-items: center;
+border: 1px solid #36506e;
+border-radius: 14px;
+color: var(--accent);
+background: linear-gradient(145deg, #1c2d45, #111827);
+font-size: 22px;
+text-decoration: none;
+transition: .15s ease;
+flex-shrink: 0;
+}
+.home-btn:active { transform: scale(0.94); background: #25324a; }
+.brand-icon {
+width: 48px; height: 48px;
+display: grid; place-items: center;
+border: 1px solid #36506e;
+border-radius: 14px;
+color: var(--accent);
+background: linear-gradient(145deg, #1c2d45, #111827);
+font-size: 24px;
+}
+h1 { margin: 0; font-size: 17px; letter-spacing: .2px; }
+.subtitle { margin-top: 2px; color: var(--muted); font-size: 11px; }
+.top-status {
+display: flex; align-items: center; gap: 8px;
+padding: 9px 13px;
+border: 1px solid var(--border);
+border-radius: 999px;
+color: #c8d4e9;
+background: #10182a;
+font-size: 12px;
+}
+.status-dot {
+width: 8px; height: 8px;
+border-radius: 50%;
+background: var(--accent);
+box-shadow: 0 0 12px #67e8c477;
+}
+
+/* ===== PANEL ===== */
+.panel {
+overflow: hidden;
+border: 1px solid var(--border);
+border-radius: 16px;
+background: linear-gradient(145deg, #121a2d, #0f1627);
+box-shadow: 0 14px 50px #0003;
+}
+.panel-head {
+min-height: 46px;
+padding: 0 14px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+gap: 10px;
+border-bottom: 1px solid var(--border);
+flex-wrap: wrap;
+}
+.panel-title {
+display: flex; align-items: center; gap: 8px;
+font-weight: 650; font-size: 13px;
+}
+.panel-title span:first-child { color: var(--accent); }
+.small-muted { color: var(--muted); font-size: 11px; }
+
+/* ===== BẢNG CHỌN MẪU ===== */
+.shape-bar {
+padding: 12px;
+display: flex;
+flex-direction: column;
+gap: 10px;
+}
+.bar-label {
+display: flex;
+align-items: center;
+gap: 7px;
+color: var(--muted);
+font-size: 11px;
+font-weight: 650;
+letter-spacing: .5px;
+text-transform: uppercase;
+}
+.bar-label .dot {
+width: 6px; height: 6px;
+border-radius: 50%;
+background: var(--accent);
+box-shadow: 0 0 10px var(--accent);
+}
+.shape-grid {
+display: grid;
+grid-template-columns: repeat(5, 1fr);
+gap: 8px;
+}
+.shape-btn {
+position: relative;
+min-height: 82px;
+padding: 8px 4px;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 4px;
+border: 2px solid #34415a;
+border-radius: 14px;
+background: linear-gradient(145deg, #1a2438, #131b2b);
+color: #dce6f5;
+cursor: pointer;
+transition: all .18s ease;
+font-size: 10px;
+font-weight: 600;
+text-align: center;
+-webkit-user-select: none;
+user-select: none;
+}
+.shape-btn:active { transform: scale(0.96); }
+.shape-btn .shape-icon { font-size: 26px; line-height: 1; }
+.shape-btn .shape-name { font-size: 10px; line-height: 1.15; font-weight: 700; }
+.shape-btn.active {
+border-color: var(--accent);
+background: linear-gradient(145deg, #1f3a35, #16302b);
+color: var(--accent);
+box-shadow: 0 0 0 3px #67e8c422, 0 4px 20px #67e8c433;
+}
+.shape-btn.active::before {
+content: "●";
+position: absolute;
+top: 4px;
+right: 6px;
+color: var(--accent);
+font-size: 10px;
+text-shadow: 0 0 8px var(--accent);
+animation: blink 1.2s ease-in-out infinite;
+}
+@keyframes blink {
+0%, 100% { opacity: 1; }
+50% { opacity: 0.35; }
+}
+
+/* ===== Ô NHẬP CHỮ ===== */
+.text-input-bar {
+padding: 0 12px 12px;
+display: none;
+flex-direction: column;
+gap: 7px;
+}
+.text-input-bar.show { display: flex; }
+.text-input-bar label {
+color: var(--muted);
+font-size: 11px;
+font-weight: 650;
+letter-spacing: .3px;
+}
+.text-input-bar input[type="text"] {
+width: 100%;
+min-height: 46px;
+padding: 0 14px;
+border: 1px solid #34415a;
+border-radius: 11px;
+background: #0a1020;
+color: var(--accent);
+font-size: 15px;
+font-weight: 700;
+letter-spacing: 2px;
+outline: 0;
+transition: .15s ease;
+}
+.text-input-bar input[type="text"]:focus {
+border-color: var(--accent);
+box-shadow: 0 0 0 3px #67e8c422;
+}
+.text-hint {
+color: var(--muted);
+font-size: 10px;
+line-height: 1.4;
+}
+
+/* ===== EDITOR ===== */
+.editor-toolbar {
+min-height: 50px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 10px;
+padding: 10px 12px;
+border-bottom: 1px solid var(--border);
+flex-wrap: wrap;
+}
+.toolbar-left, .toolbar-right {
+display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.file-name {
+color: #d8e2f2;
+font: 11px ui-monospace, Menlo, monospace;
+flex: 1;
+}
+
+.btn {
+min-height: 44px;
+padding: 0 14px;
+display: inline-flex;
+justify-content: center;
+align-items: center;
+gap: 7px;
+border: 1px solid #34415a;
+border-radius: 11px;
+color: #dce6f5;
+background: #1a2438;
+cursor: pointer;
+font-size: 13px;
+font-weight: 600;
+transition: all .15s ease;
+-webkit-user-select: none;
+user-select: none;
+}
+.btn:active { transform: scale(0.96); }
+.btn:hover { background: #25324a; border-color: #52627d; }
+.btn.primary {
+color: #071b18;
+border-color: var(--accent);
+background: var(--accent);
+font-weight: 750;
+}
+.btn.primary:hover { background: #8af2d5; }
+.btn.copy {
+color: #071b18;
+border-color: #69a7ff;
+background: linear-gradient(135deg, #69a7ff, #4a8cdf);
+font-weight: 750;
+}
+.btn.copy:hover { background: linear-gradient(135deg, #8bc0ff, #69a7ff); }
+.btn.download {
+color: #071b18;
+border-color: var(--yellow);
+background: linear-gradient(135deg, #ffd166, #f5a726);
+font-weight: 750;
+}
+.btn.download:hover { background: linear-gradient(135deg, #ffdf8a, #ffc14a); }
+.btn.danger { color: #ffacb4; border-color: #673440; }
+
+/* Ô GCODE */
+.editor-body {
+height: 45vh;
+min-height: 220px;
+max-height: 400px;
+display: flex;
+overflow: hidden;
+background: #0a1020;
+}
+.line-numbers {
+width: 44px;
+padding: 12px 8px 12px 0;
+overflow: hidden;
+border-right: 1px solid #202b41;
+color: #53617a;
+text-align: right;
+white-space: pre;
+font: 11px/18px ui-monospace, Menlo, monospace;
+user-select: none;
+}
+textarea {
+width: 100%;
+height: 100%;
+resize: none;
+padding: 12px 14px;
+border: 0;
+outline: 0;
+color: #c8d6eb;
+background: transparent;
+tab-size: 2;
+white-space: pre;
+font: 11px/18px ui-monospace, Menlo, monospace;
+}
+textarea:focus { box-shadow: inset 0 0 0 1px #67e8c422; }
+
+.stats-bar {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+border-top: 1px solid var(--border);
+}
+.stat { padding: 9px 12px; border-right: 1px solid var(--border); text-align: center; }
+.stat:last-child { border-right: 0; }
+.stat-label { color: var(--muted); font-size: 9px; letter-spacing: .3px; }
+.stat-value {
+margin-top: 3px;
+font-size: 14px;
+font-weight: 650;
+font-variant-numeric: tabular-nums;
+color: var(--accent);
+}
+
+.footer {
+padding: 9px 14px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+gap: 10px;
+color: var(--muted);
+font-size: 11px;
+flex-wrap: wrap;
+}
+.footer strong { color: #c6d3e8; font-weight: 550; }
+
+.toast {
+position: fixed;
+bottom: 20px;
+left: 50%;
+transform: translate(-50%, 20px);
+max-width: min(420px, calc(100vw - 40px));
+padding: 12px 18px;
+border: 1px solid #3b526b;
+border-radius: 12px;
+color: #e4edf9;
+background: #162237;
+box-shadow: 0 12px 30px #0007;
+font-size: 13px;
+font-weight: 600;
+opacity: 0;
+pointer-events: none;
+transition: .25s ease;
+z-index: 100;
+text-align: center;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 700px) {
+.app { padding: 10px; gap: 10px; }
+h1 { font-size: 15px; }
+.subtitle { font-size: 10px; }
+.home-btn, .brand-icon { width: 44px; height: 44px; font-size: 20px; }
+.top-status { font-size: 10px; padding: 7px 10px; }
+
+.shape-grid { grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.shape-btn { min-height: 80px; }
+.shape-btn .shape-icon { font-size: 26px; }
+.shape-btn .shape-name { font-size: 10px; }
+
+.editor-toolbar { padding: 8px 10px; gap: 7px; }
+.toolbar-left, .toolbar-right { width: 100%; }
+.btn { font-size: 12px; padding: 0 12px; min-height: 42px; flex: 1; min-width: 0; }
+.file-name { width: 100%; text-align: center; font-size: 10px; }
+
+.editor-body {
+height: 38vh;
+min-height: 200px;
+max-height: 300px;
+}
+.line-numbers { width: 36px; font-size: 10px; padding: 10px 6px 10px 0; }
+textarea { font-size: 10px; line-height: 16px; padding: 10px 12px; }
+
+.footer { font-size: 10px; padding: 8px 12px; }
+}
+
+@media (max-width: 380px) {
+.shape-grid { grid-template-columns: repeat(2, 1fr); }
+}
 </style>
 </head>
 <body>
-<h2>⚪ Sinh G-code quả bóng 40mm</h2>
-<button id="genBtn">Sinh G-code</button>
-<button id="copyBtn">Copy toàn bộ</button>
-<div id="info">Sẵn sàng.</div>
-<textarea id="out" readonly placeholder="Nhấn “Sinh G-code” để tạo..."></textarea>
+
+<div class="app">
+
+<header class="topbar">
+<div class="brand">
+<a href="tuongzalo.html" class="home-btn" title="Về trang chủ">⌂</a>
+<div class="brand-icon">⌁</div>
+<div>
+<h1>Sinh Mẫu In 3D</h1>
+<div class="subtitle">Chọn mẫu → Copy G-code → Dán vào máy in</div>
+</div>
+</div>
+<div class="top-status">
+<span class="status-dot" id="statusDot"></span>
+<span id="statusText">Sẵn sàng</span>
+</div>
+</header>
+
+<section class="panel">
+<div class="panel-head">
+<div class="panel-title"><span>◈</span> Chọn mẫu in</div>
+<div class="small-muted">10 mẫu có sẵn</div>
+</div>
+
+<div class="shape-bar">
+<div class="bar-label"><span class="dot"></span> Bấm vào để sinh G-code</div>
+<div class="shape-grid" id="shapeGrid"></div>
+
+<!-- Ô nhập chữ nổi -->
+<div class="text-input-bar" id="textInputBar">
+<label>✍️ Nhập chữ muốn in (tối đa 8 ký tự)</label>
+<input type="text" id="textInput" maxlength="8" placeholder="HƯNG" value="HƯNG" autocomplete="off">
+<div class="text-hint">Hỗ trợ: A-Z, 0-9. Chữ sẽ được in theo kiểu pixel 5×7 nổi trên bàn in.</div>
+</div>
+</div>
+</section>
+
+<section class="panel">
+<div class="editor-toolbar">
+<div class="toolbar-left">
+<button class="btn primary" id="generateBtn">⚡ Sinh G-code</button>
+</div>
+<div class="toolbar-right">
+<button class="btn copy" id="copyBtn">📋 Copy</button>
+<button class="btn download" id="downloadBtn">💾 Tải .gcode</button>
+</div>
+</div>
+
+<div class="editor-toolbar" style="border-top:0;">
+<div class="file-name" id="fileNameLabel">ball.gcode</div>
+<button class="btn danger" id="clearBtn" style="min-height:36px;font-size:11px;">✕ Xóa</button>
+</div>
+
+<div class="editor-body">
+<div class="line-numbers" id="lineNumbers">1</div>
+<textarea id="gcodeInput" spellcheck="false" aria-label="G-code"></textarea>
+</div>
+
+<div class="stats-bar">
+<div class="stat"><div class="stat-label">SỐ DÒNG</div><div class="stat-value" id="linesCount">0</div></div>
+<div class="stat"><div class="stat-label">KÍCH THƯỚC</div><div class="stat-value" id="sizeText">—</div></div>
+<div class="stat"><div class="stat-label">NHỰA (mm)</div><div class="stat-value" id="filamentTotal">0</div></div>
+</div>
+
+<div class="footer">
+<span id="messageText"><strong>Sẵn sàng.</strong> Chọn mẫu ở trên để sinh G-code.</span>
+<span>PrintLab</span>
+</div>
+</section>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
-function generateBallGcode() {
-  const cx = 110, cy = 110;
-  const R = 20;
-  const layerH = 1.0;
-  const segs = 24;
-  const zMin = 1.0;
-  const zMax = 2 * R - 1.0;
-  const ePerMm = 0.045;
+(() => {
+const input = document.getElementById("gcodeInput");
+const textInput = document.getElementById("textInput");
+const CX = 110, CY = 110;
 
-  const lines = [];
-  lines.push("; ============================================");
-  lines.push("; BONG TRON 40mm - MO PHONG GON");
-  lines.push("; Tam: X=110, Y=110 | Cao: 1.0 -> 39.0 mm");
-  lines.push("; 38 lop x 24 diem/vong | lop day 1.0mm");
-  lines.push("; ============================================");
-  lines.push("G21"); lines.push("G90"); lines.push("M83"); lines.push("G28");
+// ===== 10 MẪU =====
+const SHAPES = [
+{ id: "ball", name: "Quả bóng", icon: "⚪", file: "ball.gcode", size: "⌀40mm" },
+{ id: "spiral", name: "Xoắn ốc", icon: "🌀", file: "spiral.gcode", size: "Ø50×h50" },
+{ id: "pyramid", name: "Kim tự tháp", icon: "💎", file: "pyramid.gcode", size: "30×30×60" },
+{ id: "heart", name: "Trái tim", icon: "❤️", file: "heart.gcode", size: "~56mm 3D" },
+{ id: "vase", name: "Bình gốm", icon: "🏺", file: "vase.gcode", size: "Ø40×h50" },
+{ id: "hourglass", name: "Đồng hồ cát", icon: "⏳", file: "hourglass.gcode", size: "Ø44×h50" },
+{ id: "lotus", name: "Hoa sen", icon: "🌸", file: "lotus.gcode", size: "6 cánh" },
+{ id: "hexagon", name: "Lục giác", icon: "⬡", file: "hexagon.gcode", size: "Trụ 6 cạnh" },
+{ id: "star", name: "Ngôi sao", icon: "⭐", file: "star.gcode", size: "5 cánh" },
+{ id: "text", name: "Chữ nổi", icon: "🅰️", file: "text.gcode", size: "Tùy chỉnh" },
+];
 
-  let layer = 0;
-  for (let z = zMin; z <= zMax + 0.001; z += layerH) {
-    layer++;
-    const dz = z - R;
-    const r2 = R * R - dz * dz;
-    if (r2 <= 0) continue;
-    const r = Math.sqrt(r2);
-    lines.push("");
-    lines.push("; ---------- LOP " + layer + " (z=" + z.toFixed(2) + ", r=" + r.toFixed(2) + ") ----------");
-    lines.push("G1 Z" + z.toFixed(3) + " F600");
-    const startX = cx + r;
-    lines.push("G1 X" + startX.toFixed(3) + " Y" + cy.toFixed(3) + " F3000");
-    let prevX = startX, prevY = cy;
-    for (let i = 1; i <= segs; i++) {
-      const a = (i / segs) * Math.PI * 2;
-      const x = cx + r * Math.cos(a);
-      const y = cy + r * Math.sin(a);
-      const dist = Math.hypot(x - prevX, y - prevY);
-      const dE = dist * ePerMm;
-      lines.push("G1 X" + x.toFixed(3) + " Y" + y.toFixed(3) + " E" + dE.toFixed(3) + " F1200");
-      prevX = x; prevY = y;
-    }
-  }
-  lines.push("");
-  lines.push("; ---------- KET THUC ----------");
-  lines.push("G1 Z5.00 F1200"); lines.push("M104 S0"); lines.push("M84");
-  return lines.join("\n");
+let currentShape = SHAPES[0];
+
+// ===== TRẠNG THÁI =====
+let toastTimer;
+
+// ===== HELPER G-CODE =====
+const E_PER_MM = 0.045;
+
+function newGcode() {
+return ["; ============================================", "G21", "G90", "M83", "G28"];
+}
+function endGcode() {
+return ["", "; ---------- PARK HEAD ----------", "G1 Z10.00 F600", "G1 X0 Y110 F3000", "M104 S0", "M84"];
+}
+function circlePath(L, cx, cy, r, segs, startAngle, ePerMm) {
+const sx = cx + r * Math.cos(startAngle);
+const sy = cy + r * Math.sin(startAngle);
+L.push(`G1 X${sx.toFixed(3)} Y${sy.toFixed(3)} F3000`);
+let px = sx, py = sy;
+for (let i = 1; i <= segs; i++) {
+const a = startAngle + (i / segs) * Math.PI * 2;
+const x = cx + r * Math.cos(a);
+const y = cy + r * Math.sin(a);
+const d = Math.hypot(x - px, y - py);
+L.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} E${(d * ePerMm).toFixed(3)} F1200`);
+px = x; py = y;
+}
 }
 
-document.getElementById("genBtn").addEventListener("click", () => {
-  const code = generateBallGcode();
-  document.getElementById("out").value = code;
-  document.getElementById("info").textContent = 
-    "✅ Đã sinh " + code.split("\n").length + " dòng. Nhấn 'Copy toàn bộ' để copy.";
+// ===== GENERATORS =====
+// 1. BALL
+function genBall() {
+const R = 20, layerH = 1.0, segs = 24, zMin = 1.0, zMax = 2 * R - 1.0;
+const L = newGcode();
+L.push("; MẪU: QUẢ BÓNG - Ø40mm, 38 lớp");
+L.push("; ============================================");
+let layer = 0;
+for (let z = zMin; z <= zMax + 0.001; z += layerH) {
+layer++;
+const dz = z - R;
+const r2 = R * R - dz * dz;
+if (r2 <= 0) continue;
+const r = Math.sqrt(r2);
+L.push(`; ---------- LOP ${layer} (z=${z.toFixed(2)}, r=${r.toFixed(2)}) ----------`);
+L.push(`G1 Z${z.toFixed(3)} F600`);
+circlePath(L, CX, CY, r, segs, 0, E_PER_MM);
+}
+return L.concat(endGcode()).join("\n");
+}
+
+// 2. SPIRAL
+function genSpiral() {
+const R0 = 25, H = 50, layerH = 1.0, segs = 30, turns = 2;
+const L = newGcode();
+L.push("; MẪU: XOẮN ỐC - Cao 50mm, xoay 2 vòng");
+L.push("; ============================================");
+const totalLayers = Math.floor(H / layerH);
+for (let k = 0; k <= totalLayers; k++) {
+const z = 1 + k * layerH;
+const r = R0 * (1 - k / totalLayers);
+if (r < 0.5) break;
+L.push(`; ---------- LOP ${k + 1} (z=${z.toFixed(2)}, r=${r.toFixed(2)}) ----------`);
+L.push(`G1 Z${z.toFixed(3)} F600`);
+const startAngle = (z / H) * turns * Math.PI * 2;
+const sx = CX + r * Math.cos(startAngle);
+const sy = CY + r * Math.sin(startAngle);
+L.push(`G1 X${sx.toFixed(3)} Y${sy.toFixed(3)} F3000`);
+let px = sx, py = sy;
+for (let i = 1; i <= segs; i++) {
+const a = startAngle + (i / segs) * Math.PI * 2;
+const x = CX + r * Math.cos(a);
+const y = CY + r * Math.sin(a);
+const d = Math.hypot(x - px, y - py);
+L.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} E${(d * E_PER_MM).toFixed(3)} F1200`);
+px = x; py = y;
+}
+}
+return L.concat(endGcode()).join("\n");
+}
+
+// 3. PYRAMID
+function genPyramid() {
+const S = 30, H = 60, layerH = 1.0;
+const L = newGcode();
+L.push("; MẪU: KIM TỰ THÁP - 30x30, cao 60mm");
+L.push("; ============================================");
+const totalLayers = Math.floor(H / layerH);
+for (let k = 0; k <= totalLayers; k++) {
+const z = 1 + k * layerH;
+const s = S * (1 - k / totalLayers);
+if (s < 0.5) break;
+const half = s / 2;
+L.push(`; ---------- LOP ${k + 1} (z=${z.toFixed(2)}, side=${s.toFixed(2)}) ----------`);
+L.push(`G1 Z${z.toFixed(3)} F600`);
+const corners = [
+[CX - half, CY - half],
+[CX + half, CY - half],
+[CX + half, CY + half],
+[CX - half, CY + half],
+[CX - half, CY - half],
+];
+L.push(`G1 X${corners[0][0].toFixed(3)} Y${corners[0][1].toFixed(3)} F3000`);
+for (let i = 1; i < corners.length; i++) {
+const d = Math.hypot(corners[i][0] - corners[i - 1][0], corners[i][1] - corners[i - 1][1]);
+L.push(`G1 X${corners[i][0].toFixed(3)} Y${corners[i][1].toFixed(3)} E${(d * E_PER_MM).toFixed(3)} F1200`);
+}
+}
+return L.concat(endGcode()).join("\n");
+}
+
+// 4. HEART
+function genHeart() {
+const scale = 3.5, layerH = 1.0, segs = 60, totalLayers = 25;
+const L = newGcode();
+L.push("; MẪU: TRÁI TIM 3D - phồng giữa, ~56mm");
+L.push("; ============================================");
+function heartPoint(t) {
+const x = 16 * Math.pow(Math.sin(t), 3);
+const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+return { x: CX + x * scale, y: CY + y * scale };
+}
+for (let k = 0; k < totalLayers; k++) {
+const z = 1 + k * layerH;
+const t = k / (totalLayers - 1);
+const s = 0.4 + 0.6 * Math.sin(t * Math.PI);
+L.push(`; ---------- LOP ${k + 1} (z=${z.toFixed(2)}, scale=${s.toFixed(2)}) ----------`);
+L.push(`G1 Z${z.toFixed(3)} F600`);
+let px = null, py = null;
+for (let i = 0; i <= segs; i++) {
+const angle = (i / segs) * Math.PI * 2;
+const p = heartPoint(angle);
+const x = CX + (p.x - CX) * s;
+const y = CY + (p.y - CY) * s;
+if (i === 0) {
+L.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} F3000`);
+} else {
+const d = Math.hypot(x - px, y - py);
+L.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} E${(d * E_PER_MM).toFixed(3)} F1200`);
+}
+px = x; py = y;
+}
+}
+return L.concat(endGcode()).join("\n");
+}
+
+// 5. VASE
+function genVase() {
+const H = 50, layerH = 1.0, segs = 30;
+const L = newGcode();
+L.push("; MẪU: BÌNH GỐM - phình sin 2 lần");
+L.push("; ============================================");
+const totalLayers = Math.floor(H / layerH);
+for (let k = 0; k <= totalLayers; k++) {
+const z = 1 + k * layerH;
+const tt = k / totalLayers;
+const r = 14 + 6 * Math.sin(tt * Math.PI * 2 + Math.PI / 4);
+L.push(`; ---------- LOP ${k + 1} (z=${z.toFixed(2)}, r=${r.toFixed(2)}) ----------`);
+L.push(`G1 Z${z.toFixed(3)} F600`);
+circlePath(L, CX, CY, r, segs, 0, E_PER_MM);
+}
+return L.concat(endGcode()).join("\n");
+}
+
+// 6. HOURGLASS
+function genHourglass() {
+const R0 = 22, H = 50, layerH = 1.0, segs = 30;
+const L = newGcode();
+L.push("; MẪU: ĐỒNG HỒ CÁT - thắt giữa, mở 2 đầu");
+L.push("; ============================================");
+const totalLayers = Math.floor(H / layerH);
+for (let k = 0; k <= totalLayers; k++) {
+const z = 1 + k * layerH;
+const tt = k / totalLayers;
+const r = Math.max(2, R0 * Math.abs(Math.sin(tt * Math.PI + 0.1)));
+L.push(`; ---------- LOP ${k + 1} (z=${z.toFixed(2)}, r=${r.toFixed(2)}) ----------`);
+L.push(`G1 Z${z.toFixed(3)} F600`);
+circlePath(L, CX, CY, r, segs, 0, E_PER_MM);
+}
+return L.concat(endGcode()).join("\n");
+}
+
+// 7. LOTUS (hoa sen 6 cánh)
+function genLotus() {
+const R_BASE = 18, A = 6, H = 35, layerH = 1.0, segs = 48;
+const L = newGcode();
+L.push("; MẪU: HOA SEN - 6 cánh, cao 35mm");
+L.push("; ============================================");
+const totalLayers = Math.floor(H / layerH);
+for (let k = 0; k <= totalLayers; k++) {
+const z = 1 + k * layerH;
+const tt = k / totalLayers;
+// Cánh hoa phình ra giữa, thu nhỏ đầu
+const petalAmp = A * Math.sin(tt * Math.PI);
+const baseR = R_BASE * (1 - tt * 0.7);
+L.push(`; ---------- LOP ${k + 1} (z=${z.toFixed(2)}) ----------`);
+L.push(`G1 Z${z.toFixed(3)} F600`);
+let px = null, py = null;
+for (let i = 0; i <= segs; i++) {
+const a = (i / segs) * Math.PI * 2;
+const r = baseR + petalAmp * Math.pow(Math.abs(Math.cos(3 * a)), 1.2);
+const x = CX + r * Math.cos(a);
+const y = CY + r * Math.sin(a);
+if (i === 0) {
+L.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} F3000`);
+} else {
+const d = Math.hypot(x - px, y - py);
+L.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} E${(d * E_PER_MM).toFixed(3)} F1200`);
+}
+px = x; py = y;
+}
+}
+return L.concat(endGcode()).join("\n");
+}
+
+// 8. HEXAGON (trụ 6 cạnh)
+function genHexagon() {
+const R = 22, H = 25, layerH = 1.0;
+const L = newGcode();
+L.push("; MẪU: LỤC GIÁC - trụ 6 cạnh, cao 25mm");
+L.push("; ============================================");
+const totalLayers = Math.floor(H / layerH);
+for (let k = 0; k <= totalLayers; k++) {
+const z = 1 + k * layerH;
+L.push(`; ---------- LOP ${k + 1} (z=${z.toFixed(2)}) ----------`);
+L.push(`G1 Z${z.toFixed(3)} F600`);
+let px = null, py = null;
+for (let i = 0; i <= 6; i++) {
+const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+const x = CX + R * Math.cos(a);
+const y = CY + R * Math.sin(a);
+if (i === 0) {
+L.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} F3000`);
+} else {
+const d = Math.hypot(x - px, y - py);
+L.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} E${(d * E_PER_MM).toFixed(3)} F1200`);
+}
+px = x; py = y;
+}
+}
+return L.concat(endGcode()).join("\n");
+}
+
+// 9. STAR (ngôi sao 5 cánh)
+function genStar() {
+const R_OUT = 24, R_IN = 10, H = 25, layerH = 1.0;
+const L = newGcode();
+L.push("; MẪU: NGÔI SAO 5 CÁNH - cao 25mm");
+L.push("; ============================================");
+const totalLayers = Math.floor(H / layerH);
+for (let k = 0; k <= totalLayers; k++) {
+const z = 1 + k * layerH;
+L.push(`; ---------- LOP ${k + 1} (z=${z.toFixed(2)}) ----------`);
+L.push(`G1 Z${z.toFixed(3)} F600`);
+let px = null, py = null;
+const points = 10; // 5 cánh * 2 điểm
+for (let i = 0; i <= points; i++) {
+const a = (i / points) * Math.PI * 2 - Math.PI / 2;
+const r = i % 2 === 0 ? R_OUT : R_IN;
+const x = CX + r * Math.cos(a);
+const y = CY + r * Math.sin(a);
+if (i === 0) {
+L.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} F3000`);
+} else {
+const d = Math.hypot(x - px, y - py);
+L.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} E${(d * E_PER_MM).toFixed(3)} F1200`);
+}
+px = x; py = y;
+}
+}
+return L.concat(endGcode()).join("\n");
+}
+
+// 10. TEXT (chữ nổi 5x7 pixel)
+// Font 5x7 cho các ký tự A-Z, 0-9 (một số cơ bản)
+const FONT_5X7 = {
+"A": ["01110","10001","10001","11111","10001","10001","10001"],
+"B": ["11110","10001","11110","10001","10001","10001","11110"],
+"C": ["01110","10001","10000","10000","10000","10001","01110"],
+"D": ["11110","10001","10001","10001","10001","10001","11110"],
+"E": ["11111","10000","11110","10000","10000","10000","11111"],
+"F": ["11111","10000","11110","10000","10000","10000","10000"],
+"G": ["01110","10001","10000","10111","10001","10001","01110"],
+"H": ["10001","10001","11111","10001","10001","10001","10001"],
+"I": ["11111","00100","00100","00100","00100","00100","11111"],
+"J": ["00111","00010","00010","00010","00010","10010","01100"],
+"K": ["10001","10010","11100","10010","10001","10001","10001"],
+"L": ["10000","10000","10000","10000","10000","10000","11111"],
+"M": ["10001","11011","10101","10001","10001","10001","10001"],
+"N": ["10001","11001","10101","10011","10001","10001","10001"],
+"O": ["01110","10001","10001","10001","10001","10001","01110"],
+"P": ["11110","10001","10001","11110","10000","10000","10000"],
+"Q": ["01110","10001","10001","10001","10101","10010","01101"],
+"R": ["11110","10001","10001","11110","10100","10010","10001"],
+"S": ["01111","10000","10000","01110","00001","00001","11110"],
+"T": ["11111","00100","00100","00100","00100","00100","00100"],
+"U": ["10001","10001","10001","10001","10001","10001","01110"],
+"V": ["10001","10001","10001","10001","10001","01010","00100"],
+"W": ["10001","10001","10001","10101","10101","11011","10001"],
+"X": ["10001","10001","01010","00100","01010","10001","10001"],
+"Y": ["10001","10001","01010","00100","00100","00100","00100"],
+"Z": ["11111","00001","00010","00100","01000","10000","11111"],
+"0": ["01110","10001","10011","10101","11001","10001","01110"],
+"1": ["00100","01100","00100","00100","00100","00100","01110"],
+"2": ["01110","10001","00001","00010","00100","01000","11111"],
+"3": ["11111","00010","00100","00010","00001","10001","01110"],
+"4": ["00010","00110","01010","10010","11111","00010","00010"],
+"5": ["11111","10000","11110","00001","00001","10001","01110"],
+"6": ["00110","01000","10000","11110","10001","10001","01110"],
+"7": ["11111","00001","00010","00100","01000","01000","01000"],
+"8": ["01110","10001","10001","01110","10001","10001","01110"],
+"9": ["01110","10001","10001","01111","00001","00010","01100"],
+" ": ["00000","00000","00000","00000","00000","00000","00000"],
+"Đ": ["01110","10001","10001","11111","10001","10001","10001"],
+"Ư": ["10001","10001","10001","10001","10001","10001","01110"],
+"Ơ": ["01110","10001","10001","10001","10001","10001","01110"],
+"Á": ["00100","01110","10001","11111","10001","10001","10001"],
+"À": ["00100","01110","10001","11111","10001","10001","10001"],
+"Ả": ["00100","01110","10001","11111","10001","10001","10001"],
+"Ã": ["00100","01110","10001","11111","10001","10001","10001"],
+"Ạ": ["00100","01110","10001","11111","10001","10001","10001"],
+};
+
+function genText() {
+const raw = (textInput.value || "HUNG").toUpperCase().trim();
+const text = raw.slice(0, 8) || "HUNG";
+
+const pixelSize = 4; // mm/pixel
+const charW = 5, charH = 7;
+const gap = 1; // gap giữa các ký tự (pixel)
+
+// Tính tổng rộng để căn giữa
+const totalCols = text.length * charW + (text.length - 1) * gap;
+const totalW = totalCols * pixelSize;
+const startX = CX - totalW / 2;
+const startY = CY - (charH * pixelSize) / 2;
+
+// Chia 2 lớp: chữ nổi lên 2mm
+const L = newGcode();
+L.push("; MẪU: CHỮ NỔI - " + text);
+L.push("; Chiều cao chữ: 2mm | Kiểu: pixel 5x7");
+L.push("; ============================================");
+
+// Lớp nền 0.4mm - hình chữ nhật bao quanh
+L.push(`; ---------- DE CHU (nen) ----------`);
+L.push(`G1 Z0.400 F600`);
+const pad = 3;
+L.push(`G1 X${(startX - pad).toFixed(3)} Y${(startY - pad).toFixed(3)} F3000`);
+L.push(`G1 X${(startX + totalW + pad).toFixed(3)} Y${(startY - pad).toFixed(3)} E${((totalW + 2*pad) * E_PER_MM).toFixed(3)} F1200`);
+L.push(`G1 X${(startX + totalW + pad).toFixed(3)} Y${(startY + charH * pixelSize + pad).toFixed(3)} E${((charH * pixelSize + 2*pad) * E_PER_MM).toFixed(3)} F1200`);
+L.push(`G1 X${(startX - pad).toFixed(3)} Y${(startY + charH * pixelSize + pad).toFixed(3)} E${((totalW + 2*pad) * E_PER_MM).toFixed(3)} F1200`);
+L.push(`G1 X${(startX - pad).toFixed(3)} Y${(startY - pad).toFixed(3)} E${((charH * pixelSize + 2*pad) * E_PER_MM).toFixed(3)} F1200`);
+
+// Lớp chữ 0.4 -> 2.4mm - tô đầy các pixel của chữ
+const totalTextLayers = 5;
+const layerH = 0.4;
+const baseZ = 0.4;
+
+// Tập hợp các ô cần tô
+const cells = []; // {col, row}
+let colOffset = 0;
+for (const ch of text) {
+const glyph = FONT_5X7[ch] || FONT_5X7[" "];
+for (let row = 0; row < charH; row++) {
+for (let col = 0; col < charW; col++) {
+if (glyph[row][col] === "1") {
+cells.push({ col: colOffset + col, row });
+}
+}
+}
+colOffset += charW + gap;
+}
+
+// Vẽ ô đầy cho từng lớp
+for (let lz = 0; lz < totalTextLayers; lz++) {
+const z = baseZ + (lz + 1) * layerH;
+L.push(`; ---------- LOP CHU ${lz + 1} (z=${z.toFixed(2)}) ----------`);
+L.push(`G1 Z${z.toFixed(3)} F600`);
+for (const cell of cells) {
+// Góc dưới-trái của ô
+const x0 = startX + cell.col * pixelSize;
+const y0 = startY + (charH - 1 - cell.row) * pixelSize;
+const x1 = x0 + pixelSize;
+const y1 = y0 + pixelSize;
+// Tô đầy ô theo hình zigzag (kiểu in thật)
+L.push(`G1 X${x0.toFixed(3)} Y${y0.toFixed(3)} F3000`);
+L.push(`G1 X${x1.toFixed(3)} Y${y0.toFixed(3)} E${(pixelSize * E_PER_MM).toFixed(3)} F1200`);
+L.push(`G1 X${x1.toFixed(3)} Y${y1.toFixed(3)} E${(pixelSize * E_PER_MM).toFixed(3)} F1200`);
+L.push(`G1 X${x0.toFixed(3)} Y${y1.toFixed(3)} E${(pixelSize * E_PER_MM).toFixed(3)} F1200`);
+L.push(`G1 X${x0.toFixed(3)} Y${y0.toFixed(3)} E${(pixelSize * E_PER_MM).toFixed(3)} F1200`);
+}
+}
+
+return L.concat(endGcode()).join("\n");
+}
+
+const GENERATORS = {
+ball: genBall,
+spiral: genSpiral,
+pyramid: genPyramid,
+heart: genHeart,
+vase: genVase,
+hourglass: genHourglass,
+lotus: genLotus,
+hexagon: genHexagon,
+star: genStar,
+text: genText,
+};
+
+// ===== SINH =====
+function generateCurrent() {
+const gen = GENERATORS[currentShape.id];
+if (!gen) { showToast("Mẫu chưa có."); return; }
+const code = gen();
+input.value = code;
+updateLineNumbers();
+document.getElementById("fileNameLabel").textContent = currentShape.file;
+updateStats();
+setMessage(`<strong>Đã sinh ${currentShape.name}.</strong> Bấm 📋 Copy để dán vào máy in.`);
+showToast(`⚡ Đã sinh ${currentShape.name}!`);
+}
+
+function updateLineNumbers() {
+const count = input.value.split("\n").length;
+document.getElementById("lineNumbers").textContent =
+Array.from({ length: count }, (_, i) => i + 1).join("\n");
+}
+
+function updateStats() {
+const code = input.value;
+const lines = code.split("\n").length;
+document.getElementById("linesCount").textContent = lines;
+document.getElementById("sizeText").textContent = currentShape.size || "—";
+// Tính tổng nhựa
+let total = 0;
+const re = /E(-?\d*\.?\d+)/g;
+let m;
+while ((m = re.exec(code)) !== null) {
+const v = parseFloat(m[1]);
+if (v > 0) total += v;
+}
+document.getElementById("filamentTotal").textContent = total.toFixed(1);
+}
+
+function setStatus(text, mode = "ready") {
+document.getElementById("statusText").textContent = text;
+const dot = document.getElementById("statusDot");
+dot.style.background = mode === "done" ? "var(--blue)" : "var(--accent)";
+}
+function setMessage(h) { document.getElementById("messageText").innerHTML = h; }
+
+function showToast(msg) {
+const el = document.getElementById("toast");
+el.textContent = msg;
+el.classList.add("show");
+clearTimeout(toastTimer);
+toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+// ===== BẢNG MẪU =====
+function buildShapeButtons() {
+const grid = document.getElementById("shapeGrid");
+grid.innerHTML = "";
+SHAPES.forEach(sh => {
+const btn = document.createElement("button");
+btn.className = "shape-btn";
+btn.dataset.id = sh.id;
+if (sh.id === currentShape.id) btn.classList.add("active");
+btn.innerHTML = `
+<span class="shape-icon">${sh.icon}</span>
+<span class="shape-name">${sh.name}</span>
+`;
+btn.addEventListener("click", () => {
+currentShape = sh;
+document.querySelectorAll(".shape-btn").forEach(b => b.classList.remove("active"));
+btn.classList.add("active");
+// Hiện/ẩn ô nhập chữ
+const textBar = document.getElementById("textInputBar");
+if (sh.id === "text") {
+textBar.classList.add("show");
+} else {
+textBar.classList.remove("show");
+}
+generateCurrent();
+});
+grid.appendChild(btn);
+});
+}
+
+// ===== COPY =====
+async function copyToClipboard() {
+const text = input.value;
+if (!text) { showToast("Chưa có G-code để copy."); return; }
+try {
+await navigator.clipboard.writeText(text);
+showToast("📋 Đã copy G-code vào clipboard!");
+setStatus("Đã copy", "done");
+} catch (e) {
+// Fallback
+input.select();
+input.setSelectionRange(0, 999999);
+try {
+document.execCommand("copy");
+showToast("📋 Đã copy (fallback).");
+} catch (err) {
+showToast("❌ Không copy được. Bôi đen và copy thủ công.");
+}
+}
+}
+
+// ===== TẢI VỀ =====
+function downloadFile() {
+const text = input.value;
+if (!text) { showToast("Chưa có G-code để tải."); return; }
+const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+const url = URL.createObjectURL(blob);
+const a = document.createElement("a");
+a.href = url;
+a.download = currentShape.file;
+document.body.appendChild(a);
+a.click();
+setTimeout(() => {
+document.body.removeChild(a);
+URL.revokeObjectURL(url);
+}, 100);
+showToast(`💾 Đã tải ${currentShape.file}`);
+setStatus("Đã tải xuống", "done");
+}
+
+// ===== SỰ KIỆN =====
+document.getElementById("generateBtn").addEventListener("click", generateCurrent);
+document.getElementById("copyBtn").addEventListener("click", copyToClipboard);
+document.getElementById("downloadBtn").addEventListener("click", downloadFile);
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+input.value = "";
+updateLineNumbers();
+updateStats();
+setMessage("<strong>Đã xóa.</strong> Chọn mẫu để sinh lại.");
+setStatus("Sẵn sàng");
 });
 
-document.getElementById("copyBtn").addEventListener("click", async () => {
-  const ta = document.getElementById("out");
-  ta.select();
-  ta.setSelectionRange(0, 999999);
-  try {
-    await navigator.clipboard.writeText(ta.value);
-    document.getElementById("info").textContent = "✅ Đã copy vào clipboard!";
-  } catch(e) {
-    document.execCommand("copy");
-    document.getElementById("info").textContent = "✅ Đã copy (phương thức dự phòng).";
-  }
+input.addEventListener("input", () => {
+updateLineNumbers();
+updateStats();
 });
+input.addEventListener("scroll", () => {
+document.getElementById("lineNumbers").scrollTop = input.scrollTop;
+});
+
+// Nhập chữ → cập nhật G-code ngay
+textInput.addEventListener("input", () => {
+if (currentShape.id === "text") generateCurrent();
+});
+
+// ===== KHỞI ĐỘNG =====
+buildShapeButtons();
+// Sinh mẫu mặc định
+input.value = genBall();
+updateLineNumbers();
+updateStats();
+document.getElementById("fileNameLabel").textContent = "ball.gcode";
+})();
 </script>
 </body>
 </html>
