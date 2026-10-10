@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrintLab — Mô phỏng máy in 3D</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #11182b;
+    --border: #27334d;
+    --text: #eef3ff;
+    --muted: #94a3bd;
+    --accent: #67e8c4;
+    --blue: #69a7ff;
+    --yellow: #ffd166;
+    --red: #ff6b7a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(ellipse at 20% 0%, #172340 0%, transparent 45%), var(--bg);
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  button, textarea, input { font: inherit; }
+  .app {
+    width: min(1500px, 100%);
+    min-height: 100vh;
+    margin: auto;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .topbar {
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .home-btn {
+    width: 42px; height: 42px;
+    display: grid; place-items: center;
+    border: 1px solid #36506e;
+    border-radius: 13px;
+    color: var(--accent);
+    background: linear-gradient(145deg, #1c2d45, #111827);
+    font-size: 20px;
+    text-decoration: none;
+    transition: .15s ease;
+    flex-shrink: 0;
+  }
+  .home-btn:hover { background: #25324a; border-color: #67e8c4; }
+  .brand-icon {
+    width: 42px; height: 42px;
+    display: grid; place-items: center;
+    border: 1px solid #36506e;
+    border-radius: 13px;
+    color: var(--accent);
+    background: linear-gradient(145deg, #1c2d45, #111827);
+    font-size: 22px;
+  }
+  h1 { margin: 0; font-size: 18px; letter-spacing: .2px; }
+  .subtitle { margin-top: 3px; color: var(--muted); font-size: 12px; }
+  .top-status {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 13px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: #c8d4e9;
+    background: #10182a;
+    font-size: 12px;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px #67e8c477;
+  }
+  .main-panel, .editor-panel {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: linear-gradient(145deg, #121a2d, #0f1627);
+    box-shadow: 0 14px 50px #0003;
+  }
+  .section-heading {
+    min-height: 48px;
+    padding: 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .section-title {
+    display: flex; align-items: center; gap: 9px;
+    font-weight: 650; font-size: 13px;
+  }
+  .section-title span:first-child { color: var(--accent); }
+  .small-muted { color: var(--muted); font-size: 11px; }
+  .visual-area {
+    position: relative;
+    height: clamp(300px, 42vh, 480px);
+    background: radial-gradient(ellipse at 50% 45%, #1b2940 0%, #111a2c 55%, #0e1525 100%);
+  }
+  canvas { width: 100%; height: 100%; display: block; }
+  .view-label {
+    position: absolute; top: 13px; left: 15px;
+    padding: 7px 10px;
+    border: 1px solid #ffffff16;
+    border-radius: 8px;
+    color: #c6d1e3;
+    background: #0b1220a8;
+    font-size: 11px;
+    pointer-events: none;
+  }
+  .view-label b { color: var(--accent); }
+  .coords {
+    position: absolute; top: 13px; right: 15px;
+    display: flex; gap: 7px;
+    pointer-events: none;
+  }
+  .coord {
+    min-width: 62px;
+    padding: 7px 9px;
+    border: 1px solid #ffffff16;
+    border-radius: 8px;
+    background: #0b1220b8;
+    font: 11px ui-monospace, Menlo, monospace;
+    color: #b8c5da;
+  }
+  .coord b { color: var(--accent); }
+  .visual-legend {
+    position: absolute; bottom: 12px; left: 15px;
+    display: flex; gap: 14px;
+    color: #b5c0d1;
+    font-size: 10px;
+    pointer-events: none;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .legend-dot.print { background: var(--accent); }
+  .legend-dot.travel { background: var(--yellow); }
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--border);
+  }
+  .stat { padding: 12px 16px; border-right: 1px solid var(--border); }
+  .stat:last-child { border-right: 0; }
+  .stat-label { color: var(--muted); font-size: 10px; }
+  .stat-value {
+    margin-top: 5px;
+    font-size: 15px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+  .editor-panel { display: flex; flex-direction: column; }
+  .editor-toolbar {
+    min-height: 53px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .toolbar-left, .toolbar-right {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .file-name {
+    margin-left: 5px;
+    color: #d8e2f2;
+    font: 12px ui-monospace, Menlo, monospace;
+  }
+  .btn {
+    min-height: 32px;
+    padding: 0 11px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid #34415a;
+    border-radius: 8px;
+    color: #dce6f5;
+    background: #1a2438;
+    cursor: pointer;
+    font-size: 11px;
+    transition: .15s ease;
+  }
+  .btn:hover { background: #25324a; border-color: #52627d; }
+  .btn:disabled { opacity: .42; cursor: not-allowed; }
+  .btn.primary {
+    color: #071b18;
+    border-color: #67e8c4;
+    background: var(--accent);
+    font-weight: 750;
+  }
+  .btn.primary:hover { background: #8af2d5; }
+  .btn.danger { color: #ffacb4; border-color: #673440; }
+
+  /* ===== BẢNG CHỌN MÀU ===== */
+  .color-bar {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(90deg, #0f1627, #121a2d);
+  }
+  .color-label {
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    font-weight: 650;
+    flex-shrink: 0;
+  }
+  .shading-group {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: #0a1020;
+    flex-shrink: 0;
+  }
+  .shading-btn {
+    padding: 5px 9px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 10px;
+    cursor: pointer;
+    transition: .15s ease;
+  }
+  .shading-btn:hover { color: var(--text); }
+  .shading-btn.active {
+    color: #071b18;
+    background: var(--accent);
+    font-weight: 700;
+  }
+  .preset-list {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+  .preset-btn {
+    width: 32px; height: 32px;
+    padding: 0;
+    border: 2px solid #27334d;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: .18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .preset-btn:hover {
+    transform: scale(1.08);
+    border-color: #52627d;
+  }
+  .preset-btn.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px #67e8c433, 0 0 12px #67e8c466;
+  }
+  .preset-btn.active::after {
+    content: "✓";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    text-shadow: 0 0 3px #000, 0 0 6px #000;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .custom-picker {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 3px 6px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: #0a1020;
+    flex-shrink: 0;
+  }
+  .custom-picker input[type="color"] {
+    width: 28px; height: 28px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+  .custom-picker span { color: var(--muted); font-size: 14px; }
+
+  .editor-body {
+    height: 230px;
+    min-height: 170px;
+    display: flex;
+    overflow: hidden;
+    background: #0a1020;
+  }
+  .line-numbers {
+    width: 48px;
+    padding: 13px 10px 13px 0;
+    overflow: hidden;
+    border-right: 1px solid #202b41;
+    color: #53617a;
+    text-align: right;
+    white-space: pre;
+    font: 12px/20px ui-monospace, Menlo, monospace;
+    user-select: none;
+  }
+  textarea {
+    width: 100%; height: 100%;
+    resize: vertical;
+    padding: 13px 15px;
+    border: 0;
+    outline: 0;
+    color: #c8d6eb;
+    background: transparent;
+    tab-size: 2;
+    white-space: pre;
+    font: 12px/20px ui-monospace, Menlo, monospace;
+  }
+  textarea:focus { box-shadow: inset 0 0 0 1px #67e8c422; }
+  .progress-wrap { height: 4px; background: #202b40; }
+  .progress-bar {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #49c9a8, #9bf3d9);
+    box-shadow: 0 0 10px #67e8c477;
+    transition: width .12s linear;
+  }
+  .footer {
+    padding: 9px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 10px;
+  }
+  .footer strong { color: #c6d3e8; font-weight: 550; }
+  .toast {
+    position: fixed; bottom: 20px; right: 20px;
+    max-width: min(400px, calc(100vw - 40px));
+    padding: 11px 14px;
+    border: 1px solid #3b526b;
+    border-radius: 10px;
+    color: #e4edf9;
+    background: #162237;
+    box-shadow: 0 12px 30px #0006;
+    font-size: 12px;
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: .2s ease;
+    z-index: 5;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 700px) {
+    .app { padding: 10px; gap: 10px; }
+    .topbar { align-items: flex-start; }
+    .top-status { font-size: 10px; padding: 7px 9px; }
+    .visual-area { height: 330px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .stat:nth-child(2) { border-right: 0; }
+    .stat:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+    .editor-body { height: 240px; }
+    .toolbar-right { width: 100%; }
+    .coords { gap: 4px; }
+    .coord { min-width: 50px; padding: 6px; }
+    .footer { align-items: flex-start; flex-direction: column; }
+    .color-bar { padding: 8px 10px; }
+    .color-label { font-size: 9px; }
+  }
+</style>
+</head>
+
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <a href="tuongzalo.html" class="home-btn" title="Về trang chủ">⌂</a>
+      <div class="brand-icon">⌁</div>
+      <div>
+        <h1>PrintLab <span style="color:var(--accent)">Simulator</span></h1>
+        <div class="subtitle">Môi trường mô phỏng và kiểm tra đường chạy G-code</div>
+      </div>
+    </div>
+    <div class="top-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Sẵn sàng mô phỏng</span>
+    </div>
+  </header>
+
+  <section class="main-panel">
+    <div class="section-heading">
+      <div class="section-title"><span>◈</span> Mô phỏng máy in 3D</div>
+      <div class="small-muted">Không gian làm việc 220 × 220 × 250 mm</div>
+    </div>
+
+    <div class="visual-area">
+      <canvas id="printerCanvas"></canvas>
+      <div class="view-label"><b>●</b> LIVE VIEW &nbsp; / &nbsp; BED VIEW</div>
+      <div class="coords">
+        <div class="coord">X <b id="xCoord">0.0</b></div>
+        <div class="coord">Y <b id="yCoord">0.0</b></div>
+        <div class="coord">Z <b id="zCoord">0.0</b></div>
+      </div>
+      <div class="visual-legend">
+        <div class="legend-item"><span class="legend-dot print"></span> Đường in</div>
+        <div class="legend-item"><span class="legend-dot travel"></span> Di chuyển đầu in</div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-label">TIẾN ĐỘ</div>
+        <div class="stat-value" id="progressText">0%</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">LỆNH HIỆN TẠI</div>
+        <div class="stat-value" id="lineText">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">LỚP ƯỚC TÍNH</div>
+        <div class="stat-value" id="layerText">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">SỢI NHỰA ĐÃ ĐÙN</div>
+        <div class="stat-value" id="filamentText">0.0 mm</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="editor-panel">
+    <div class="editor-toolbar">
+      <div class="toolbar-left">
+        <span style="color:var(--accent)">▤</span>
+        <span class="file-name">model.gcode</span>
+        <button class="btn" id="sampleBtn">↻ Tải mẫu</button>
+        <button class="btn" id="sphereBtn">⚪ Sinh quả bóng</button>
+        <button class="btn" id="clearBtn">Xóa code</button>
+      </div>
+      <div class="toolbar-right">
+        <div class="speed-control">
+          Tốc độ
+          <input id="speedSlider" type="range" min="0.25" max="4" value="1" step="0.25">
+          <span class="speed-value" id="speedValue">1×</span>
+        </div>
+        <button class="btn primary" id="startBtn">▶ Chạy mô phỏng</button>
+        <button class="btn" id="pauseBtn" disabled>Ⅱ Tạm dừng</button>
+        <button class="btn" id="stepBtn">▸| Từng bước</button>
+        <button class="btn danger" id="resetBtn">↺ Đặt lại</button>
+      </div>
+    </div>
+
+    <div class="color-bar">
+      <span class="color-label">Màu nhựa</span>
+      <div class="preset-list" id="presetList"></div>
+      <div class="custom-picker" title="Màu tùy chỉnh: chọn màu trong + màu ngoài">
+        <input type="color" id="colorInner" value="#125a6e">
+        <span>→</span>
+        <input type="color" id="colorOuter" value="#fff5be">
+      </div>
+      <span class="color-label" style="margin-left:6px">Shading</span>
+      <div class="shading-group">
+        <button class="shading-btn active" data-shading="radial">Tâm</button>
+        <button class="shading-btn" data-shading="vertical">Cao</button>
+        <button class="shading-btn" data-shading="off">Off</button>
+      </div>
+    </div>
+
+    <div class="editor-body">
+      <div class="line-numbers" id="lineNumbers">1</div>
+      <textarea id="gcodeInput" spellcheck="false" aria-label="Nhập G-code"></textarea>
+    </div>
+
+    <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="footer">
+      <span id="messageText"><strong>Sẵn sàng.</strong> Dán G-code vào vùng soạn thảo hoặc tải mã mẫu.</span>
+      <span>PrintLab Simulator • Made with ❤️</span>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("printerCanvas");
+  const ctx = canvas.getContext("2d");
+  const input = document.getElementById("gcodeInput");
+
+  const CX = 110, CY = 110;
+
+  // ===== PRESET MÀU =====
+  const PRESETS = [
+    { name: "Cyan",    inner: "#125a6e", outer: "#fff5be" },
+    { name: "Sunset",  inner: "#7a1533", outer: "#ffcb63" },
+    { name: "Ocean",   inner: "#0d2c5c", outer: "#7fd8ff" },
+    { name: "Aurora",  inner: "#1b5c3a", outer: "#b8f2c9" },
+    { name: "Ember",   inner: "#5a1008", outer: "#ff8a3d" },
+    { name: "Mint",    inner: "#0f4a3a", outer: "#a8ffdc" },
+    { name: "Candy",   inner: "#6b1e6b", outer: "#ffe0f2" },
+    { name: "Mono",    inner: "#2a2a2a", outer: "#f5f5f5" },
+    { name: "Thermal", inner: "#1a0033", outer: "#ffdd55" },
+    { name: "Steel",   inner: "#2a3a4a", outer: "#c8d8e8" },
+  ];
+
+  let currentPreset = PRESETS[0];
+  let currentShading = "radial";
+  let customInner = "#125a6e";
+  let customOuter = "#fff5be";
+
+  // ===== G-CODE MẪU =====
+  const sampleCode = `; PRINTLAB DEMO - Hình vuông 40 x 40 mm
+G21
+G90
+M82
+G28
+G1 Z0.20 F600
+G1 X90 Y90 F3000
+G1 X130 Y90 E1.2 F1200
+G1 X130 Y130 E2.4
+G1 X90 Y130 E3.6
+G1 X90 Y90 E4.8
+G1 Z0.40 F600
+G1 X130 Y90 F3000
+G1 X130 Y130 E6.0 F1200
+G1 X90 Y130 E7.2
+G1 X90 Y90 E8.4
+G1 X130 Y90 E9.6
+G1 Z0.60 F600
+G1 X130 Y130 F3000
+G1 X90 Y130 E10.8 F1200
+G1 X90 Y90 E12.0
+G1 X130 Y90 E13.2
+G1 X130 Y130 E14.4
+G1 Z10 F600
+G1 X0 Y110 F3000
+M104 S0
+M84`;
+
+  let commands = [];
+  let currentIndex = 0;
+  let running = false;
+  let paused = false;
+  let animationFrame = null;
+  let lastTimestamp = 0;
+  let segmentElapsed = 0;
+  let paths = [];
+  let activeMove = null;
+  let displayedPosition = { x: 0, y: 0, z: 0 };
+  let depositedFilament = 0;
+  let maxZ = 0;
+  let toastTimer;
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+
+  function project(x, y, z, w, h) {
+    const scale = Math.min(w / 420, h / 300);
+    const cx = w * 0.50;
+    const cy = h * 0.73;
+    return {
+      x: cx + (x - 110) * scale * 1.05 + (y - 110) * scale * 0.42,
+      y: cy - (x - 110) * scale * 0.27 + (y - 110) * scale * 0.27 - z * scale * 1.25
+    };
+  }
+
+  function hexToRgb(hex) {
+    const v = hex.replace("#", "");
+    return [
+      parseInt(v.substring(0, 2), 16),
+      parseInt(v.substring(2, 4), 16),
+      parseInt(v.substring(4, 6), 16)
+    ];
+  }
+  function lerpColor(c1, c2, t) {
+    return [
+      Math.round(c1[0] + (c2[0] - c1[0]) * t),
+      Math.round(c1[1] + (c2[1] - c1[1]) * t),
+      Math.round(c1[2] + (c2[2] - c1[2]) * t)
+    ];
+  }
+  function getColorByT(t) {
+    const inner = hexToRgb(currentPreset.inner);
+    const outer = hexToRgb(currentPreset.outer);
+    return lerpColor(inner, outer, Math.max(0, Math.min(1, t)));
+  }
+
+  function draw() {
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    if (!w || !h) return;
+
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(145,170,205,.045)";
+    ctx.lineWidth = 1;
+    for (let x = 0; x < w; x += 32) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 0; y < h; y += 32) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    ctx.restore();
+
+    const A = project(0, 0, 0, w, h);
+    const B = project(220, 0, 0, w, h);
+    const C = project(220, 220, 0, w, h);
+    const D = project(0, 220, 0, w, h);
+
+    const frameTop = 245;
+    const frameLeft = w * .24;
+    const frameRight = w * .76;
+
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    // Cột máy
+    ctx.strokeStyle = "#52627c";
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(frameLeft, frameTop);
+    ctx.lineTo(frameLeft, h * .13);
+    ctx.moveTo(frameRight, frameTop);
+    ctx.lineTo(frameRight, h * .13);
+    ctx.stroke();
+
+    // Thanh trên
+    ctx.strokeStyle = "#73849d";
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(frameLeft, h * .13);
+    ctx.lineTo(frameRight, h * .13);
+    ctx.moveTo(frameLeft + 10, h * .28);
+    ctx.lineTo(frameRight - 10, h * .28);
+    ctx.stroke();
+
+    // Bóng đổ lên bàn
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = "#000";
+    const shadowCenter = project(110, 110, 0, w, h);
+    ctx.beginPath();
+    ctx.ellipse(shadowCenter.x, shadowCenter.y, 60, 26, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Mặt bàn
+    ctx.fillStyle = "#26364c";
+    ctx.beginPath();
+    ctx.moveTo(A.x, A.y);
+    ctx.lineTo(B.x, B.y);
+    ctx.lineTo(C.x, C.y);
+    ctx.lineTo(D.x, D.y);
+    ctx.closePath();
+    ctx.fill();
+
+    // Thành bàn
+    ctx.fillStyle = "#1b293b";
+    ctx.beginPath();
+    ctx.moveTo(D.x, D.y);
+    ctx.lineTo(C.x, C.y);
+    ctx.lineTo(C.x, C.y + 13);
+    ctx.lineTo(D.x, D.y + 13);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = "#233248";
+    ctx.beginPath();
+    ctx.moveTo(B.x, B.y);
+    ctx.lineTo(C.x, C.y);
+    ctx.lineTo(C.x, C.y + 13);
+    ctx.lineTo(B.x, B.y + 13);
+    ctx.closePath();
+    ctx.fill();
+
+    // Viền bàn
+    ctx.strokeStyle = "#60738d";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y);
+    ctx.lineTo(C.x, C.y); ctx.lineTo(D.x, D.y);
+    ctx.closePath(); ctx.stroke();
+
+    // Lưới bàn
+    for (let i = 1; i < 10; i++) {
+      const depth = i / 10;
+      ctx.strokeStyle = `rgba(177,199,225,${0.05 + depth * 0.12})`;
+      ctx.lineWidth = 1;
+      let p1 = project(i * 22, 0, 0, w, h);
+      let p2 = project(i * 22, 220, 0, w, h);
+      ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+      p1 = project(0, i * 22, 0, w, h);
+      p2 = project(220, i * 22, 0, w, h);
+      ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    }
+
+    // Vẽ dây nhựa 3D + shading
+    const MAX_R = 25;
+    const MAX_Z = 45;
+
+    const sortedPaths = [...paths].sort((a, b) => {
+      const za = a.points[0].z || 0;
+      const zb = b.points[0].z || 0;
+      return za - zb;
+    });
+
+    sortedPaths.forEach(path => {
+      if (!path.points || path.points.length < 2) return;
+
+      let t = 0;
+      if (currentShading === "radial") {
+        let sumR = 0;
+        for (const pt of path.points) sumR += Math.hypot(pt.x - CX, pt.y - CY);
+        t = Math.min(1, (sumR / path.points.length) / MAX_R);
+      } else if (currentShading === "vertical") {
+        let sumZ = 0;
+        for (const pt of path.points) sumZ += pt.z;
+        t = Math.min(1, (sumZ / path.points.length) / MAX_Z);
+      }
+
+      const [r, g, b] = getColorByT(t);
+      const brightness = 0.4 + t * 0.6;
+
+      ctx.beginPath();
+      for (let i = 0; i < path.points.length; i++) {
+        const p = project(path.points[i].x, path.points[i].y, path.points[i].z, w, h);
+        if (i === 0) ctx.moveTo(p.x, p.y + 2);
+        else ctx.lineTo(p.x, p.y + 2);
+      }
+      ctx.strokeStyle = `rgba(10,25,35,${0.4 * brightness})`;
+      ctx.lineWidth = 4.5;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke();
+
+      ctx.beginPath();
+      for (let i = 0; i < path.points.length; i++) {
+        const p = project(path.points[i].x, path.points[i].y, path.points[i].z, w, h);
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
+      ctx.strokeStyle = `rgba(${r},${g},${b},${0.6 + brightness * 0.4})`;
+      ctx.lineWidth = 3.2;
+      ctx.stroke();
+
+      ctx.beginPath();
+      for (let i = 0; i < path.points.length; i++) {
+        const p = project(path.points[i].x, path.points[i].y, path.points[i].z, w, h);
+        if (i === 0) ctx.moveTo(p.x, p.y - 0.8);
+        else ctx.lineTo(p.x, p.y - 0.8);
+      }
+      ctx.strokeStyle = `rgba(255,255,255,${0.15 + t * 0.5})`;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      ctx.beginPath();
+      for (let i = 0; i < path.points.length; i++) {
+        const p = project(path.points[i].x, path.points[i].y, path.points[i].z, w, h);
+        if (i === 0) ctx.moveTo(p.x, p.y + 1.5);
+        else ctx.lineTo(p.x, p.y + 1.5);
+      }
+      ctx.strokeStyle = `rgba(5,20,30,${0.65 - t * 0.35})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+
+    // Đầu in
+    const nozzle = project(displayedPosition.x, displayedPosition.y, displayedPosition.z, w, h);
+    const carriageX = Math.max(frameLeft + 18, Math.min(frameRight - 18, nozzle.x));
+
+    ctx.strokeStyle = "#a9b7cb";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(frameLeft + 9, h * .28);
+    ctx.lineTo(frameRight - 9, h * .28);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#33445d";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(frameLeft + 8, h * .31);
+    ctx.lineTo(frameRight - 8, h * .31);
+    ctx.stroke();
+
+    const headX = Math.max(frameLeft + 15, Math.min(frameRight - 15, carriageX));
+    ctx.fillStyle = "#dce6f3";
+    ctx.fillRect(headX - 14, h * .255, 28, 20);
+    ctx.fillStyle = "#7688a1";
+    ctx.fillRect(headX - 7, h * .265, 14, 14);
+
+    ctx.strokeStyle = "#3f5874";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(headX, h * .28 + 16);
+    ctx.lineTo(nozzle.x, nozzle.y - 17);
+    ctx.stroke();
+
+    ctx.fillStyle = "#f1b85b";
+    ctx.beginPath();
+    ctx.moveTo(nozzle.x - 7, nozzle.y - 16);
+    ctx.lineTo(nozzle.x + 7, nozzle.y - 16);
+    ctx.lineTo(nozzle.x + 4, nozzle.y - 5);
+    ctx.lineTo(nozzle.x, nozzle.y);
+    ctx.lineTo(nozzle.x - 4, nozzle.y - 5);
+    ctx.closePath();
+    ctx.fill();
+
+    const glow = ctx.createRadialGradient(nozzle.x, nozzle.y, 0, nozzle.x, nozzle.y, 18);
+    glow.addColorStop(0, "rgba(255,240,180,0.55)");
+    glow.addColorStop(1, "rgba(255,240,180,0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(nozzle.x, nozzle.y, 18, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#fff8d8";
+    ctx.beginPath();
+    ctx.arc(nozzle.x, nozzle.y, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Bệ chân
+    ctx.fillStyle = "#26354b";
+    ctx.fillRect(frameLeft - 8, frameTop, frameRight - frameLeft + 16, 10);
+    ctx.fillStyle = "#3d506a";
+    ctx.fillRect(frameLeft - 13, frameTop + 10, 12, 18);
+    ctx.fillRect(frameRight + 1, frameTop + 10, 12, 18);
+
+    ctx.restore();
+
+    updateReadouts();
+  }
+
+  function updateReadouts() {
+    document.getElementById("xCoord").textContent = displayedPosition.x.toFixed(1);
+    document.getElementById("yCoord").textContent = displayedPosition.y.toFixed(1);
+    document.getElementById("zCoord").textContent = displayedPosition.z.toFixed(2);
+  }
+
+  function parseGcode(text) {
+    const lines = text.split(/\r?\n/);
+    const moves = [];
+    const pos = { x: 0, y: 0, z: 0, e: 0 };
+    let xyzAbsolute = true;
+    let eAbsolute = true;
+    let currentFeed = 1200;
+    let skipped = 0;
+    const BOUND = 220;
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i].replace(/\([^)]*\)/g, "").split(";")[0].trim().toUpperCase();
+      if (!line) continue;
+
+      const words = {};
+      const regex = /([A-Z])\s*(-?\d*\.?\d+)/g;
+      let match;
+      while ((match = regex.exec(line)) !== null) words[match[1]] = Number(match[2]);
+
+      if (/\bG90\b/.test(line)) xyzAbsolute = true;
+      if (/\bG91\b/.test(line)) xyzAbsolute = false;
+      if (/\bM82\b/.test(line)) eAbsolute = true;
+      if (/\bM83\b/.test(line)) eAbsolute = false;
+      if (words.F !== undefined) currentFeed = Math.max(1, words.F);
+
+      if (/\bG28\b/.test(line)) {
+        const from = { ...pos };
+        pos.x = 0; pos.y = 0; pos.z = 0;
+        moves.push({ from, to: { ...pos }, extrude: false, line: i + 1, feed: currentFeed, home: true });
+        continue;
+      }
+
+      if (/\bG92\b/.test(line)) {
+        ["X", "Y", "Z", "E"].forEach(axis => {
+          if (words[axis] !== undefined) pos[axis.toLowerCase()] = words[axis];
+        });
+        continue;
+      }
+
+      const isMove = /\bG0\b|\bG00\b|\bG1\b|\bG01\b/.test(line);
+      if (!isMove) continue;
+
+      const from = { ...pos };
+      ["X", "Y", "Z"].forEach(axis => {
+        if (words[axis] !== undefined) {
+          const key = axis.toLowerCase();
+          pos[key] = xyzAbsolute ? words[axis] : pos[key] + words[axis];
+        }
+      });
+
+      let extrusionDelta = 0;
+      if (words.E !== undefined) {
+        if (eAbsolute) {
+          extrusionDelta = words.E - pos.e;
+          pos.e = words.E;
+        } else {
+          extrusionDelta = words.E;
+          pos.e += words.E;
+        }
+      }
+
+      const to = { ...pos };
+      const outOfBounds =
+        to.x < -10 || to.x > BOUND + 10 ||
+        to.y < -10 || to.y > BOUND + 10 ||
+        to.z < -10 || to.z > 300;
+
+      if (outOfBounds) {
+        skipped++;
+        pos.x = from.x; pos.y = from.y; pos.z = from.z;
+        continue;
+      }
+
+      const distance = Math.hypot(to.x - from.x, to.y - from.y, (to.z - from.z) * 2);
+      moves.push({
+        from, to,
+        extrude: extrusionDelta > 0.0001 && distance > 0.001,
+        extrusion: Math.max(0, extrusionDelta),
+        line: i + 1,
+        feed: currentFeed,
+        distance
+      });
+    }
+
+    if (skipped > 0) {
+      showToast(`⚠️ Đã bỏ qua ${skipped} dòng có tọa độ ngoài vùng in.`);
+    }
+    return moves;
+  }
+
+  function setStatus(text, mode = "ready") {
+    document.getElementById("statusText").textContent = text;
+    const dot = document.getElementById("statusDot");
+    dot.style.background = mode === "run" ? "var(--yellow)" : mode === "done" ? "var(--blue)" : "var(--accent)";
+    dot.style.boxShadow = mode === "run" ? "0 0 12px #ffd16677" : "0 0 12px #67e8c477";
+  }
+
+  function setMessage(html) {
+    document.getElementById("messageText").innerHTML = html;
+  }
+
+  function prepareSimulation() {
+    const code = input.value.trim();
+    if (!code) {
+      showToast("Vui lòng nhập G-code trước khi chạy.");
+      return false;
+    }
+    commands = parseGcode(code);
+    if (!commands.length) {
+      showToast("Không tìm thấy lệnh di chuyển G0/G1 hợp lệ.");
+      return false;
+    }
+    resetState(false);
+    commands = parseGcode(code);
+    document.getElementById("lineText").textContent = "—";
+    document.getElementById("progressText").textContent = "0%";
+    setMessage(`<strong>${commands.length} lệnh di chuyển.</strong> Đang sẵn sàng mô phỏng.`);
+    return true;
+  }
+
+  function startSimulation() {
+    if (running) return;
+    if (!commands.length || currentIndex >= commands.length) {
+      if (!prepareSimulation()) return;
+    }
+    running = true;
+    paused = false;
+    lastTimestamp = 0;
+    document.getElementById("startBtn").disabled = true;
+    document.getElementById("pauseBtn").disabled = false;
+    document.getElementById("pauseBtn").textContent = "Ⅱ Tạm dừng";
+    setStatus("Đang mô phỏng", "run");
+    setMessage("<strong>Mô phỏng đang chạy.</strong> Đây chỉ là bản xem trước ảo.");
+    animationFrame = requestAnimationFrame(tick);
+  }
+
+  function tick(timestamp) {
+    if (!running || paused) return;
+    if (!lastTimestamp) lastTimestamp = timestamp;
+    const dt = Math.min(50, timestamp - lastTimestamp);
+    lastTimestamp = timestamp;
+
+    if (!activeMove) {
+      if (currentIndex >= commands.length) {
+        finishSimulation();
+        return;
+      }
+      activeMove = commands[currentIndex];
+      segmentElapsed = 0;
+      document.getElementById("lineText").textContent = "G-code dòng " + activeMove.line;
+    }
+
+    const move = activeMove;
+    const speed = Number(document.getElementById("speedSlider").value);
+    const dist = move.distance || 0;
+    const duration = Math.max(40, (dist / Math.max(1, move.feed / 60)) * 1000) / speed;
+
+    segmentElapsed += dt;
+    const t = Math.min(1, segmentElapsed / duration);
+
+    displayedPosition = {
+      x: move.from.x + (move.to.x - move.from.x) * t,
+      y: move.from.y + (move.to.y - move.from.y) * t,
+      z: move.from.z + (move.to.z - move.from.z) * t
+    };
+
+    if (move.extrude && dist > 0.001) {
+      if (t === 0 || !move.pathStarted) {
+        move.pathStarted = true;
+        paths.push({ points: [{ ...move.from }, { ...displayedPosition }] });
+        move.pathRef = paths[paths.length - 1];
+      } else if (move.pathRef) {
+        move.pathRef.points[move.pathRef.points.length - 1] = { ...displayedPosition };
+      }
+    }
+
+    draw();
+
+    if (t >= 1) {
+      displayedPosition = { x: move.to.x, y: move.to.y, z: move.to.z };
+      if (move.extrude) {
+        depositedFilament += move.extrusion || 0;
+        maxZ = Math.max(maxZ, move.to.z);
+      }
+      currentIndex++;
+      activeMove = null;
+      updateProgress();
+    }
+
+    animationFrame = requestAnimationFrame(tick);
+  }
+
+  function updateProgress() {
+    const percent = commands.length ? Math.round(currentIndex / commands.length * 100) : 0;
+    document.getElementById("progressText").textContent = percent + "%";
+    document.getElementById("progressBar").style.width = percent + "%";
+    document.getElementById("layerText").textContent = maxZ > 0 ? Math.max(1, Math.ceil(maxZ / 0.2)) : "0";
+    document.getElementById("filamentText").textContent = depositedFilament.toFixed(1) + " mm";
+  }
+
+  // ===== PARK ĐẦU IN VỀ GÓC TRÁI KHI IN XONG =====
+  function finishSimulation() {
+    running = false;
+    paused = false;
+    activeMove = null;
+    document.getElementById("startBtn").disabled = false;
+    document.getElementById("pauseBtn").disabled = true;
+    setStatus("Đã in xong — đang park đầu in", "run");
+    setMessage("<strong style='color:var(--yellow)'>In hoàn tất!</strong> Đầu phun đang di chuyển về góc trái để nghỉ…");
+
+    const startPos = { ...displayedPosition };
+    const endPos = { x: 0, y: 110, z: 10 };
+    const pcStart = performance.now();
+    const pcDuration = 2000;
+
+    const trail = [];
+
+    function parkTick(now) {
+      const t = Math.min(1, (now - pcStart) / pcDuration);
+      const e = 1 - Math.pow(1 - t, 3);
+
+      displayedPosition = {
+        x: startPos.x + (endPos.x - startPos.x) * e,
+        y: startPos.y + (endPos.y - startPos.y) * e,
+        z: startPos.z + (endPos.z - startPos.z) * e
+      };
+
+      trail.push({ ...displayedPosition });
+      if (trail.length > 40) trail.shift();
+
+      draw();
+
+      // Vẽ trail vàng phía sau đầu in
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      if (trail.length > 1) {
+        ctx.save();
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        for (let i = 0; i < trail.length - 1; i++) {
+          const alpha = (i / trail.length) * 0.5;
+          const p1 = project(trail[i].x, trail[i].y, trail[i].z, w, h);
+          const p2 = project(trail[i + 1].x, trail[i + 1].y, trail[i + 1].z, w, h);
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.strokeStyle = `rgba(255, 209, 102, ${alpha})`;
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      updateReadouts();
+
+      if (t < 1) {
+        requestAnimationFrame(parkTick);
+      } else {
+        setStatus("Mô phỏng hoàn tất", "done");
+        setMessage("<strong>Hoàn tất.</strong> Đầu in đã park ở góc trái, an toàn để tháo sản phẩm.");
+        showToast("🎉 In xong — Đầu in đã về góc trái!");
+      }
+    }
+    requestAnimationFrame(parkTick);
+
+    updateProgress();
+  }
+
+  function pauseSimulation() {
+    if (!running) return;
+    paused = !paused;
+    document.getElementById("pauseBtn").textContent = paused ? "▶ Tiếp tục" : "Ⅱ Tạm dừng";
+    if (paused) {
+      cancelAnimationFrame(animationFrame);
+      setStatus("Đã tạm dừng");
+      setMessage("<strong>Đã tạm dừng.</strong> Nhấn Tiếp tục để chạy tiếp.");
+    } else {
+      lastTimestamp = 0;
+      setStatus("Đang chạy", "run");
+      animationFrame = requestAnimationFrame(tick);
+    }
+  }
+
+  function stepOnce() {
+    if (running) {
+      showToast("Hãy tạm dừng mô phỏng trước khi chạy từng bước.");
+      return;
+    }
+    if (!commands.length || currentIndex >= commands.length) {
+      if (!prepareSimulation()) return;
+    }
+
+    const move = commands[currentIndex];
+    if (!move) return;
+
+    displayedPosition = { x: move.to.x, y: move.to.y, z: move.to.z };
+    if (move.extrude) {
+      paths.push({ points: [{ ...move.from }, { ...move.to }] });
+      depositedFilament += move.extrusion || 0;
+      maxZ = Math.max(maxZ, move.to.z);
+    }
+    document.getElementById("lineText").textContent = "G-code dòng " + move.line;
+    currentIndex++;
+    updateProgress();
+    draw();
+
+    if (currentIndex >= commands.length) {
+      setStatus("Mô phỏng hoàn tất", "done");
+      setMessage("<strong>Đã chạy hết lệnh.</strong> Mô phỏng hoàn tất.");
+    } else {
+      setStatus("Đang xem từng bước", "run");
+      setMessage("<strong>Đã chạy 1 lệnh.</strong> Nhấn “Từng bước” để xem lệnh tiếp theo.");
+    }
+  }
+
+  function resetState(clearCommands = true) {
+    running = false;
+    paused = false;
+    cancelAnimationFrame(animationFrame);
+    if (clearCommands) commands = [];
+    currentIndex = 0;
+    activeMove = null;
+    segmentElapsed = 0;
+    displayedPosition = { x: 0, y: 0, z: 0 };
+    paths = [];
+    depositedFilament = 0;
+    maxZ = 0;
+    document.getElementById("startBtn").disabled = false;
+    document.getElementById("pauseBtn").disabled = true;
+    document.getElementById("pauseBtn").textContent = "Ⅱ Tạm dừng";
+    document.getElementById("progressText").textContent = "0%";
+    document.getElementById("progressBar").style.width = "0%";
+    document.getElementById("lineText").textContent = "—";
+    document.getElementById("layerText").textContent = "0";
+    document.getElementById("filamentText").textContent = "0.0 mm";
+    setStatus("Sẵn sàng mô phỏng");
+    draw();
+  }
+
+  function showToast(message) {
+    const el = document.getElementById("toast");
+    el.textContent = message;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
+  }
+
+  function updateLineNumbers() {
+    const count = input.value.split("\n").length;
+    document.getElementById("lineNumbers").textContent =
+      Array.from({ length: count }, (_, i) => i + 1).join("\n");
+  }
+
+  // ===== SINH QUẢ BÓNG (có park cuối) =====
+  function generateBallGcode() {
+    const cx = CX, cy = CY;
+    const R = 20;
+    const layerH = 1.0;
+    const segs = 24;
+    const zMin = 1.0;
+    const zMax = 2 * R - 1.0;
+    const ePerMm = 0.045;
+
+    const lines = [];
+    lines.push("; ============================================");
+    lines.push("; BONG TRON 40mm - MO PHONG GON");
+    lines.push("; Tam: X=110, Y=110 | Cao: 1.0 -> 39.0 mm");
+    lines.push("; 38 lop x 24 diem/vong | lop day 1.0mm");
+    lines.push("; ============================================");
+    lines.push("G21"); lines.push("G90"); lines.push("M83"); lines.push("G28");
+
+    let layer = 0;
+    for (let z = zMin; z <= zMax + 0.001; z += layerH) {
+      layer++;
+      const dz = z - R;
+      const r2 = R * R - dz * dz;
+      if (r2 <= 0) continue;
+      const r = Math.sqrt(r2);
+      lines.push("");
+      lines.push(`; ---------- LOP ${layer} (z=${z.toFixed(2)}, r=${r.toFixed(2)}) ----------`);
+      lines.push(`G1 Z${z.toFixed(3)} F600`);
+      const startX = cx + r;
+      lines.push(`G1 X${startX.toFixed(3)} Y${cy.toFixed(3)} F3000`);
+      let prevX = startX, prevY = cy;
+      for (let i = 1; i <= segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        const x = cx + r * Math.cos(a);
+        const y = cy + r * Math.sin(a);
+        const dist = Math.hypot(x - prevX, y - prevY);
+        const dE = dist * ePerMm;
+        lines.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} E${dE.toFixed(3)} F1200`);
+        prevX = x; prevY = y;
+      }
+    }
+    lines.push("");
+    lines.push("; ---------- HOAN TAT - PARK HEAD VE GOC TRAI ----------");
+    lines.push("G1 Z10.00 F600");
+    lines.push("G1 X0 Y110 F3000");
+    lines.push("M104 S0");
+    lines.push("M84");
+    return lines.join("\n");
+  }
+
+  function buildPresetButtons() {
+    const list = document.getElementById("presetList");
+    list.innerHTML = "";
+    PRESETS.forEach((p, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "preset-btn";
+      btn.title = p.name;
+      btn.style.background = `linear-gradient(135deg, ${p.inner}, ${p.outer})`;
+      btn.dataset.idx = idx;
+      if (p.name === currentPreset.name) btn.classList.add("active");
+      btn.addEventListener("click", () => {
+        currentPreset = { ...PRESETS[idx] };
+        document.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        saveSettings();
+        draw();
+        showToast(`Màu: ${p.name}`);
+      });
+      list.appendChild(btn);
+    });
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem("printlab_settings", JSON.stringify({
+        preset: currentPreset,
+        shading: currentShading,
+        customInner, customOuter
+      }));
+    } catch (e) {}
+  }
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem("printlab_settings");
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s.preset) currentPreset = s.preset;
+      if (s.shading) currentShading = s.shading;
+      if (s.customInner) customInner = s.customInner;
+      if (s.customOuter) customOuter = s.customOuter;
+    } catch (e) {}
+  }
+
+  // ===== SỰ KIỆN =====
+  input.addEventListener("input", updateLineNumbers);
+  input.addEventListener("scroll", () => {
+    document.getElementById("lineNumbers").scrollTop = input.scrollTop;
+  });
+
+  document.getElementById("sampleBtn").addEventListener("click", () => {
+    input.value = sampleCode;
+    updateLineNumbers();
+    resetState();
+    setMessage("<strong>Đã tải mã mẫu.</strong> Nhấn “Chạy mô phỏng” để bắt đầu.");
+  });
+
+  document.getElementById("sphereBtn").addEventListener("click", () => {
+    input.value = generateBallGcode();
+    updateLineNumbers();
+    resetState();
+    setMessage("<strong>Đã sinh G-code quả bóng 40mm.</strong> Nhấn “▶ Chạy mô phỏng”.");
+    showToast("Đã sinh xong G-code quả bóng! 🎯");
+  });
+
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    input.value = "";
+    updateLineNumbers();
+    resetState();
+    setMessage("<strong>Vùng nhập đã được xóa.</strong> Dán G-code vào đây để bắt đầu.");
+  });
+
+  document.getElementById("startBtn").addEventListener("click", startSimulation);
+  document.getElementById("pauseBtn").addEventListener("click", pauseSimulation);
+  document.getElementById("stepBtn").addEventListener("click", stepOnce);
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    resetState();
+    setMessage("<strong>Đã đặt lại mô phỏng.</strong> Nhấn chạy để bắt đầu lại từ đầu.");
+  });
+
+  document.getElementById("speedSlider").addEventListener("input", event => {
+    document.getElementById("speedValue").textContent = event.target.value + "×";
+  });
+
+  document.querySelectorAll(".shading-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".shading-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentShading = btn.dataset.shading;
+      saveSettings();
+      draw();
+      showToast("Shading: " + btn.textContent);
+    });
+  });
+
+  document.getElementById("colorInner").addEventListener("input", e => {
+    customInner = e.target.value;
+    currentPreset = { name: "Custom", inner: customInner, outer: customOuter };
+    document.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("active"));
+    saveSettings();
+    draw();
+  });
+  document.getElementById("colorOuter").addEventListener("input", e => {
+    customOuter = e.target.value;
+    currentPreset = { name: "Custom", inner: customInner, outer: customOuter };
+    document.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("active"));
+    saveSettings();
+    draw();
+  });
+
+  window.addEventListener("resize", resizeCanvas);
+
+  // ===== KHỞI ĐỘNG =====
+  loadSettings();
+  document.getElementById("colorInner").value = customInner;
+  document.getElementById("colorOuter").value = customOuter;
+  buildPresetButtons();
+  document.querySelectorAll(".preset-btn").forEach(b => {
+    const p = PRESETS[Number(b.dataset.idx)];
+    if (p.name === currentPreset.name) b.classList.add("active");
+  });
+  document.querySelectorAll(".shading-btn").forEach(b => {
+    if (b.dataset.shading === currentShading) b.classList.add("active");
+    else b.classList.remove("active");
+  });
+  input.value = sampleCode;
+  updateLineNumbers();
+  resizeCanvas();
+})();
+</script>
+</body>
+</html>

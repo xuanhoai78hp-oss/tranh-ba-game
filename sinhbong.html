@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Sinh quả bóng G-code</title>
+<style>
+  body { background:#0b1020; color:#eef3ff; font-family:monospace; padding:20px; }
+  button { padding:10px 15px; font-size:14px; background:#67e8c4; border:0; border-radius:8px; cursor:pointer; }
+  textarea { width:100%; height:60vh; margin-top:12px; padding:10px; background:#0a1020; color:#c8d6eb; border:1px solid #27334d; font-family:monospace; font-size:11px; }
+  #info { margin-top:10px; color:#94a3bd; font-size:12px; }
+</style>
+</head>
+<body>
+<h2>⚪ Sinh G-code quả bóng 40mm</h2>
+<button id="genBtn">Sinh G-code</button>
+<button id="copyBtn">Copy toàn bộ</button>
+<div id="info">Sẵn sàng.</div>
+<textarea id="out" readonly placeholder="Nhấn “Sinh G-code” để tạo..."></textarea>
+
+<script>
+function generateBallGcode() {
+  const cx = 110, cy = 110;
+  const R = 20;
+  const layerH = 1.0;
+  const segs = 24;
+  const zMin = 1.0;
+  const zMax = 2 * R - 1.0;
+  const ePerMm = 0.045;
+
+  const lines = [];
+  lines.push("; ============================================");
+  lines.push("; BONG TRON 40mm - MO PHONG GON");
+  lines.push("; Tam: X=110, Y=110 | Cao: 1.0 -> 39.0 mm");
+  lines.push("; 38 lop x 24 diem/vong | lop day 1.0mm");
+  lines.push("; ============================================");
+  lines.push("G21"); lines.push("G90"); lines.push("M83"); lines.push("G28");
+
+  let layer = 0;
+  for (let z = zMin; z <= zMax + 0.001; z += layerH) {
+    layer++;
+    const dz = z - R;
+    const r2 = R * R - dz * dz;
+    if (r2 <= 0) continue;
+    const r = Math.sqrt(r2);
+    lines.push("");
+    lines.push("; ---------- LOP " + layer + " (z=" + z.toFixed(2) + ", r=" + r.toFixed(2) + ") ----------");
+    lines.push("G1 Z" + z.toFixed(3) + " F600");
+    const startX = cx + r;
+    lines.push("G1 X" + startX.toFixed(3) + " Y" + cy.toFixed(3) + " F3000");
+    let prevX = startX, prevY = cy;
+    for (let i = 1; i <= segs; i++) {
+      const a = (i / segs) * Math.PI * 2;
+      const x = cx + r * Math.cos(a);
+      const y = cy + r * Math.sin(a);
+      const dist = Math.hypot(x - prevX, y - prevY);
+      const dE = dist * ePerMm;
+      lines.push("G1 X" + x.toFixed(3) + " Y" + y.toFixed(3) + " E" + dE.toFixed(3) + " F1200");
+      prevX = x; prevY = y;
+    }
+  }
+  lines.push("");
+  lines.push("; ---------- KET THUC ----------");
+  lines.push("G1 Z5.00 F1200"); lines.push("M104 S0"); lines.push("M84");
+  return lines.join("\n");
+}
+
+document.getElementById("genBtn").addEventListener("click", () => {
+  const code = generateBallGcode();
+  document.getElementById("out").value = code;
+  document.getElementById("info").textContent = 
+    "✅ Đã sinh " + code.split("\n").length + " dòng. Nhấn 'Copy toàn bộ' để copy.";
+});
+
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  const ta = document.getElementById("out");
+  ta.select();
+  ta.setSelectionRange(0, 999999);
+  try {
+    await navigator.clipboard.writeText(ta.value);
+    document.getElementById("info").textContent = "✅ Đã copy vào clipboard!";
+  } catch(e) {
+    document.execCommand("copy");
+    document.getElementById("info").textContent = "✅ Đã copy (phương thức dự phòng).";
+  }
+});
+</script>
+</body>
+</html>
