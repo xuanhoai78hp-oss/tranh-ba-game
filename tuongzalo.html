@@ -3,118 +3,551 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Game viết bởi Ai</title>
+<title>Game viết bởi AI</title>
 
 <!-- Cấu hình chuẩn cho Zalo/Facebook -->
 <meta property="og:title" content="🎮 Game Viết Bởi AI - Chơi Ngay!">
-<meta property="og:description" content="Tổng hợp game HTML5 cực hay! Đánh Quại, Flycam Vận Tải, Tank vs Bugs... Chơi ngay trên điện thoại!">
+<meta property="og:description" content="Tổng hợp 22 game HTML5 cực hay! Đánh Quái, Flycam Vận Tải, Tank vs Bugs... Chơi ngay trên điện thoại!">
 
-<!-- Link ảnh GIF bồ tèo muốn hiển thị (Phải là link thật) -->
 <meta property="og:image" content="https://tranh-ba-game-gw3q.vercel.app/tuongzalo.gif">
 <meta property="og:image:secure_url" content="https://tranh-ba-game-gw3q.vercel.app/tuongzalo.gif">
 <meta property="og:image:type" content="image/gif">
 <meta property="og:image:width" content="600">
 <meta property="og:image:height" content="315">
 
-<!-- Link trang web của bồ tèo -->
 <meta property="og:url" content="https://tranh-ba-game-gw3q.vercel.app/">
 <meta property="og:type" content="website">
 
-<!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://tranh-ba-game-gw3q.vercel.app/tuongzalo.gif">
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap');
+
+:root {
+  --lime-1: #a3ff12;
+  --lime-2: #7cd920;
+  --lime-3: #4a9e0c;
+  --bg-1: #0f1e08;
+  --bg-2: #142a0c;
+  --bg-3: #1a3810;
+  --text: #eaffd4;
+  --text-muted: #9bc482;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Be Vietnam Pro', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; padding: 20px; color: #fff; }
-.header { text-align: center; margin-bottom: 25px; }
-.header h1 { font-size: 32px; font-weight: 700; background: linear-gradient(90deg, #00d4ff, #7b2ff7, #ff006e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 0 30px rgba(0, 212, 255, 0.3); letter-spacing: 2px; }
-.header .subtitle { font-size: 14px; color: #8892b0; margin-top: 5px; }
-.hot-badge { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(90deg, #ff006e, #ff4d94); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 15px; animation: pulse 1.5s ease-in-out infinite; }
+
+body {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 50%, var(--bg-3) 100%);
+  min-height: 100vh;
+  padding: 20px;
+  color: var(--text);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--lime-1), var(--lime-2), var(--lime-1));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px rgba(163, 255, 18, 0.3);
+  letter-spacing: 2px;
+  animation: glow 3s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(163, 255, 18, 0.4)); }
+  50% { filter: drop-shadow(0 0 20px rgba(163, 255, 18, 0.7)); }
+}
+
+.header .subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 5px;
+}
+
+.hot-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(90deg, var(--lime-3), var(--lime-2));
+  color: #0f1e08;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 auto 15px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.hot-badge-wrap { text-align: center; }
 .hot-badge span { font-size: 16px; }
-@keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 110, 0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 20px 5px rgba(255, 0, 110, 0.3); } }
-.game-grid { display: flex; flex-direction: column; gap: 20px; max-width: 700px; margin: 0 auto; }
-.game-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.game-card { background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 16px; backdrop-filter: blur(10px); transition: all 0.3s ease; position: relative; }
-.game-card:hover { transform: translateY(-3px); border-color: rgba(0, 212, 255, 0.4); box-shadow: 0 10px 40px rgba(0, 212, 255, 0.15); }
-.game-card.hot { border-color: rgba(255, 0, 110, 0.5); background: linear-gradient(145deg, rgba(255,0,110,0.1), rgba(255,0,110,0.02)); }
-.game-card.hot::before { content: '🔥 HOT'; position: absolute; top: -8px; right: 12px; background: linear-gradient(90deg, #ff006e, #ff4d94); padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; animation: pulse 1.5s ease-in-out infinite; z-index: 1; }
-.game-info h3 { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(163, 255, 18, 0.5); }
+  50% { transform: scale(1.05); box-shadow: 0 0 20px 5px rgba(163, 255, 18, 0.35); }
+}
+
+.game-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.game-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.game-card {
+  background: linear-gradient(145deg, rgba(163, 255, 18, 0.08), rgba(163, 255, 18, 0.02));
+  border: 1px solid rgba(163, 255, 18, 0.15);
+  border-radius: 16px;
+  padding: 16px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.game-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(163, 255, 18, 0.55);
+  box-shadow: 0 10px 40px rgba(163, 255, 18, 0.2);
+}
+
+.game-card.hot {
+  border-color: rgba(163, 255, 18, 0.6);
+  background: linear-gradient(145deg, rgba(163, 255, 18, 0.15), rgba(163, 255, 18, 0.03));
+}
+
+.game-card.hot::before {
+  content: '🔥 HOT';
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  background: linear-gradient(90deg, var(--lime-1), var(--lime-2));
+  color: #0f1e08;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  animation: pulse 1.5s ease-in-out infinite;
+  z-index: 1;
+}
+
+.game-info h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .game-info .icon { font-size: 22px; }
-.game-info p { font-size: 12px; color: #a8b2d1; line-height: 1.5; margin-bottom: 12px; }
-.play-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 16px; background: linear-gradient(135deg, #00d4ff, #0099cc); border: none; border-radius: 10px; color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; transition: all 0.2s ease; }
-.play-btn:hover { background: linear-gradient(135deg, #00e5ff, #00b8d4); transform: scale(1.02); box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4); }
+
+.game-info p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.play-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--lime-1), var(--lime-3));
+  border: none;
+  border-radius: 10px;
+  color: #0f1e08;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.play-btn:hover {
+  background: linear-gradient(135deg, #b8ff40, #5cc40e);
+  transform: scale(1.02);
+  box-shadow: 0 5px 25px rgba(163, 255, 18, 0.5);
+}
+
 .play-btn .btn-icon { font-size: 18px; }
-@media (max-width: 500px) { .game-row { grid-template-columns: 1fr; } .header h1 { font-size: 26px; } }
+
+.footer {
+  text-align: center;
+  margin-top: 30px;
+  padding: 15px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.footer strong { color: var(--lime-1); }
+
+/* ===== NÚT NHẠC ===== */
+.music-btn {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid rgba(163, 255, 18, 0.5);
+  border-radius: 999px;
+  background: rgba(15, 30, 8, 0.85);
+  backdrop-filter: blur(10px);
+  color: var(--lime-1);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  animation: musicPulse 2s ease-in-out infinite;
+}
+
+.music-btn:hover {
+  background: rgba(163, 255, 18, 0.15);
+  border-color: var(--lime-1);
+  transform: scale(1.05);
+}
+
+.music-btn.playing {
+  background: linear-gradient(135deg, var(--lime-1), var(--lime-3));
+  color: #0f1e08;
+  animation: none;
+  box-shadow: 0 0 20px rgba(163, 255, 18, 0.5);
+}
+
+@keyframes musicPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(163, 255, 18, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(163, 255, 18, 0); }
+}
+
+@media (max-width: 500px) {
+  .game-row { grid-template-columns: 1fr; }
+  .header h1 { font-size: 24px; }
+  .game-info h3 { font-size: 15px; }
+  .music-btn {
+    top: 10px;
+    right: 10px;
+    padding: 7px 11px;
+    font-size: 11px;
+  }
+}
 </style>
 </head>
 <body>
+
+<!-- Nút toggle nhạc -->
+<button id="musicBtn" class="music-btn" title="Bật/tắt nhạc nền">
+  <span id="musicIcon">🔇</span>
+  <span id="musicLabel">Bật nhạc Ả Rập</span>
+</button>
+
 <div class="header">
-<h1>🎮 GAME VIẾT BỞI AI 🚀</h1>
-<p class="subtitle">Chơi ngay trên điện thoại - siêu nhỏ nhẹ</p>
+  <h1>🎮 GAME VIẾT BỞI AI 🚀</h1>
+  <p class="subtitle">22 game HTML5 - Chơi ngay trên điện thoại, siêu nhỏ nhẹ</p>
 </div>
-<div class="hot-badge"><span>🔥</span> GAME ĐANG HOT - THỬ NGAY!</div>
-<div class="game-grid">
-<div class="game-row">
-<div class="game-card hot">
-<div class="game-info"><h3><span class="icon">🐜</span> Đánh Quái</h3><p>Game hành động phiêu lưu trong rừng. Diệt côn trùng, thu thập nguyên liệu, tu luyện!</p></div>
-<a href="https://tranh-ba-game-gw3q.vercel.app/1.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
+
+<div class="hot-badge-wrap">
+  <div class="hot-badge"><span>🔥</span> GAME ĐANG HOT - THỬ NGAY!</div>
 </div>
-<div class="game-card">
-<div class="game-info"><h3><span class="icon">🚁</span> Flycam Vận Tải</h3><p>Điều khiển flycam chở hàng hóa. Bay qua các chướng ngại vật, hạ cánh an toàn!</p></div>
-<a href="https://tranh-ba-game-gw3q.vercel.app/flycamvantai.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
+
+<div class="game-grid" id="gameGrid"></div>
+
+<div class="footer">
+  <strong>Game Hub AI</strong> • Made with ❤️ và 🍋
 </div>
-</div>
-<div class="game-row">
-<div class="game-card">
-<div class="game-info"><h3><span class="icon">📚</span> Học Làm Cơ Trưởng</h3><p>Game giáo dục học cách lái máy bay dân dụng. Từ cơ bản đến nâng cao, rất dễ hiểu!</p></div>
-<a href="https://tranh-ba-game-gw3q.vercel.app/hoclamcotruong.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
-</div>
-<div class="game-card">
-<div class="game-info"><h3><span class="icon">🚛</span> Xe Container</h3><p>Lái xe container chở hàng. Cẩn thận với những đoạn đường khó!</p></div>
-<a href="https://tranh-ba-game-gw3q.vercel.app/xecontainer.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
-</div>
-</div>
-<div class="game-row">
-<div class="game-card">
-<div class="game-info"><h3><span class="icon">🚜</span> Lái Máy Xúc</h3><p>Điều khiển máy xúc đào đất, xúc vật liệu. Công việc của một thợ lái bằng Fc!</p></div>
-<a href="https://tranh-ba-game-gw3q.vercel.app/laimayxuc.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
-</div>
-<div class="game-card">
-<div class="game-info"><h3><span class="icon">🏗️</span> Lái Xe Nâng</h3><p>Lái xe nâng di chuyển hàng hóa trong kho. Chính xác và nhanh nhất!</p></div>
-<a href="https://tranh-ba-game-gw3q.vercel.app/laixenang.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
-</div>
-</div>
-<div class="game-row">
-<div class="game-card hot">
-<div class="game-info"><h3><span class="icon">🚜</span> Tank vs Bugs</h3><p>Điều khiển xe tăng bằng 2 cần gạt. Bắn côn trùng bảo vệ rừng!</p></div>
-<a href="https://tranh-ba-game-gw3q.vercel.app/tank.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
-</div>
-<div class="game-card">
-<div class="game-info"><h3><span class="icon">🚁</span> Team Vĩnh Lộc</h3><p>Lái máy bay giao hàng. Nhiệm vụ vận chuyển hàng hóa đến các điểm!</p></div>
-<a href="https://tranh-ba-game-gw3q.vercel.app/helicopter.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
-</div>
-</div>
-<div class="game-row">
-<div class="game-card">
-<div class="game-info"><h3><span class="icon">🐍</span> Rắn Ăn Chữ</h3><p>Game giáo dục tiếng Việt. Ăn chữ đúng để rắn dài ra, tránh chướng ngại!</p></div>
-<a href="https://tranh-ba-game-gw3q.vercel.app/snackanchu.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
-</div>
-<div class="game-card">
-<div class="game-info"><h3><span class="icon">🎵</span> Giao Nhạc Player</h3><p>Gõ nốt nhạc theo giai điệu. Nghe nhạc cùng lúc, tập nhạc cơ bản!</p></div>
-<a href="https://tranh-ba-game-gw3q.vercel.app/giaonhanplayer.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
-</div>
-</div>
-<div class="game-row">
-<div class="game-card">
-<div class="game-info"><h3><span class="icon">🚁</span> Flycam Vận Tải 2</h3><p>Phiên bản 2 của Flycam Vận Tải. Nhiều thử thách hơn, hấp dẫn hơn!</p></div>
-<a href="https://tranh-ba-game-gw3q.vercel.app/flycamvantai2.html" class="play-btn" target="_blank"><span class="btn-icon">🎮</span> CHƠI NGAY</a>
-</div>
-<div class="game-card">
-<div class="game-info"><h3><span class="icon">📖</span> Giới Thiệu</h3><p>Tìm hiểu thêm về các game và cập nhật mới nhất từ tác giả!</p></div>
-<a href="https://tranh-ba-game-gw3q.vercel.app/gioithieu.html" class="play-btn" target="_blank"><span class="btn-icon">📖</span> XEM NGAY</a>
-</div>
-</div>
-</div>
+
+<script>
+// ===== DANH SÁCH GAME =====
+const GAMES = [
+  { file: "danhquai.html",          title: "Đánh Quái",           icon: "🐜", desc: "Hành động phiêu lưu trong rừng. Diệt côn trùng, thu thập nguyên liệu, tu luyện!", group: "danhquai", hot: true },
+  { file: "danhquai310.html",       title: "Đánh Quái 3.10",      icon: "🐜", desc: "Phiên bản mới của Đánh Quái. Nhiều boss hơn, kỹ năng đa dạng hơn!", group: "danhquai" },
+  { file: "flycamvantai.html",      title: "Flycam Vận Tải",      icon: "🚁", desc: "Điều khiển flycam chở hàng hóa. Bay qua chướng ngại vật, hạ cánh an toàn!", group: "flycam" },
+  { file: "flycamvantai2.html",     title: "Flycam Vận Tải 2",    icon: "🚁", desc: "Phiên bản 2 của Flycam Vận Tải. Nhiều thử thách hơn, hấp dẫn hơn!", group: "flycam" },
+  { file: "forumchat.html",         title: "Forum Chat",          icon: "💬", desc: "Diễn đàn trò chuyện cộng đồng. Kết bạn, chia sẻ kinh nghiệm chơi game!", group: "forum" },
+  { file: "giaonhanplayer.html",    title: "Giao Nhạc Player",    icon: "🎵", desc: "Gõ nốt nhạc theo giai điệu. Nghe nhạc cùng lúc, tập nhạc cơ bản!", group: "music" },
+  { file: "gioithieu.HTML",         title: "Giới Thiệu",          icon: "📖", desc: "Tìm hiểu về các game và cập nhật mới nhất từ tác giả!", group: "info" },
+  { file: "helicopter.html",        title: "Team Vĩnh Lộc",       icon: "🚁", desc: "Lái máy bay giao hàng. Vận chuyển hàng hóa đến các điểm!", group: "helipc" },
+  { file: "hoclamcotruong.html",    title: "Học Làm Cơ Trưởng",   icon: "📚", desc: "Game giáo dục học lái máy bay dân dụng. Từ cơ bản đến nâng cao!", group: "hoctap" },
+  { file: "hungnote.html",          title: "Hưng Note",           icon: "📝", desc: "Ứng dụng ghi chú mini kèm game giải trí. Ghi nhớ mọi thứ quan trọng!", group: "note" },
+  { file: "in3d.html",              title: "In 3D",               icon: "🖨️", desc: "Mô phỏng máy in 3D trong trình duyệt. Xem từng lớp nhựa hình thành!", group: "print3d" },
+  { file: "laimayxuc.html",         title: "Lái Máy Xúc",         icon: "🚜", desc: "Điều khiển máy xúc đào đất, xúc vật liệu. Công việc thợ lái!", group: "drive1" },
+  { file: "laixenang.html",         title: "Lái Xe Nâng",         icon: "🏗️", desc: "Lái xe nâng di chuyển hàng hóa trong kho. Chính xác và nhanh nhất!", group: "drive2" },
+  { file: "sinhbong.html",          title: "Sinh Bóng",           icon: "⚪", desc: "Sinh vật thể hình cầu 3D. Xem quả bóng được in từng lớp một!", group: "print3d" },
+  { file: "snakeanchu.html",        title: "Rắn Ăn Chữ",          icon: "🐍", desc: "Game giáo dục tiếng Việt. Ăn chữ đúng để rắn dài ra, tránh chướng ngại!", group: "snake" },
+  { file: "snakeanchu3.html",       title: "Rắn Ăn Chữ 3",        icon: "🐍", desc: "Phiên bản 3 của Rắn Ăn Chữ. Thêm chế độ khó, thêm từ vựng!", group: "snake" },
+  { file: "snakecodien.html",       title: "Rắn Cổ Điển",         icon: "🐍", desc: "Snake kinh điển trên điện thoại Nokia. Chơi hoài niệm tuổi thơ!", group: "snake" },
+  { file: "sniper.html",            title: "Sniper",              icon: "🎯", desc: "Game bắn tỉa hấp dẫn. Ngắm chuẩn và hạ gục mục tiêu!", group: "shooter1" },
+  { file: "tank.html",              title: "Tank vs Bugs",        icon: "🚜", desc: "Điều khiển xe tăng 2 cần gạt. Bắn côn trùng bảo vệ rừng!", group: "shooter2", hot: true },
+  { file: "tutien3.html",           title: "Tu Tiên 3",           icon: "⚔️", desc: "Tu luyện thành tiên. Vượt ải, đánh boss để nâng cấp bản thân!", group: "cultivation" },
+  { file: "tutienrungtruc.html",    title: "Tu Tiên Rừng Trúc",   icon: "⚔️", desc: "Tu tiên bối cảnh rừng trúc. Luyện công, đột phá cảnh giới!", group: "cultivation" },
+  { file: "xecontainer.html",       title: "Xe Container",        icon: "🚛", desc: "Lái xe container chở hàng. Cẩn thận với những đoạn đường khó!", group: "truck" },
+];
+
+// ===== XÁO TRỘN: các game cùng group không đứng gần nhau =====
+function shuffleByGroup(games) {
+  const groups = {};
+  games.forEach(g => {
+    if (!groups[g.group]) groups[g.group] = [];
+    groups[g.group].push(g);
+  });
+
+  const groupKeys = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
+
+  const result = [];
+  while (groupKeys.some(k => groups[k].length > 0)) {
+    for (const k of groupKeys) {
+      if (groups[k].length > 0) {
+        result.push(groups[k].shift());
+      }
+    }
+  }
+  return result;
+}
+
+// ===== RENDER =====
+function render() {
+  const grid = document.getElementById("gameGrid");
+  const shuffled = shuffleByGroup([...GAMES]);
+
+  grid.innerHTML = "";
+  for (let i = 0; i < shuffled.length; i += 2) {
+    const row = document.createElement("div");
+    row.className = "game-row";
+
+    for (let j = 0; j < 2 && i + j < shuffled.length; j++) {
+      const g = shuffled[i + j];
+      const card = document.createElement("div");
+      card.className = "game-card" + (g.hot ? " hot" : "");
+      card.innerHTML = `
+        <div class="game-info">
+          <h3><span class="icon">${g.icon}</span> ${g.title}</h3>
+          <p>${g.desc}</p>
+        </div>
+        <a href="${g.file}" class="play-btn" target="_blank">
+          <span class="btn-icon">🎮</span> CHƠI NGAY
+        </a>
+      `;
+      row.appendChild(card);
+    }
+
+    grid.appendChild(row);
+  }
+}
+
+// ===== NHẠC NỀN Ả RẬP TỰ SINH =====
+const Music = (() => {
+  let actx = null;
+  let masterGain = null;
+  let playing = false;
+  let loopTimer = null;
+
+  // Thang âm Hijaz (âm giai Ả Rập kinh điển)
+  const HIJAZ_SCALE = [261.63, 277.18, 329.63, 349.23, 392.00, 415.30, 466.16, 523.25];
+
+  function init() {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = actx.createGain();
+    masterGain.gain.value = 0;
+    masterGain.connect(actx.destination);
+  }
+
+  function playBell(freq, time, duration = 0.8, vol = 0.15) {
+    const osc = actx.createOscillator();
+    const gain = actx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(vol, time + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(time);
+    osc.stop(time + duration);
+  }
+
+  function playDrone(freq, time, duration = 4, vol = 0.08) {
+    const osc = actx.createOscillator();
+    const gain = actx.createGain();
+    osc.type = "triangle";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(vol, time + 0.5);
+    gain.gain.setValueAtTime(vol, time + duration - 0.5);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(time);
+    osc.stop(time + duration);
+  }
+
+  function playKick(time, vol = 0.3) {
+    const osc = actx.createOscillator();
+    const gain = actx.createGain();
+    osc.frequency.setValueAtTime(120, time);
+    osc.frequency.exponentialRampToValueAtTime(40, time + 0.15);
+    gain.gain.setValueAtTime(vol, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(time);
+    osc.stop(time + 0.25);
+  }
+
+  function playShaker(time, vol = 0.05) {
+    const bufferSize = actx.sampleRate * 0.05;
+    const buffer = actx.createBuffer(1, bufferSize, actx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const src = actx.createBufferSource();
+    src.buffer = buffer;
+    const filter = actx.createBiquadFilter();
+    filter.type = "highpass";
+    filter.frequency.value = 6000;
+    const gain = actx.createGain();
+    gain.gain.setValueAtTime(vol, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+    src.start(time);
+    src.stop(time + 0.06);
+  }
+
+  function scheduleLoop() {
+    if (!playing) return;
+    const now = actx.currentTime;
+    const bpm = 90;
+    const beatDur = 60 / bpm;
+    const loopBeats = 16;
+    const loopDur = beatDur * loopBeats;
+
+    // Drone bass
+    playDrone(HIJAZ_SCALE[0] / 2, now, loopDur, 0.06);
+    playDrone(HIJAZ_SCALE[4] / 2, now, loopDur, 0.04);
+
+    // Giai điệu bell
+    const melody = [
+      { beat: 0,  note: 0, dur: 1.2 },
+      { beat: 2,  note: 2, dur: 0.8 },
+      { beat: 3,  note: 1, dur: 0.8 },
+      { beat: 5,  note: 4, dur: 1.0 },
+      { beat: 7,  note: 2, dur: 0.8 },
+      { beat: 8,  note: 5, dur: 1.2 },
+      { beat: 10, note: 4, dur: 0.8 },
+      { beat: 11, note: 3, dur: 0.8 },
+      { beat: 13, note: 1, dur: 1.0 },
+      { beat: 15, note: 0, dur: 1.2 },
+    ];
+    melody.forEach(m => {
+      const octaveShift = Math.random() < 0.3 ? 1 : 0;
+      const freq = HIJAZ_SCALE[m.note] * (octaveShift ? 2 : 1);
+      playBell(freq, now + m.beat * beatDur, m.dur, 0.12);
+    });
+
+    // Trống kick baladi
+    const kickPattern = [0, 3, 5, 7, 10, 12, 14];
+    kickPattern.forEach(b => {
+      playKick(now + b * beatDur, 0.22);
+      if (Math.random() < 0.35) {
+        playKick(now + b * beatDur + beatDur * 0.5, 0.12);
+      }
+    });
+
+    // Shaker
+    for (let b = 0; b < loopBeats; b++) {
+      playShaker(now + b * beatDur, 0.035);
+      playShaker(now + b * beatDur + beatDur * 0.5, 0.025);
+    }
+
+    loopTimer = setTimeout(scheduleLoop, (loopDur - 0.3) * 1000);
+  }
+
+  function fadeTo(target, seconds = 0.5) {
+    if (!masterGain) return;
+    const now = actx.currentTime;
+    masterGain.gain.cancelScheduledValues(now);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+    masterGain.gain.linearRampToValueAtTime(target, now + seconds);
+  }
+
+  function toggle() {
+    if (!actx) init();
+    if (actx.state === "suspended") actx.resume();
+
+    playing = !playing;
+    if (playing) {
+      fadeTo(0.35, 0.8);
+      scheduleLoop();
+    } else {
+      fadeTo(0, 0.5);
+      clearTimeout(loopTimer);
+    }
+    return playing;
+  }
+
+  return { toggle, isPlaying: () => playing };
+})();
+
+// ===== GẮN NÚT NHẠC =====
+const musicBtn = document.getElementById("musicBtn");
+const musicIcon = document.getElementById("musicIcon");
+const musicLabel = document.getElementById("musicLabel");
+
+// Khôi phục trạng thái cũ
+const savedMusic = localStorage.getItem("printlab_music_on");
+if (savedMusic === "1") {
+  // iOS chặn autoplay → chờ user chạm 1 lần
+  document.body.addEventListener("click", function enableOnce() {
+    if (!Music.isPlaying()) {
+      Music.toggle();
+      musicBtn.classList.add("playing");
+      musicIcon.textContent = "🔊";
+      musicLabel.textContent = "Đang phát nhạc";
+    }
+    document.body.removeEventListener("click", enableOnce);
+  }, { once: true });
+}
+
+musicBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const on = Music.toggle();
+  if (on) {
+    musicBtn.classList.add("playing");
+    musicIcon.textContent = "🔊";
+    musicLabel.textContent = "Đang phát nhạc";
+    localStorage.setItem("printlab_music_on", "1");
+  } else {
+    musicBtn.classList.remove("playing");
+    musicIcon.textContent = "🔇";
+    musicLabel.textContent = "Bật nhạc Ả Rập";
+    localStorage.setItem("printlab_music_on", "0");
+  }
+});
+
+// ===== KHỞI ĐỘNG =====
+render();
+</script>
+
 </body>
 </html>
