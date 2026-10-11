@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cano Đua — Game HTML5</title>
+
+<meta property="og:title" content="🚤 Cano Đua — Game HTML5 Cực Vui">
+<meta property="og:description" content="Cần số 4 vị trí, âm thanh động cơ thật, sprite từ ảnh! Chơi ngay trên điện thoại.">
+<meta property="og:image" content="https://tranh-ba-game-gw3q.vercel.app/tuongzalo.gif">
+<meta property="og:type" content="website">
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: Inter, -apple-system, system-ui, sans-serif;
+    color: #fff;
+    touch-action: none;
+    user-select: none;
+  }
+  #game {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ===== HUD ===== */
+  .hud {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    pointer-events: none;
+    z-index: 10;
+    font-size: 14px;
+    font-weight: 700;
+    text-shadow: 0 2px 8px #000a;
+  }
+  .hud-left, .hud-right {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .hud-right { align-items: flex-end; }
+  .hud-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    background: rgba(0, 20, 40, 0.65);
+    border: 1px solid rgba(103, 232, 196, 0.35);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.5px;
+  }
+  .hud-item .ico { font-size: 16px; }
+  .hud-item #score { color: #67e8c4; }
+  .hud-item #best { color: #ffd166; }
+  .hud-item #speed { color: #69a7ff; }
+  .hud-item #gear  { color: #ff6b7a; font-size: 16px; }
+
+  /* ===== Nút Home / Khám phá ===== */
+  .top-btns {
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 20;
+  }
+  .icon-btn {
+    height: 42px;
+    min-width: 42px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid rgba(103, 232, 196, 0.5);
+    border-radius: 12px;
+    background: rgba(0, 20, 40, 0.7);
+    color: #67e8c4;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    backdrop-filter: blur(10px);
+    transition: .15s ease;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .icon-btn:active { transform: scale(0.92); }
+  .icon-btn .label { font-size: 12px; letter-spacing: .3px; }
+
+  /* ===== Thanh tốc độ ===== */
+  .speed-meter {
+    position: fixed;
+    bottom: 30px;
+    right: 130px;
+    width: 8px;
+    height: 140px;
+    background: rgba(0, 20, 40, 0.7);
+    border: 1px solid rgba(103, 232, 196, 0.35);
+    border-radius: 6px;
+    overflow: hidden;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+  }
+  .speed-fill {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 0%;
+    background: linear-gradient(0deg, #67e8c4, #69a7ff, #ffd166);
+    transition: height .2s ease;
+    box-shadow: 0 0 12px #67e8c4aa;
+  }
+
+  /* ===== CẦN SỐ 4 VỊ TRÍ — GÓC DƯỚI PHẢI ===== */
+  .gear-shifter {
+    position: fixed;
+    bottom: 24px;
+    right: 16px;
+    width: 90px;
+    height: 190px;
+    z-index: 25;
+    touch-action: none;
+    user-select: none;
+  }
+  .gear-rail {
+    position: absolute;
+    left: 50%;
+    top: 8px;
+    bottom: 8px;
+    width: 6px;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, #1c3a5c, #0f2238);
+    border: 1px solid rgba(103, 232, 196, 0.35);
+    border-radius: 4px;
+    box-shadow: inset 0 0 8px #000a;
+  }
+  .gear-notch {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #67e8c4;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .3px;
+    text-shadow: 0 0 4px #67e8c488;
+    pointer-events: none;
+  }
+  .gear-handle {
+    position: absolute;
+    left: 50%;
+    width: 56px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #67e8c4, #3d9e82);
+    border: 2px solid #a5ffdc;
+    box-shadow: 0 4px 16px rgba(103, 232, 196, 0.55), inset 0 -3px 8px rgba(0,0,0,0.25);
+    transform: translate(-50%, -50%);
+    transition: top .22s cubic-bezier(.34,1.56,.64,1), background .2s ease;
+    cursor: grab;
+    display: grid;
+    place-items: center;
+    touch-action: none;
+  }
+  .gear-handle:active { cursor: grabbing; }
+  .gear-handle .knob-label {
+    font-size: 18px;
+    font-weight: 900;
+    color: #06251e;
+    letter-spacing: 0;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .gear-handle.s0 { background: linear-gradient(145deg, #6b7a8a, #4a5665); border-color: #a0aec0; box-shadow: 0 4px 16px rgba(150,160,180,0.5), inset 0 -3px 8px rgba(0,0,0,0.25); }
+  .gear-handle.s1 { background: linear-gradient(145deg, #67e8c4, #3d9e82); border-color: #a5ffdc; }
+  .gear-handle.s2 { background: linear-gradient(145deg, #69a7ff, #3d7fd9); border-color: #a8d0ff; }
+  .gear-handle.s3 { background: linear-gradient(145deg, #ff6b7a, #d63a4d); border-color: #ffb0ba; }
+
+  /* ===== Overlay ===== */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 18px;
+    padding: 24px;
+    text-align: center;
+    background: radial-gradient(ellipse at center, rgba(10,30,60,0.85), rgba(0,10,25,0.98));
+    backdrop-filter: blur(6px);
+    z-index: 30;
+    transition: opacity .3s ease;
+  }
+  .overlay.hidden { opacity: 0; pointer-events: none; }
+  .overlay h1 {
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(90deg, #67e8c4, #69a7ff, #ffd166);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 20px rgba(103, 232, 196, 0.5));
+    letter-spacing: 2px;
+  }
+  .overlay p {
+    color: #9bb5d0;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 360px;
+  }
+  .overlay .final-score {
+    font-size: 42px;
+    font-weight: 800;
+    color: #67e8c4;
+    font-variant-numeric: tabular-nums;
+  }
+  .overlay .final-label {
+    color: #9bb5d0;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .play-btn {
+    padding: 16px 40px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #67e8c4, #4db8a0);
+    color: #06251e;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 8px 30px rgba(103, 232, 196, 0.45);
+    transition: .15s ease;
+    font-family: inherit;
+  }
+  .play-btn:active { transform: scale(0.95); }
+
+  @media (max-width: 500px) {
+    .overlay h1 { font-size: 26px; }
+    .speed-meter { height: 110px; bottom: 20px; right: 118px; }
+    .gear-shifter { width: 82px; height: 170px; bottom: 16px; right: 10px; }
+    .gear-handle { width: 52px; height: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<!-- Nút Home & Khám phá -->
+<div class="top-btns">
+  <a href="tuongzalo.html" class="icon-btn" title="Về trang chủ"><span>⌂</span></a>
+  <a href="tuongzalo.html" class="icon-btn" title="Khám phá các game khác">
+    <span>🧭</span><span class="label">Khám phá</span>
+  </a>
+</div>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="hud-left">
+    <div class="hud-item"><span class="ico">⚡</span><span id="speed">0 km/h</span></div>
+    <div class="hud-item"><span class="ico">🎚️</span><span id="gear">Số N</span></div>
+  </div>
+  <div class="hud-right">
+    <div class="hud-item"><span class="ico">💎</span><span id="score">0</span></div>
+    <div class="hud-item"><span class="ico">🏆</span><span id="best">0</span></div>
+  </div>
+</div>
+
+<!-- Thanh tốc độ -->
+<div class="speed-meter">
+  <div class="speed-fill" id="speedFill"></div>
+</div>
+
+<!-- Cần số 4 vị trí -->
+<div class="gear-shifter" id="gearShifter">
+  <div class="gear-rail">
+    <div class="gear-notch" style="top: 12%;">N</div>
+    <div class="gear-notch" style="top: 38%;">1</div>
+    <div class="gear-notch" style="top: 62%;">2</div>
+    <div class="gear-notch" style="top: 88%;">3</div>
+  </div>
+  <div class="gear-handle" id="gearHandle" style="top: 88%;">
+    <span class="knob-label" id="gearLabel">N</span>
+  </div>
+</div>
+
+<!-- Overlay bắt đầu -->
+<div class="overlay" id="startOverlay">
+  <h1>🚤 CANO ĐUA</h1>
+  <p>Kéo <b>cần số</b> ở góc dưới-phải để tăng tốc. Chạm và kéo trên màn hình để lái cano. Né chướng ngại, thu thập 💎!</p>
+  <button class="play-btn" id="playBtn">▶ BẮT ĐẦU</button>
+</div>
+
+<!-- Overlay game over -->
+<div class="overlay hidden" id="gameOverOverlay">
+  <div class="final-label">ĐIỂM CỦA BẠN</div>
+  <div class="final-score" id="finalScore">0</div>
+  <p id="gameOverMsg">Cano bị chìm rồi! Thử lại xem sao 💪</p>
+  <button class="play-btn" id="restartBtn">🔁 CHƠI LẠI</button>
+</div>
+
+<script>
+(() => {
+  // ===== CANVAS =====
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  resize();
+  window.addEventListener("resize", resize);
+  window.addEventListener("orientationchange", () => setTimeout(resize, 100));
+
+  // ===== SPRITE =====
+  const SPRITE = new Image();
+  SPRITE.src = "anh.png";
+  let SPRITE_OK = false;
+  SPRITE.onload = () => { SPRITE_OK = true; };
+  SPRITE.onerror = () => { SPRITE_OK = false; };
+
+  // 8 ô hàng 6 (y=200), mỗi ô 40x40
+  const FRAME = { w: 40, h: 40, y: 200 };
+  const FRAMES = {
+    idle0: 0, idle1: 1,     // thẳng số 0
+    fwd0: 2, fwd1: 3,       // thẳng số 1+
+    light0: 4, light1: 5,   // cua nhẹ
+    hard0: 6, hard1: 7,     // cua nhiều
+  };
+
+  // ===== TRẠNG THÁI GAME =====
+  let state = "menu";
+  let t = 0;
+  let score = 0;
+  let best = parseInt(localStorage.getItem("cano_best") || "0");
+
+  // Số và tốc độ (km/h)
+  const GEAR_SPEEDS = [0, 20, 45, 75];  // N, 1, 2, 3
+  let currentGear = 0;                   // 0..3
+  let currentSpeed = 0;                  // km/h hiện tại (nội suy)
+  let targetSpeed = 0;                   // km/h mục tiêu theo số
+
+  // Sông
+  let riverWaveT = 0;
+  function riverOffsetAt(y) {
+    return Math.sin((y + t * 60) * 0.004) * 60
+         + Math.sin((y + t * 90) * 0.011) * 25
+         + Math.sin((y + t * 40) * 0.0023) * 90;
+  }
+  function getRiverCenterAtY(y) { return W / 2 + riverOffsetAt(y); }
+  function getRiverWidthAtY(y) {
+    return Math.min(W * 0.75, W * 0.55 + Math.sin(y * 0.005 + t * 0.5) * W * 0.08);
+  }
+
+  // Cano
+  const canoe = { x: 0, y: 0, angle: 0, radius: 22, bob: 0 };
+
+  // Vật thể
+  let obstacles = [];
+  let coins = [];
+  let wakes = [];
+  let particles = [];
+  let floatingTexts = [];
+
+  // Điều khiển
+  const input = { targetX: null, drag: false };
+  let keyLeft = false, keyRight = false, keyUp = false, keyDown = false;
+
+  // ===== ÂM THANH (Web Audio API) =====
+  const Sfx = (() => {
+    let actx = null;
+    let masterGain = null;
+    let musicGain = null;
+    let sfxGain = null;
+    let engineOsc = null;
+    let engineOsc2 = null;
+    let engineGain = null;
+    let engineFilter = null;
+    let engineOn = false;
+    let currentEngineFreq = 60;
+
+    function init() {
+      if (actx) return;
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = actx.createGain(); masterGain.gain.value = 0.9; masterGain.connect(actx.destination);
+      musicGain = actx.createGain(); musicGain.gain.value = 0.4; musicGain.connect(masterGain);
+      sfxGain = actx.createGain(); sfxGain.gain.value = 1.0; sfxGain.connect(masterGain);
+    }
+    function resume() {
+      init();
+      if (actx.state === "suspended") actx.resume();
+    }
+
+    // Tiếng động cơ — oscillator liên tục, tần số theo tốc độ
+    function startEngine() {
+      if (engineOn) return;
+      init();
+      engineOsc = actx.createOscillator();
+      engineOsc2 = actx.createOscillator();
+      engineFilter = actx.createBiquadFilter();
+      engineGain = actx.createGain();
+
+      engineOsc.type = "sawtooth";
+      engineOsc2.type = "triangle";
+      engineOsc.frequency.value = 60;
+      engineOsc2.frequency.value = 62;
+
+      engineFilter.type = "lowpass";
+      engineFilter.frequency.value = 400;
+      engineFilter.Q.value = 5;
+
+      engineGain.gain.value = 0;
+
+      engineOsc.connect(engineFilter);
+      engineOsc2.connect(engineFilter);
+      engineFilter.connect(engineGain);
+      engineGain.connect(sfxGain);
+
+      engineOsc.start();
+      engineOsc2.start();
+      engineOn = true;
+    }
+    function stopEngine() {
+      if (!engineOn) return;
+      try {
+        engineGain.gain.linearRampToValueAtTime(0, actx.currentTime + 0.3);
+        setTimeout(() => {
+          try { engineOsc.stop(); engineOsc2.stop(); } catch (e) {}
+          engineOn = false;
+        }, 400);
+      } catch (e) { engineOn = false; }
+    }
+    // Cập nhật âm động cơ theo tốc độ (km/h) và số (0-3)
+    function setEngineSpeed(kmh, gear) {
+      if (!engineOn || !actx) return;
+      const now = actx.currentTime;
+      // freq: 60 Hz ở số N → 220 Hz ở 75 km/h
+      const targetFreq = 50 + kmh * 2.2;
+      currentEngineFreq += (targetFreq - currentEngineFreq) * 0.1;
+      engineOsc.frequency.setTargetAtTime(currentEngineFreq, now, 0.1);
+      engineOsc2.frequency.setTargetAtTime(currentEngineFreq * 1.5, now, 0.1);
+      engineFilter.frequency.setTargetAtTime(300 + kmh * 15, now, 0.1);
+      // Volume: số N nhỏ, số cao hơn → to hơn
+      const targetVol = gear === 0 ? 0.05 : 0.06 + (kmh / 75) * 0.10;
+      engineGain.gain.setTargetAtTime(targetVol, now, 0.15);
+    }
+
+    // Tiếng "click" lên số
+    function gearClick(up) {
+      init();
+      resume();
+      const now = actx.currentTime;
+      const osc = actx.createOscillator();
+      const gain = actx.createGain();
+      osc.type = "square";
+      const f1 = up ? 600 : 400;
+      const f2 = up ? 900 : 300;
+      osc.frequency.setValueAtTime(f1, now);
+      osc.frequency.exponentialRampToValueAtTime(f2, now + 0.06);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.15, now + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.connect(gain); gain.connect(sfxGain);
+      osc.start(now); osc.stop(now + 0.1);
+    }
+
+    // Ăn xu — 2 nốt cao "ting ting"
+    function coin() {
+      init(); resume();
+      const now = actx.currentTime;
+      const notes = [880, 1320];
+      notes.forEach((f, i) => {
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = f;
+        const startT = now + i * 0.06;
+        gain.gain.setValueAtTime(0, startT);
+        gain.gain.linearRampToValueAtTime(0.12, startT + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.35);
+        osc.connect(gain); gain.connect(sfxGain);
+        osc.start(startT); osc.stop(startT + 0.4);
+      });
+    }
+
+    // Va chạm
+    function crash() {
+      init(); resume();
+      const now = actx.currentTime;
+      // Low thump
+      const osc = actx.createOscillator();
+      const gain = actx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.35);
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      osc.connect(gain); gain.connect(sfxGain);
+      osc.start(now); osc.stop(now + 0.55);
+
+      // Noise burst
+      const bufSize = actx.sampleRate * 0.4;
+      const buf = actx.createBuffer(1, bufSize, actx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 2);
+      const src = actx.createBufferSource();
+      src.buffer = buf;
+      const filt = actx.createBiquadFilter();
+      filt.type = "bandpass"; filt.frequency.value = 800; filt.Q.value = 1;
+      const ng = actx.createGain();
+      ng.gain.value = 0.3;
+      src.connect(filt); filt.connect(ng); ng.connect(sfxGain);
+      src.start(now); src.stop(now + 0.5);
+    }
+
+    // Tóe nước — white noise lọc cao khi mũi cano đập sóng
+    function splash(intensity) {
+      init(); resume();
+      const now = actx.currentTime;
+      const vol = Math.min(0.25, (intensity || 0.3) * 0.25);
+      const bufSize = Math.floor(actx.sampleRate * 0.25);
+      const buf = actx.createBuffer(1, bufSize, actx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 1.5);
+      const src = actx.createBufferSource();
+      src.buffer = buf;
+      const filt = actx.createBiquadFilter();
+      filt.type = "highpass"; filt.frequency.value = 1200 + Math.random() * 800;
+      const g = actx.createGain();
+      g.gain.value = vol;
+      src.connect(filt); filt.connect(g); g.connect(sfxGain);
+      src.start(now); src.stop(now + 0.3);
+    }
+
+    return { resume, startEngine, stopEngine, setEngineSpeed, gearClick, coin, crash, splash };
+  })();
+
+  // ===== CẦN SỐ =====
+  const gearHandle = document.getElementById("gearHandle");
+  const gearLabel = document.getElementById("gearLabel");
+  const gearShifter = document.getElementById("gearShifter");
+  // Vị trí (top %) theo số: N=88, 1=62, 2=38, 3=12
+  const GEAR_POSITIONS = [88, 62, 38, 12];  // index 0 = N
+  const GEAR_LABELS    = ["N", "1", "2", "3"];
+  const GEAR_CLASSES   = ["s0", "s1", "s2", "s3"];
+
+  function setGear(g, silent) {
+    g = Math.max(0, Math.min(3, g));
+    if (g === currentGear && silent !== true) return;
+    const prev = currentGear;
+    currentGear = g;
+    gearHandle.style.top = GEAR_POSITIONS[g] + "%";
+    gearLabel.textContent = GEAR_LABELS[g];
+    gearHandle.classList.remove("s0", "s1", "s2", "s3");
+    gearHandle.classList.add(GEAR_CLASSES[g]);
+    targetSpeed = GEAR_SPEEDS[g];
+    document.getElementById("gear").textContent = "Số " + GEAR_LABELS[g];
+    if (!silent && prev !== g) {
+      Sfx.gearClick(g > prev);
+      if (g > prev) Sfx.splash(0.5);
+    }
+  }
+
+  // Kéo cần số
+  let gearDrag = { active: false };
+  function pointToGear(clientY) {
+    const rect = gearShifter.getBoundingClientRect();
+    const relY = (clientY - rect.top) / rect.height * 100;
+    // Tìm số gần nhất
+    let bestIdx = 0, bestDist = Infinity;
+    GEAR_POSITIONS.forEach((p, i) => {
+      const d = Math.abs(p - relY);
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    });
+    return bestIdx;
+  }
+  function onGearStart(e) {
+    e.preventDefault(); e.stopPropagation();
+    gearDrag.active = true;
+    Sfx.resume();
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    setGear(pointToGear(y));
+  }
+  function onGearMove(e) {
+    if (!gearDrag.active) return;
+    e.preventDefault(); e.stopPropagation();
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    setGear(pointToGear(y));
+  }
+  function onGearEnd(e) {
+    gearDrag.active = false;
+  }
+  gearHandle.addEventListener("touchstart", onGearStart, { passive: false });
+  gearHandle.addEventListener("touchmove", onGearMove, { passive: false });
+  gearHandle.addEventListener("touchend", onGearEnd);
+  gearShifter.addEventListener("touchstart", onGearStart, { passive: false });
+  gearShifter.addEventListener("touchmove", onGearMove, { passive: false });
+  gearShifter.addEventListener("touchend", onGearEnd);
+  gearHandle.addEventListener("mousedown", onGearStart);
+  window.addEventListener("mousemove", onGearMove);
+  window.addEventListener("mouseup", onGearEnd);
+
+  // ===== KHỞI TẠO =====
+  function resetGame() {
+    t = 0;
+    score = 0;
+    setGear(0, true);
+    currentSpeed = 0;
+    targetSpeed = 0;
+
+    const startY = H * 0.72;
+    canoe.x = getRiverCenterAtY(startY);
+    canoe.y = startY;
+    canoe.angle = 0;
+    canoe.bob = 0;
+
+    obstacles = [];
+    coins = [];
+    wakes = [];
+    particles = [];
+    floatingTexts = [];
+
+    input.targetX = null;
+
+    spawnObstacle.lastT = 0;
+    spawnCoin.lastT = 0;
+  }
+
+  // ===== SINH VẬT =====
+  let obstacleSpawnRate = 5.0;   // giây/lần — bắt đầu 5s
+  function spawnObstacle() {
+    const y = -80;
+    const centerX = getRiverCenterAtY(y);
+    const halfW = Math.max(50, getRiverWidthAtY(y) / 2 - 30);
+
+    const type = Math.random();
+    let obs;
+    if (type < 0.35) {
+      obs = { x: centerX + (Math.random() * 2 - 1) * halfW, y, r: 22 + Math.random() * 14, type: "rock" };
+    } else if (type < 0.7) {
+      obs = { x: centerX + (Math.random() * 2 - 1) * halfW, y, w: 70, h: 18, rot: (Math.random() - 0.5) * 1.2, type: "log" };
+    } else {
+      obs = { x: centerX + (Math.random() * 2 - 1) * halfW, y, r: 20, type: "barrel" };
+    }
+    obstacles.push(obs);
+  }
+
+  function spawnCoin() {
+    const y = -80;
+    const centerX = getRiverCenterAtY(y);
+    const halfW = Math.max(50, getRiverWidthAtY(y) / 2 - 30);
+    const x = centerX + (Math.random() * 2 - 1) * halfW;
+    coins.push({ x, y, collected: false, wobble: Math.random() * 6.28 });
+  }
+
+  // ===== VA CHẠM =====
+  function hitObstacle(o) {
+    if (o.type === "rock" || o.type === "barrel") {
+      return Math.hypot(canoe.x - o.x, canoe.y - o.y) < canoe.radius + o.r;
+    } else if (o.type === "log") {
+      const dx = canoe.x - o.x;
+      const dy = canoe.y - o.y;
+      const cos = Math.cos(-o.rot);
+      const sin = Math.sin(-o.rot);
+      const lx = dx * cos - dy * sin;
+      const ly = dx * sin + dy * cos;
+      const hw = o.w / 2 + canoe.radius;
+      const hh = o.h / 2 + canoe.radius;
+      return Math.abs(lx) < hw && Math.abs(ly) < hh;
+    }
+    return false;
+  }
+
+  // ===== UPDATE =====
+  let lastTime = 0;
+  let splashTimer = 0;
+  function update(dt) {
+    if (state !== "playing") return;
+    t += dt;
+
+    // Tốc độ nội suy về targetSpeed
+    currentSpeed += (targetSpeed - currentSpeed) * Math.min(1, dt * 1.5);
+
+    // Độ khó tăng dần theo thời gian (giây)
+    const elapsed = t;
+    obstacleSpawnRate = Math.max(0.6, 5.0 - elapsed * 0.12);
+
+    // Vận tốc hiển thị km/h
+    document.getElementById("speed").textContent = Math.round(currentSpeed) + " km/h";
+    document.getElementById("speedFill").style.height = Math.min(100, currentSpeed / 75 * 100) + "%";
+    document.getElementById("gear").textContent = "Số " + GEAR_LABELS[currentGear];
+
+    if (state === "playing") Sfx.setEngineSpeed(currentSpeed, currentGear);
+
+    // Tiếng nước khi di chuyển
+    if (currentSpeed > 10) {
+      splashTimer += dt;
+      if (splashTimer > 0.4 + 0.4 * (1 - currentSpeed / 75)) {
+        splashTimer = 0;
+        Sfx.splash(currentSpeed / 75 * 0.5);
+      }
+    }
+
+    // ===== DI CHUYỂN CANO =====
+    const leftRightSpeed = 240;
+    if (input.targetX !== null) {
+      const dx = input.targetX - canoe.x;
+      const move = Math.max(-leftRightSpeed * dt, Math.min(leftRightSpeed * dt, dx * 6 * dt));
+      canoe.x += move;
+      canoe.angle = Math.max(-0.7, Math.min(0.7, dx * 0.012));
+    } else {
+      if (keyLeft) { canoe.x -= leftRightSpeed * dt; canoe.angle = -0.55; }
+      else if (keyRight) { canoe.x += leftRightSpeed * dt; canoe.angle = 0.55; }
+      else canoe.angle *= 0.92;
+    }
+
+    // Giới hạn sông
+    const cx = getRiverCenterAtY(canoe.y);
+    const hw = getRiverWidthAtY(canoe.y) / 2 - canoe.radius - 4;
+    canoe.x = Math.max(cx - hw, Math.min(cx + hw, canoe.x));
+
+    canoe.y -= (currentSpeed / 20) * 60 * dt;
+    if (canoe.y < H * 0.72) canoe.y = H * 0.72;
+    canoe.bob = Math.sin(t * 8) * 1.5;
+
+    // ===== DI CHUYỂN VẬT =====
+    const scrollSpeed = (currentSpeed / 20) * 60 * dt;
+    for (const o of obstacles) o.y += scrollSpeed;
+    for (const c of coins) c.y += scrollSpeed;
+
+    // ===== SINH VẬT =====
+    if (!spawnObstacle.lastT) spawnObstacle.lastT = 0;
+    if (t - spawnObstacle.lastT > obstacleSpawnRate) {
+      spawnObstacle.lastT = t;
+      spawnObstacle();
+    }
+    if (!spawnCoin.lastT) spawnCoin.lastT = 0;
+    if (t - spawnCoin.lastT > 1.1) {
+      spawnCoin.lastT = t;
+      spawnCoin();
+    }
+
+    // ===== VA CHẠM =====
+    for (const o of obstacles) {
+      if (o.dead) continue;
+      if (hitObstacle(o)) { endGame(o); return; }
+    }
+    for (const c of coins) {
+      if (c.collected) continue;
+      if (Math.hypot(canoe.x - c.x, canoe.y - c.y) < canoe.radius + 13) {
+        c.collected = true;
+        score += 10;
+        Sfx.coin();
+        floatingTexts.push({ x: c.x, y: c.y, life: 0.9, text: "+10" });
+        for (let i = 0; i < 8; i++) {
+          const a = Math.random() * 6.28;
+          particles.push({ x: c.x, y: c.y, vx: Math.cos(a) * 80, vy: Math.sin(a) * 80, life: 0.5, color: "#ffd166" });
+        }
+      }
+    }
+
+    obstacles = obstacles.filter(o => o.y < H + 100);
+    coins = coins.filter(c => c.y < H + 100);
+
+    if (Math.random() < 0.6) {
+      wakes.push({ x: canoe.x + (Math.random() - 0.5) * 25, y: canoe.y + 20, life: 1.0, r: 3 + Math.random() * 4 });
+    }
+    wakes.forEach(w => { w.life -= dt * 0.9; w.y += scrollSpeed * 0.4; w.r += dt * 15; });
+    wakes = wakes.filter(w => w.life > 0);
+
+    particles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; p.vx *= 0.94; p.vy *= 0.94; });
+    particles = particles.filter(p => p.life > 0);
+    floatingTexts.forEach(f => { f.y -= 40 * dt; f.life -= dt; });
+    floatingTexts = floatingTexts.filter(f => f.life > 0);
+
+    document.getElementById("score").textContent = score;
+    document.getElementById("best").textContent = best;
+  }
+
+  function endGame() {
+    state = "gameover";
+    Sfx.stopEngine();
+    Sfx.crash();
+    if (score > best) { best = score; localStorage.setItem("cano_best", String(best)); }
+    for (let i = 0; i < 40; i++) {
+      const a = Math.random() * 6.28;
+      particles.push({
+        x: canoe.x, y: canoe.y,
+        vx: Math.cos(a) * (100 + Math.random() * 250),
+        vy: Math.sin(a) * (100 + Math.random() * 250),
+        life: 1.4,
+        color: Math.random() < 0.5 ? "#67e8c4" : "#ffd166"
+      });
+    }
+    document.getElementById("finalScore").textContent = score;
+    document.getElementById("gameOverMsg").innerHTML = score >= best
+      ? "🏆 KỶ LỤC MỚI! Bạn thật tuyệt vời!"
+      : "Cano bị chìm rồi! Thử lại xem sao 💪";
+    document.getElementById("gameOverOverlay").classList.remove("hidden");
+    document.getElementById("startOverlay").classList.add("hidden");
+  }
+
+  // ===== SPRITE ANIMATION =====
+  function getSpriteFrame() {
+    const gear = currentGear;
+    const absAngle = Math.abs(canoe.angle);
+
+    // Cua nhiều: |angle| >= 0.35
+    if (absAngle >= 0.35) {
+      const prefix = "hard";
+      const idx = Math.floor(t * 1000 / 300) % 2;
+      return { key: prefix + idx, flip: canoe.angle < 0 };
+    }
+    // Cua nhẹ: 0.1 <= |angle| < 0.35
+    if (absAngle >= 0.1) {
+      const prefix = "light";
+      const idx = Math.floor(t * 1000 / 400) % 2;
+      return { key: prefix + idx, flip: canoe.angle < 0 };
+    }
+    // Đi thẳng
+    if (gear === 0) {
+      const idx = Math.floor(t * 1000 / 1000) % 2;   // 1s
+      return { key: "idle" + idx, flip: false };
+    } else {
+      const idx = Math.floor(t * 1000 / 700) % 2;    // 700ms
+      return { key: "fwd" + idx, flip: false };
+    }
+  }
+
+  // ===== RENDER =====
+  function render() {
+    drawWater();
+    drawShore();
+    drawWakes();
+    drawCoins();
+    drawObstacles();
+    drawCanoe();
+    drawParticles();
+    drawFloatingTexts();
+  }
+
+  function drawWater() {
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, "#0a2b4a");
+    grad.addColorStop(0.5, "#0d3d5c");
+    grad.addColorStop(1, "#0a2b4a");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = "rgba(103, 232, 196, 0.12)";
+    ctx.lineWidth = 1.5;
+    const scrollSpeed = (currentSpeed / 20) * 60;
+    const yOffset = (t * scrollSpeed * 0.6) % 60;
+    for (let y = -60 + yOffset; y < H; y += 60) {
+      ctx.beginPath();
+      for (let x = 0; x < W; x += 20) {
+        const waveY = y + Math.sin((x * 0.02) + t * 2) * 3;
+        if (x === 0) ctx.moveTo(x, waveY);
+        else ctx.lineTo(x, waveY);
+      }
+      ctx.stroke();
+    }
+  }
+
+  function drawShore() {
+    const step = 8;
+    ctx.fillStyle = "#1a3d1a";
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    ctx.lineTo(0, 0);
+    for (let y = 0; y <= H; y += step) {
+      const cx = getRiverCenterAtY(y);
+      const w = getRiverWidthAtY(y);
+      ctx.lineTo(cx - w / 2, y);
+    }
+    ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(W, H);
+    ctx.lineTo(W, 0);
+    for (let y = 0; y <= H; y += step) {
+      const cx = getRiverCenterAtY(y);
+      const w = getRiverWidthAtY(y);
+      ctx.lineTo(cx + w / 2, y);
+    }
+    ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+
+    ctx.strokeStyle = "#67e8c488";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let y = 0; y <= H; y += step) {
+      const cx = getRiverCenterAtY(y);
+      const w = getRiverWidthAtY(y);
+      if (y === 0) ctx.moveTo(cx - w / 2, y);
+      else ctx.lineTo(cx - w / 2, y);
+    }
+    ctx.stroke();
+    ctx.beginPath();
+    for (let y = 0; y <= H; y += step) {
+      const cx = getRiverCenterAtY(y);
+      const w = getRiverWidthAtY(y);
+      if (y === 0) ctx.moveTo(cx + w / 2, y);
+      else ctx.lineTo(cx + w / 2, y);
+    }
+    ctx.stroke();
+
+    for (let i = 0; i < 6; i++) {
+      const y = ((i * 200 + t * 60) % (H + 200)) - 100;
+      const cx = getRiverCenterAtY(y);
+      const w = getRiverWidthAtY(y);
+      const treeSize = 30 + (i % 3) * 12;
+      drawTree(cx - w / 2 - 25 - i * 5, y, treeSize);
+      drawTree(cx + w / 2 + 25 + i * 5, y, treeSize);
+    }
+  }
+  function drawTree(x, y, size) {
+    ctx.fillStyle = "#0d2810";
+    ctx.beginPath(); ctx.arc(x, y, size, 0, 6.28); ctx.fill();
+    ctx.fillStyle = "#1a4a1a";
+    ctx.beginPath(); ctx.arc(x - size * 0.2, y - size * 0.2, size * 0.7, 0, 6.28); ctx.fill();
+  }
+
+  function drawWakes() {
+    for (const w of wakes) {
+      ctx.fillStyle = `rgba(200, 240, 255, ${w.life * 0.35})`;
+      ctx.beginPath(); ctx.arc(w.x, w.y, w.r, 0, 6.28); ctx.fill();
+    }
+  }
+
+  function drawCoins() {
+    for (const c of coins) {
+      if (c.collected) continue;
+      c.wobble += 0.08;
+      const wob = Math.sin(c.wobble) * 2;
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
+      ctx.beginPath(); ctx.ellipse(c.x, c.y + 12, 10, 4, 0, 0, 6.28); ctx.fill();
+      const grad = ctx.createRadialGradient(c.x - 3, c.y - 3 + wob, 2, c.x, c.y + wob, 13);
+      grad.addColorStop(0, "#fff5b8");
+      grad.addColorStop(0.5, "#ffd166");
+      grad.addColorStop(1, "#c88a10");
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(c.x, c.y + wob, 13, 0, 6.28); ctx.fill();
+      ctx.fillStyle = "#7a4a00";
+      ctx.font = "bold 14px Inter, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("💎", c.x, c.y + wob + 1);
+    }
+  }
+
+  function drawObstacles() {
+    for (const o of obstacles) {
+      if (o.type === "rock") {
+        ctx.fillStyle = "#3a3a3a";
+        ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 6.28); ctx.fill();
+        ctx.fillStyle = "#5a5a5a";
+        ctx.beginPath(); ctx.arc(o.x - o.r * 0.25, o.y - o.r * 0.25, o.r * 0.7, 0, 6.28); ctx.fill();
+        ctx.fillStyle = "#2a2a2a";
+        ctx.beginPath(); ctx.arc(o.x + o.r * 0.3, o.y + o.r * 0.2, o.r * 0.35, 0, 6.28); ctx.fill();
+      } else if (o.type === "log") {
+        ctx.save();
+        ctx.translate(o.x, o.y);
+        ctx.rotate(o.rot);
+        ctx.fillStyle = "#6a3a1a";
+        ctx.fillRect(-o.w / 2, -o.h / 2, o.w, o.h);
+        ctx.strokeStyle = "#4a2a10"; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-o.w / 2 + 5, -o.h / 2 + 3); ctx.lineTo(o.w / 2 - 5, -o.h / 2 + 3);
+        ctx.moveTo(-o.w / 2 + 5, 0); ctx.lineTo(o.w / 2 - 5, 0);
+        ctx.moveTo(-o.w / 2 + 5, o.h / 2 - 3); ctx.lineTo(o.w / 2 - 5, o.h / 2 - 3);
+        ctx.stroke();
+        ctx.fillStyle = "#a06a30";
+        ctx.beginPath(); ctx.ellipse(-o.w / 2, 0, 3, o.h / 2, 0, 0, 6.28); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(o.w / 2, 0, 3, o.h / 2, 0, 0, 6.28); ctx.fill();
+        ctx.restore();
+      } else if (o.type === "barrel") {
+        ctx.fillStyle = "#c0392b";
+        ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 6.28); ctx.fill();
+        ctx.fillStyle = "#e74c3c";
+        ctx.beginPath(); ctx.arc(o.x, o.y, o.r * 0.75, 0, 6.28); ctx.fill();
+        ctx.strokeStyle = "#ffffffaa"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(o.x, o.y, o.r * 0.55, 0, 6.28); ctx.stroke();
+        ctx.fillStyle = "#ffd166";
+        ctx.fillRect(o.x - o.r, o.y - 3, o.r * 2, 6);
+      }
+    }
+  }
+
+  function drawCanoe() {
+    const spriteData = getSpriteFrame();
+    const cw = 40, ch = 40;
+    const drawW = canoe.radius * 2.4;   // hiển thị rộng 52.8px
+    const drawH = drawW * (ch / cw);
+
+    ctx.save();
+    ctx.translate(canoe.x, canoe.y + canoe.bob);
+
+    // Bóng đổ
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.beginPath(); ctx.ellipse(0, 12, 26, 8, 0, 0, 6.28); ctx.fill();
+
+    // Vệt nước sau cano
+    ctx.fillStyle = "rgba(200,240,255,0.4)";
+    ctx.beginPath();
+    ctx.moveTo(-15, 20);
+    ctx.quadraticCurveTo(0, 40, 15, 20);
+    ctx.quadraticCurveTo(0, 25, -15, 20);
+    ctx.fill();
+
+    // Nếu ảnh load được → vẽ sprite; nếu không → fallback
+    let drew = false;
+    if (SPRITE_OK && SPRITE.complete && SPRITE.naturalWidth > 0) {
+      const col = FRAMES[spriteData.key];
+      const sx = col * FRAME.w;
+      const sy = FRAME.y;
+
+      // Áp dụng nghiêng nhẹ theo angle
+      ctx.rotate(canoe.angle * 0.35);
+
+      // Flip nếu cua phải (sprite gốc là cua trái)
+      if (spriteData.flip) {
+        ctx.scale(-1, 1);
+      }
+
+      // Vẽ sprite
+      // scale từ 40x40 lên drawW x drawH
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(SPRITE, sx, sy, cw, ch, -drawW / 2, -drawH / 2, drawW, drawH);
+      drew = true;
+    }
+
+    // Fallback: vẽ cano bằng hình khối
+    if (!drew) {
+      ctx.rotate(canoe.angle * 0.35);
+      ctx.fillStyle = "#e74c3c";
+      ctx.beginPath();
+      ctx.moveTo(0, -26);
+      ctx.quadraticCurveTo(18, -10, 20, 10);
+      ctx.quadraticCurveTo(15, 24, 0, 26);
+      ctx.quadraticCurveTo(-15, 24, -20, 10);
+      ctx.quadraticCurveTo(-18, -10, 0, -26);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#67e8c4";
+      ctx.beginPath();
+      ctx.ellipse(0, 3, 8, 5, 0, 0, 6.28);
+      ctx.fill();
+    }
+
+    // Đèn nhấp nháy
+    const blink = (t * 3) % 1 < 0.5;
+    if (blink) {
+      const flick = 1 + Math.sin(t * 20) * 0.2;
+      ctx.fillStyle = "#ffd166";
+      ctx.beginPath();
+      ctx.arc(0, -drawH / 2 - 2, 3 * flick, 0, 6.28);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,209,102,0.35)";
+      ctx.beginPath();
+      ctx.arc(0, -drawH / 2 - 2, 8 * flick, 0, 6.28);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 6.28); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawFloatingTexts() {
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (const f of floatingTexts) {
+      ctx.globalAlpha = Math.min(1, f.life * 1.5);
+      ctx.font = "bold 18px Inter, sans-serif";
+      ctx.strokeStyle = "#000"; ctx.lineWidth = 3;
+      ctx.strokeText(f.text, f.x, f.y);
+      ctx.fillStyle = "#ffd166";
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ===== LOOP =====
+  function loop(now) {
+    const dt = Math.min(0.05, (now - lastTime) / 1000) || 0;
+    lastTime = now;
+
+    if (state === "gameover") {
+      particles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; p.vx *= 0.94; p.vy *= 0.94; });
+      particles = particles.filter(p => p.life > 0);
+      floatingTexts.forEach(f => { f.y -= 40 * dt; f.life -= dt; });
+      floatingTexts = floatingTexts.filter(f => f.life > 0);
+    }
+
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  // ===== INPUT CHẠM =====
+  function handleTouchStart(e) {
+    if (state !== "playing") return;
+    // Bỏ qua nếu chạm vào cần số
+    if (e.target.closest && e.target.closest(".gear-shifter")) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    input.targetX = touch.clientX;
+    input.drag = true;
+  }
+  function handleTouchMove(e) {
+    if (state !== "playing" || !input.drag) return;
+    if (e.target.closest && e.target.closest(".gear-shifter")) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    input.targetX = touch.clientX;
+  }
+  function handleTouchEnd() {
+    input.drag = false;
+    input.targetX = null;
+  }
+
+  canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
+  canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
+  canvas.addEventListener("touchend", handleTouchEnd);
+  canvas.addEventListener("touchcancel", handleTouchEnd);
+
+  canvas.addEventListener("mousedown", e => { if (state !== "playing") return; input.targetX = e.clientX; input.drag = true; });
+  canvas.addEventListener("mousemove", e => { if (state !== "playing" || !input.drag) return; input.targetX = e.clientX; });
+  canvas.addEventListener("mouseup", () => { input.drag = false; input.targetX = null; });
+  canvas.addEventListener("mouseleave", () => { input.drag = false; input.targetX = null; });
+
+  // Bàn phím desktop
+  window.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keyLeft = true;
+    if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keyRight = true;
+    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") { setGear(currentGear + 1); }
+    if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") { setGear(currentGear - 1); }
+    if (e.key === " " && state === "menu") startGame();
+    if (e.key === " " && state === "gameover") startGame();
+  });
+  window.addEventListener("keyup", e => {
+    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keyLeft = false;
+    if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keyRight = false;
+  });
+
+  // ===== BẮT ĐẦU =====
+  function startGame() {
+    resetGame();
+    state = "playing";
+    lastTime = 0;
+    Sfx.resume();
+    Sfx.startEngine();
+    document.getElementById("startOverlay").classList.add("hidden");
+    document.getElementById("gameOverOverlay").classList.add("hidden");
+  }
+  document.getElementById("playBtn").addEventListener("click", startGame);
+  document.getElementById("restartBtn").addEventListener("click", startGame);
+
+  // ===== KHỞI ĐỘNG =====
+  resetGame();
+  canoe.y = H * 0.72;
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
