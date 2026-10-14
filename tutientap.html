@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎵 Music Bug</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none; -webkit-user-select: none; }
+  html, body { width: 100%; height: 100%; overflow: hidden;
+    background: #0a1a12; color: #eaffdf;
+    font-family: system-ui, -apple-system, sans-serif;
+    touch-action: none; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; }
+
+  .hud {
+    position: fixed; top: 10px; left: 10px; right: 10px;
+    display: flex; justify-content: space-between; gap: 8px;
+    z-index: 5; pointer-events: none;
+    font-size: 13px; text-shadow: 0 1px 3px #000;
+  }
+  .panel {
+    padding: 7px 12px; border-radius: 12px;
+    background: #10251dcc; line-height: 1.5;
+  }
+  .panel.right { text-align: right; }
+  #healthBar {
+    width: 120px; height: 10px; margin-top: 4px;
+    border: 1px solid #ffffff88; border-radius: 6px; overflow: hidden;
+    background: #00000066;
+  }
+  #healthFill {
+    height: 100%; width: 100%;
+    background: #50df6d;
+    transition: width .15s linear, background .2s;
+  }
+  #exploreBtn {
+    margin-top: 6px; pointer-events: auto;
+    display: inline-block;
+    border: 1px solid #ffffff55; border-radius: 10px;
+    padding: 5px 12px; font-size: 13px; font-weight: 700;
+    color: #eaffdf; background: #1c6e46cc;
+    cursor: pointer;
+  }
+  #exploreBtn:active { transform: translateY(1px); }
+
+  .combo-big {
+    position: fixed; top: 35%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: 56px; font-weight: 900;
+    color: #ffd54a;
+    text-shadow: 0 0 20px #ffd54a, 0 0 40px #ff8c00;
+    z-index: 6; pointer-events: none;
+    opacity: 0;
+  }
+  .combo-big.pop { animation: comboPop .5s ease-out; }
+  @keyframes comboPop {
+    0%   { transform: translate(-50%, -50%) scale(.3); opacity: 0; }
+    40%  { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+  }
+
+  /* Nút chém — to hơn, phủ vùng rộng hơn */
+  #hitBtn {
+    position: fixed; right: 14px; bottom: 14px;
+    width: 120px; height: 120px; border-radius: 50%;
+    border: 3px solid #fff;
+    background: #b34832ee; color: #fff;
+    font-weight: 900; font-size: 20px;
+    box-shadow: 0 6px 30px #000a, 0 0 0 4px #ffffff22;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none; -webkit-user-select: none;
+    z-index: 10; cursor: pointer;
+    padding: 0;
+  }
+  #hitBtn:active { transform: scale(0.94); background: #d85a3f; }
+
+  /* Vùng chạm ẩn rộng hơn (mở rộng cảm ứng ra 60px) */
+  #hitZone {
+    position: fixed; right: 0; bottom: 0;
+    width: 180px; height: 180px;
+    z-index: 9;
+    background: transparent;
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+
+  .overlay {
+    position: fixed; inset: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: center;
+    background: #0009; backdrop-filter: blur(4px);
+    padding: 24px; text-align: center;
+  }
+  .overlay.hide { display: none; }
+  .card {
+    background: linear-gradient(160deg, #173a25, #10251d);
+    border: 1px solid #ffffff22;
+    border-radius: 20px; padding: 26px;
+    max-width: 380px; width: 100%;
+    box-shadow: 0 10px 40px #000a;
+  }
+  .card h1 {
+    font-size: 26px; margin-bottom: 8px;
+    background: linear-gradient(135deg, #7ee787, #ffd54a);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .card .sub { color: #9ab; font-size: 13px; margin-bottom: 18px; }
+
+  .level-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .level-item {
+    padding: 14px 16px; border-radius: 12px;
+    background: #1c3a2a; border: 1px solid #ffffff22;
+    cursor: pointer; transition: all .15s;
+    display: flex; justify-content: space-between; align-items: center;
+    font-weight: 700; font-size: 15px;
+  }
+  .level-item:hover { background: #245a3d; border-color: #7ee787; transform: translateX(2px); }
+  .level-item.locked { opacity: .4; cursor: not-allowed; }
+  .level-item .bpm {
+    font-size: 11px; padding: 3px 8px; border-radius: 8px;
+    background: #00000066; color: #ffd54a;
+  }
+
+  .btn {
+    display: inline-block; margin: 4px;
+    padding: 12px 26px;
+    background: linear-gradient(135deg, #2c8b57, #3ba568);
+    color: #fff; border: 0; border-radius: 12px;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer;
+  }
+  .btn.ghost { background: transparent; border: 1px solid #7ee787; color: #7ee787; }
+
+  .result-stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin: 18px 0;
+  }
+  .stat {
+    background: #00000055; border-radius: 10px; padding: 10px 6px;
+    border: 1px solid #ffffff11;
+  }
+  .stat .v { font-size: 22px; font-weight: 800; color: #ffd54a; }
+  .stat .l { font-size: 11px; color: #9ab; margin-top: 3px; }
+
+  .rank {
+    font-size: 70px; font-weight: 900;
+    background: linear-gradient(135deg, #ffd54a, #ff8c00);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 20px #ffd54a88);
+  }
+
+  .hint {
+    font-size: 12px; color: #9ab; margin-top: 12px; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div class="hud">
+  <div class="panel">
+    <div>❤️ <span id="hpText">100</span>%</div>
+    <div id="healthBar"><div id="healthFill"></div></div>
+    <button id="exploreBtn">🧭 Khám phá</button>
+  </div>
+  <div class="panel right">
+    <div>⭐ <span id="scoreText">0</span> điểm</div>
+    <div>🐜 Đã diệt: <span id="killText">0</span></div>
+    <div>🎵 Level <span id="levelText">1</span> · nốt <span id="progText">0/0</span></div>
+  </div>
+</div>
+
+<div class="combo-big" id="comboPop"></div>
+
+<!-- Vùng chạm rộng + nút chém -->
+<div id="hitZone"></div>
+<button id="hitBtn" type="button" oncontextmenu="return false">CHÉM</button>
+
+<div class="overlay" id="menuScreen">
+  <div class="card">
+    <h1>🎵 Music Bug</h1>
+    <div class="sub">Chém côn trùng đúng nhịp — chơi nhạc!</div>
+    <div class="level-list" id="levelList"></div>
+    <div class="hint">Chém khi côn trùng vào vòng vàng (±40%)<br>Bug lao vào bạn = −5% máu</div>
+  </div>
+</div>
+
+<div class="overlay hide" id="resultScreen">
+  <div class="card">
+    <h1 id="resultTitle">HOÀN THÀNH!</h1>
+    <div class="rank" id="rankText">S</div>
+    <div class="result-stats">
+      <div class="stat"><div class="v" id="rScore">0</div><div class="l">ĐIỂM</div></div>
+      <div class="stat"><div class="v" id="rKill">0</div><div class="l">ĐÃ DIỆT</div></div>
+      <div class="stat"><div class="v" id="rCombo">0</div><div class="l">COMBO MAX</div></div>
+      <div class="stat"><div class="v" id="rMiss">0</div><div class="l">MISS</div></div>
+    </div>
+    <div style="margin-bottom:14px;color:#9ab;font-size:13px">Chọn màn tiếp theo:</div>
+    <div class="level-list" id="nextLevelList"></div>
+    <button class="btn ghost" onclick="window.__backToMenu()">🏠 Về menu</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+(() => {
+
+// ================================================================
+// HẰNG SỐ
+// ================================================================
+const PX_PER_M   = 20;
+const DIAG_M     = 18;
+const PLAYER_M   = 2;
+const PLAYER_AT  = 1 / 6;
+const HIT_RATIO  = 0.7;
+const SHOW_RINGS = true;
+const PLAY_STEP  = true;
+const STEP_VOL   = 0.05;
+const OFFSCREEN_LOOKAHEAD = 20;
+const SPAWN_AHEAD_M = 1;      // bug đầu tiên xuất hiện trước đỉnh dây 1m
+
+const PITCH = {
+  C1:32.70, D1:36.71, E1:41.20, F1:43.65, G1:49.00, A1:55.00, B1:61.74,
+  C2:65.41, D2:73.42, E2:82.41, F2:87.31, G2:98.00, A2:110.00, B2:123.47,
+  C3:130.81, D3:146.83, E3:164.81, F3:174.61, G3:196.00, A3:220.00, B3:246.94,
+  C4:261.63, 'C#4':277.18, D4:293.66, E4:329.63, F4:349.23, G4:392.00,
+  A4:440.00, BB4:466.16, B4:493.88,
+  C5:523.25, D5:587.33, E5:659.25, F5:698.46, G5:783.99, A5:880.00, B5:987.77,
+};
+
+const LEVELS = [
+  {
+     id: 1, name: 'Baby Shark', bpm: 80, playTimes: 2,
+    music: `
+   
+
+C4 E4 G4 G4 C4 E4 G4 G4 2A4 2C5 2G4
+C5 G4 2G4 C5 G4 2G4 D4 1/2D4 1/2G4 2C4
+
+    `
+  },
+  { id: 2, name: 'Happy Birthday 2u',         bpm: 85, playTimes: 2, music: `
+
+
+1/2G4 1/2G4 A4 G4 C5 2B4
+1/2G4 1/2G4 A4 G4 D5 2C5
+1/2G4 1/2G4 G5 E5 C5 B4 2A4
+1/2F5 1/2F5 E5 C5 D5 2C5
+
+` },
+ { id: 3, name: 'Một Con Vịt', bpm: 100, playTimes: 2,
+  music: `
+    C4 F4 C4 1/2C4 1/2F4 1/2F4 G4 2A4
+    A4 F4 C4 1/2A4 1/2A4 A4 1/2C4 1/2C4 2C4
+
+    C4 C4 A4 1/2A4 1/2C4 1/2C4 C4 2A4
+    A4 F4 C4 1/2A4 1/2A4 1/2A4 G4 2F4
+
+     
+` },
+
+ {
+     id: 4, name: 'Baby Shark x2', bpm: 80, playTimes: 4,
+    music: `
+   
+
+C4 E4 G4 G4 C4 E4 G4 G4 2A4 2C5 2G4
+C5 G4 2G4 C5 G4 2G4 D4 1/2D4 1/2G4 2C4
+
+    `
+  },
+  { id: 5, name: 'Happy Birthday 2u  x2',         bpm: 85, playTimes: 4, music: `
+
+
+1/2G4 1/2G4 A4 G4 C5 2B4
+1/2G4 1/2G4 A4 G4 D5 2C5
+1/2G4 1/2G4 G5 E5 C5 B4 2A4
+1/2F5 1/2F5 E5 C5 D5 2C5
+
+` },
+ { id: 6, name: 'Một Con Vịt x2', bpm: 100, playTimes: 4,
+  music: `
+    C4 F4 C4 1/2C4 1/2F4 1/2F4 G4 2A4
+    A4 F4 C4 1/2A4 1/2A4 A4 1/2C4 1/2C4 2C4
+
+    C4 C4 A4 1/2A4 1/2C4 1/2C4 C4 2A4
+    A4 F4 C4 1/2A4 1/2A4 1/2A4 G4 2F4
+
+     
+` },
+];
+
+// ================================================================
+// SPRITE
+// ================================================================
+const sheet = new Image();
+sheet.src = 'anh.png';
+let sheetOK = false;
+sheet.onload = () => { sheetOK = sheet.naturalWidth >= 320 && sheet.naturalHeight >= 200; };
+sheet.onerror = () => { sheetOK = false; };
+
+// ================================================================
+// PARSER
+// ================================================================
+function parseToken(tok) {
+  tok = tok.trim();
+  if (!tok) return null;
+  const rMatch = tok.match(/^(1\/2|1\/4|2|4)?R$/);
+  if (rMatch) {
+    const d = rMatch[1] || '1';
+    const dur = d === '1/2' ? 0.5 : d === '1/4' ? 0.25 : parseFloat(d);
+    return { rest: true, dur };
+  }
+  const m = tok.match(/^(1\/2|1\/4|2|4)?([A-G](?:#|B)?\d)$/);
+  if (!m) { console.warn('Sai cú pháp:', tok); return null; }
+  const d = m[1] || '1';
+  const dur = d === '1/2' ? 0.5 : d === '1/4' ? 0.25 : parseFloat(d);
+  const pitch = m[2];
+  return { rest: false, dur, pitch, freq: PITCH[pitch] || 440, sizeMul: dur };
+}
+function parseMusic(src) {
+  const lines = src.split('\n').map(l => l.trim()).filter(Boolean);
+  const result = [];
+  for (const line of lines) {
+    const toks = line.split(/[\s,]+/).filter(Boolean);
+    const notes = toks.map(parseToken).filter(Boolean);
+    if (!notes.length) continue;
+    for (let i = notes.length - 1; i >= 0; i--) {
+      if (!notes[i].rest) { notes[i].bug2 = true; break; }
+    }
+    result.push(notes);
+  }
+  return result;
+}
+
+// ================================================================
+// AUDIO
+// ================================================================
+let actx = null;
+function audioOn() {
+  if (!actx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) actx = new AC();
+  }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+function playNote(freq, dur, vol = 0.22) {
+  if (!actx) return;
+  const t = actx.currentTime;
+  const osc = actx.createOscillator();
+  const g = actx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.001, t + Math.max(0.08, dur));
+  osc.connect(g).connect(actx.destination);
+  osc.start(t);
+  osc.stop(t + Math.max(0.1, dur) + 0.02);
+}
+function playThud() {
+  if (!actx) return;
+  const t = actx.currentTime;
+  const osc = actx.createOscillator();
+  const g1 = actx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(140, t);
+  osc.frequency.exponentialRampToValueAtTime(50, t + 0.18);
+  g1.gain.setValueAtTime(0.35, t);
+  g1.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+  osc.connect(g1).connect(actx.destination);
+  osc.start(t); osc.stop(t + 0.24);
+
+  const buf = actx.createBuffer(1, Math.floor(actx.sampleRate * 0.1), actx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++)
+    data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+  const src = actx.createBufferSource();
+  const g2 = actx.createGain();
+  g2.gain.setValueAtTime(0.15, t);
+  g2.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  src.buffer = buf;
+  src.connect(g2).connect(actx.destination);
+  src.start(t);
+}
+// Tiếng bước "sột" — noise ngắn, đều
+function playStepTick() {
+  if (!actx) return;
+  const t = actx.currentTime;
+  const dur = 0.045;
+
+  const buf = actx.createBuffer(1, Math.floor(actx.sampleRate * dur), actx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) {
+    const env = Math.pow(1 - i / d.length, 2.5);
+    d[i] = (Math.random() * 2 - 1) * env;
+  }
+  const src = actx.createBufferSource();
+  src.buffer = buf;
+
+  const hp = actx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 400;
+
+  const g = actx.createGain();
+  g.gain.setValueAtTime(STEP_VOL, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+
+  src.connect(hp).connect(g).connect(actx.destination);
+  src.start(t);
+  src.stop(t + dur + 0.02);
+}
+
+// ================================================================
+// STATE
+// ================================================================
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let W = 0, H = 0, dpr = 1;
+let playerPos = { x: 0, y: 0 };
+let diagX0 = 0, diagY0 = 0, diagX1 = 0, diagY1 = 0;
+let diagDx = 0, diagDy = 0;
+
+let playerAnimPhase = 0;
+let playerHitAnimUntil = 0;
+
+const state = {
+  levelId: 1,
+  playing: false,
+  finished: false,
+  t: 0,
+  score: 0, combo: 0, maxCombo: 0,
+  kills: 0, misses: 0, hp: 100,
+  totalNotes: 0, hitNotes: 0,
+  bugList: [], pendingNotes: [],
+  currentLevel: null,
+  bpm: 80, beatSec: 0, speedMps: 0,
+  stepInterval: 0.75,
+  nextStepT: 0,
+  stepStarted: false,
+};
+
+function resize() {
+  W = innerWidth; H = innerHeight;
+  dpr = Math.min(devicePixelRatio || 1, 2);
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  diagX0 = 0.05 * W; diagY0 = 0.95 * H;
+  diagX1 = 0.88 * W; diagY1 = 0.12 * H;
+  diagDx = diagX1 - diagX0;
+  diagDy = diagY1 - diagY0;
+
+  const p = PLAYER_AT;
+  playerPos.x = diagX0 + diagDx * p;
+  playerPos.y = diagY0 + diagDy * p;
+}
+addEventListener('resize', resize);
+
+function diagAtRaw(meters) {
+  const f = meters / DIAG_M;
+  return { x: diagX0 + diagDx * f, y: diagY0 + diagDy * f };
+}
+
+function spriteFrame(row, col, x, y, size, flip = false, rotate = 0, alpha = 1) {
+  if (!sheetOK) {
+    ctx.save(); ctx.globalAlpha = alpha;
+    ctx.fillStyle = row === 0 ? '#50df6d' : row === 1 ? '#4ade80' : '#ffb347';
+    ctx.beginPath(); ctx.arc(x, y, size * 0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore(); return;
+  }
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+  ctx.rotate(rotate);
+  ctx.scale(flip ? -1 : 1, 1);
+  ctx.drawImage(sheet, col * 40, row * 40, 40, 40, -size / 2, -size / 2, size, size);
+  ctx.restore();
+}
+
+// ================================================================
+// SPAWN
+// ================================================================
+function spawnBugAt(note, edgeBottomM) {
+  const sizeM = note.sizeMul * 2;
+  const sizePx = sizeM * PX_PER_M;
+  const bug = {
+    note, sizeM, sizePx,
+    edgeTopM: edgeBottomM + sizeM,
+    edgeBottomM,
+    x: 0, y: 0,
+    spriteRow: note.bug2 ? 2 : 1,
+    animPhase: 0, animTime: 0,
+    alive: true, dying: 0,
+    deadSpriteCol: 5, deadSpriteTimer: 0,
+    wasHit: false,
+  };
+  updateBugPosition(bug);
+  state.bugList.push(bug);
+  state.totalNotes++;
+}
+
+function updateBugPosition(b) {
+  const centerM = (b.edgeTopM + b.edgeBottomM) / 2;
+  const p = diagAtRaw(centerM);
+  b.x = p.x; b.y = p.y;
+}
+
+function playerMeters() { return DIAG_M * PLAYER_AT; }
+
+function updateSpawner() {
+  if (!state.pendingNotes.length) return;
+  const v = state.speedMps;
+  if (v <= 0) return;
+
+  const next = state.pendingNotes[0];
+  if (next.rest) { state.pendingNotes.shift(); return; }
+
+  let last = null;
+  for (let i = state.bugList.length - 1; i >= 0; i--) {
+    if (state.bugList[i].alive) { last = state.bugList[i]; break; }
+  }
+
+  const sizeM = next.sizeMul * 2;
+
+  if (!last) {
+    // Bug đầu tiên: spawn trước đỉnh dây SPAWN_AHEAD_M mét
+    // → cạnh dưới ở DIAG_M + SPAWN_AHEAD_M - sizeM
+    const spawnBottom = DIAG_M + SPAWN_AHEAD_M - sizeM;
+    spawnBugAt(next, spawnBottom);
+    state.pendingNotes.shift();
+    if (PLAY_STEP && !state.stepStarted) {
+      state.stepStarted = true;
+      state.nextStepT = state.t;
+    }
+    return;
+  }
+
+  const lastTop = last.edgeTopM;
+  if (lastTop > DIAG_M - sizeM) return;
+  spawnBugAt(next, lastTop);
+  state.pendingNotes.shift();
+}
+
+// ================================================================
+// UPDATE
+// ================================================================
+function update(dt) {
+  if (!state.playing || state.finished) return;
+  state.t += dt;
+  const v = state.speedMps;
+
+  updateSpawner();
+
+  // Bước chân — đều tăm tắp
+  if (PLAY_STEP && state.stepStarted) {
+    while (state.t >= state.nextStepT) {
+      playStepTick();
+      state.nextStepT += state.stepInterval;
+    }
+  }
+
+  for (let i = state.bugList.length - 1; i >= 0; i--) {
+    const b = state.bugList[i];
+    if (!b.alive) {
+      b.dying += dt * 1.6;
+      b.deadSpriteTimer += dt;
+      b.deadSpriteCol = Math.floor(b.deadSpriteTimer * 10) % 2 === 0 ? 5 : 7;
+      if (b.dying >= 1) state.bugList.splice(i, 1);
+      continue;
+    }
+    const delta = v * dt;
+    b.edgeTopM -= delta;
+    b.edgeBottomM -= delta;
+    updateBugPosition(b);
+
+    b.animTime += dt;
+    b.animPhase = Math.floor(b.animTime * 8) % 4;
+
+    const playerR = PLAYER_M * PX_PER_M / 2;
+    const bugR = b.sizePx / 2;
+    const dx = b.x - playerPos.x;
+    const dy = b.y - playerPos.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist <= playerR + bugR) {
+      if (!b.wasHit) {
+        state.hp = Math.max(0, state.hp - 5);
+        state.combo = 0;
+        state.misses++;
+        playThud();
+        updateHud();
+        if (state.hp <= 0) { finishLevel(true); return; }
+      }
+      b.alive = false;
+      b.dying = 0.01;
+      b.deadSpriteTimer = 0;
+      b.deadSpriteCol = 5;
+    }
+    if (b.edgeTopM < -5) state.bugList.splice(i, 1);
+  }
+
+  if (state.pendingNotes.length === 0 &&
+      state.bugList.every(b => !b.alive)) {
+    finishLevel(false);
+  }
+
+  const running = state.bugList.some(b => b.alive) || state.pendingNotes.length > 0;
+  if (running && state.t >= 0) playerAnimPhase += dt * 6;
+}
+
+// ================================================================
+// CHÉM
+// ================================================================
+function checkHit() {
+  if (!state.playing || state.finished) return;
+  audioOn();
+  playerHitAnimUntil = state.t + 0.4;
+
+  let target = null, bestDist = Infinity;
+  for (const b of state.bugList) {
+    if (!b.alive || b.wasHit) continue;
+    const dx = b.x - playerPos.x;
+    const dy = b.y - playerPos.y;
+    const dM = Math.hypot(dx, dy) / PX_PER_M;
+
+    const ideal = 1 + b.sizeM / 2;
+    const lo = ideal * (1 - HIT_RATIO);
+    const hi = ideal * (1 + HIT_RATIO);
+    if (dM < lo || dM > hi) continue;
+    if (dM < bestDist) { bestDist = dM; target = b; }
+  }
+  if (!target) return;
+
+  target.alive = false;
+  target.dying = 0.01;
+  target.deadSpriteTimer = 0;
+  target.deadSpriteCol = 5;
+  target.wasHit = true;
+
+  playNote(target.note.freq,
+           Math.max(0.15, target.note.dur * state.beatSec), 0.28);
+
+  state.kills++;
+  state.hp = Math.min(100, state.hp + 1);
+  state.combo++;
+  state.maxCombo = Math.max(state.maxCombo, state.combo);
+  state.score += 10 * Math.min(20, Math.max(1, state.combo));
+  state.hitNotes++;
+
+  if (state.combo >= 3 && state.combo % 5 === 0) showCombo(state.combo);
+  updateHud();
+}
+
+// ================================================================
+// VẼ
+// ================================================================
+function drawBackground() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#0f2018'); g.addColorStop(1, '#05100b');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#ffffff15';
+  for (let i = 0; i < 30; i++) {
+    ctx.fillRect((i * 137.5) % W, (i * 79.3) % H, 1.5, 1.5);
+  }
+}
+
+function drawPlayer() {
+  if (SHOW_RINGS) {
+    const r = PLAYER_M * PX_PER_M / 2;
+    ctx.beginPath(); ctx.arc(playerPos.x, playerPos.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#50df6d20'; ctx.fill();
+    ctx.strokeStyle = '#50df6daa'; ctx.lineWidth = 2; ctx.stroke();
+  }
+  const isHitAnim = state.t < playerHitAnimUntil;
+  const rot = (5 + (state.levelId - 1)) * Math.PI / 180;
+  if (isHitAnim) {
+    const tElapsed = Math.max(0, 0.4 - (playerHitAnimUntil - state.t));
+    const seq = [5, 6, 7, 4];
+    spriteFrame(4, seq[Math.floor(tElapsed * 16) % 4], playerPos.x, playerPos.y, 40, false, rot);
+  } else {
+    const col = Math.floor(playerAnimPhase) % 4;
+    spriteFrame(0, col, playerPos.x, playerPos.y, 40, false, rot);
+  }
+}
+
+function drawBug(b) {
+  const centerM = (b.edgeTopM + b.edgeBottomM) / 2;
+  if (centerM > DIAG_M + OFFSCREEN_LOOKAHEAD) return;
+
+  if (SHOW_RINGS && b.alive) {
+    const rBug = b.sizePx / 2;
+    const ideal = 1 + b.sizeM / 2;
+    const lo = ideal * (1 - HIT_RATIO);
+    const hi = ideal * (1 + HIT_RATIO);
+    ctx.beginPath(); ctx.arc(b.x, b.y, rBug, 0, Math.PI * 2);
+    ctx.fillStyle = b.spriteRow === 2 ? '#ffb34720' : '#4ade8020'; ctx.fill();
+    ctx.strokeStyle = b.spriteRow === 2 ? '#ffb347aa' : '#4ade80aa';
+    ctx.lineWidth = 2; ctx.stroke();
+
+    ctx.setLineDash([5, 5]); ctx.strokeStyle = '#ffd54a66'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(b.x, b.y, lo * PX_PER_M, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(b.x, b.y, hi * PX_PER_M, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  const flip = true;
+  if (!b.alive) {
+    spriteFrame(b.spriteRow, b.deadSpriteCol, b.x, b.y, b.sizePx, flip, 0,
+                Math.max(0, 1 - b.dying));
+    return;
+  }
+  spriteFrame(b.spriteRow, b.animPhase, b.x, b.y, b.sizePx, flip, 0);
+}
+
+function render() {
+  drawBackground();
+  const sorted = state.bugList.slice().sort((a, b) => b.edgeTopM - a.edgeTopM);
+  for (const b of sorted) drawBug(b);
+  drawPlayer();
+}
+
+function updateHud() {
+  document.getElementById('hpText').textContent = Math.ceil(state.hp);
+  const fill = document.getElementById('healthFill');
+  fill.style.width = Math.max(0, state.hp) + '%';
+  fill.style.background = state.hp > 50 ? '#50df6d'
+                        : state.hp > 25 ? '#ffd54a' : '#ff4c4c';
+  document.getElementById('scoreText').textContent = state.score;
+  document.getElementById('killText').textContent = state.kills;
+  document.getElementById('levelText').textContent = state.levelId;
+  document.getElementById('progText').textContent =
+    state.hitNotes + '/' + state.totalNotes;
+}
+
+function showCombo(n) {
+  const el = document.getElementById('comboPop');
+  el.textContent = n + ' COMBO!';
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+}
+
+let lastT = 0, rafId = 0;
+function loop(now) {
+  if (!lastT) lastT = now;
+  const dt = Math.min((now - lastT) / 1000, 0.05);
+  lastT = now;
+  update(dt);
+  render();
+  rafId = requestAnimationFrame(loop);
+}
+
+function buildFlatNotes(level) {
+  const lines = parseMusic(level.music);
+  const flat = [];
+  for (const line of lines) for (const n of line) flat.push(n);
+  const total = flat.slice();
+  for (let i = 1; i < (level.playTimes || 1); i++) flat.push(...total);
+  return flat;
+}
+
+function startLevel(levelId) {
+  audioOn();
+  const level = LEVELS.find(l => l.id === levelId);
+  if (!level || !level.music.trim()) {
+    alert('Level này chưa có nhạc!');
+    return;
+  }
+  state.currentLevel = level;
+  state.levelId = levelId;
+  state.playing = true;
+  state.finished = false;
+
+  state.score = 0; state.combo = 0; state.maxCombo = 0;
+  state.kills = 0; state.misses = 0; state.hitNotes = 0;
+  state.hp = 100;
+  state.bugList = []; state.totalNotes = 0;
+
+  state.bpm = level.bpm;
+  state.beatSec = 60 / level.bpm;
+  state.speedMps = 2 * level.bpm / 60;
+  state.pendingNotes = buildFlatNotes(level);
+
+  state.stepInterval = state.beatSec;
+  state.stepStarted = false;
+  state.nextStepT = 0;
+
+  // Delay nhạc — nhạc bắt đầu khi bug đầu tiên chạm nhân vật
+  // Bug đầu spawn ở mét (DIAG_M + SPAWN_AHEAD_M - sizeM) → cạnh dưới.
+  // Tâm ban đầu ≈ DIAG_M + SPAWN_AHEAD_M - sizeM/2
+  // Tới nhân vật (playerM) phải đi: (DIAG_M + SPAWN_AHEAD_M - sizeM/2) - playerM
+  // Nhưng để đơn giản, ta dùng khoảng cách từ đỉnh dây + SPAWN_AHEAD - sizeM tới playerM:
+  const firstSizeM = state.pendingNotes[0] ? state.pendingNotes[0].sizeMul * 2 : 0;
+  const distNeed = (DIAG_M + SPAWN_AHEAD_M - firstSizeM) - (playerMeters() - firstSizeM / 2);
+  const delay = distNeed / state.speedMps;
+  state.t = -delay;
+
+  playerAnimPhase = 0;
+  playerHitAnimUntil = 0;
+  lastT = 0;
+
+  document.getElementById('menuScreen').classList.add('hide');
+  document.getElementById('resultScreen').classList.add('hide');
+  document.getElementById('hitBtn').style.display = 'block';
+  document.getElementById('hitZone').style.display = 'block';
+
+  updateHud();
+}
+
+function finishLevel(failed) {
+  state.playing = false;
+  state.finished = true;
+
+  const acc = state.totalNotes > 0 ? state.hitNotes / state.totalNotes : 0;
+  let rank = 'F';
+  if (!failed) {
+    if (acc >= 0.9) rank = 'S';
+    else if (acc >= 0.75) rank = 'A';
+    else if (acc >= 0.5) rank = 'B';
+    else if (acc >= 0.25) rank = 'C';
+    else rank = 'D';
+  }
+
+  document.getElementById('resultTitle').textContent = failed ? 'THẤT BẠI!' : 'HOÀN THÀNH!';
+  document.getElementById('rankText').textContent = rank;
+  document.getElementById('rScore').textContent = state.score;
+  document.getElementById('rKill').textContent = state.kills;
+  document.getElementById('rCombo').textContent = state.maxCombo;
+  document.getElementById('rMiss').textContent = state.misses;
+
+  const nextList = document.getElementById('nextLevelList');
+  nextList.innerHTML = '';
+  const idx = LEVELS.findIndex(l => l.id === state.levelId);
+  const candidates = [];
+  for (let k = 1; k <= 3; k++) {
+    const lv = LEVELS[idx + k];
+    if (!lv) break;
+    candidates.push(lv);
+  }
+  if (!candidates.length) {
+    const d = document.createElement('div');
+    d.style.color = '#9ab';
+    d.textContent = 'Bạn đã hoàn thành hết các level hiện có!';
+    nextList.appendChild(d);
+  } else {
+    for (const lv of candidates) {
+      const enabled = !!lv.music.trim();
+      const el = document.createElement('div');
+      el.className = 'level-item' + (enabled ? '' : ' locked');
+      el.innerHTML = `<span>${enabled ? '🎵' : '🔒'} ${lv.name}</span>
+                      <span class="bpm">BPM ${lv.bpm}</span>`;
+      if (enabled) el.onclick = () => startLevel(lv.id);
+      nextList.appendChild(el);
+    }
+  }
+
+  document.getElementById('hitBtn').style.display = 'none';
+  document.getElementById('hitZone').style.display = 'none';
+  document.getElementById('resultScreen').classList.remove('hide');
+}
+
+function backToMenu() {
+  state.playing = false;
+  state.finished = false;
+  document.getElementById('resultScreen').classList.add('hide');
+  document.getElementById('menuScreen').classList.remove('hide');
+  buildMenu();
+}
+window.__backToMenu = backToMenu;
+
+function buildMenu() {
+  const list = document.getElementById('levelList');
+  list.innerHTML = '';
+  for (const lv of LEVELS) {
+    const enabled = !!lv.music.trim();
+    const el = document.createElement('div');
+    el.className = 'level-item' + (enabled ? '' : ' locked');
+    el.innerHTML = `<span>${enabled ? '🎵' : '🔒'} ${lv.name}</span>
+                    <span class="bpm">BPM ${lv.bpm}</span>`;
+    if (enabled) el.onclick = () => startLevel(lv.id);
+    list.appendChild(el);
+  }
+}
+
+// ================================================================
+// INPUT — kết hợp nút + vùng chạm rộng
+// ================================================================
+let lastHitT = 0;
+function onHit(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  const now = performance.now();
+  if (now - lastHitT < 30) return;      // debounce 30ms
+  lastHitT = now;
+  checkHit();
+}
+
+['hitBtn', 'hitZone'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('touchstart', onHit, { passive: false });
+  el.addEventListener('pointerdown', onHit);
+  el.addEventListener('mousedown', onHit);
+  el.addEventListener('click', onHit);
+  el.addEventListener('contextmenu', e => e.preventDefault());
+});
+
+addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); onHit(null); }
+});
+
+document.getElementById('exploreBtn').addEventListener('click', () => {
+  audioOn();
+  window.location.href = 'tuongzalo.html';
+});
+
+resize();
+buildMenu();
+rafId = requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
