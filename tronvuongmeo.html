@@ -205,7 +205,7 @@ setTimeout(() => res(musicReady), 2000);
 });
 
 const okM = await tryLoad(base + '.m4a');
-if (!okM) await tryLoad(base + '.mp3');
+if (!okM) await tryLoad(base + '.MP3');
 
 document.getElementById('title').textContent = parsed.title;
 curFile = file;
