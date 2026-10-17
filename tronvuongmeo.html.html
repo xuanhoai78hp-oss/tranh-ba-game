@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Piano Rhythm Game</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+body {
+    background-color: #111; color: white; font-family: sans-serif;
+    height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+    touch-action: none;
+}
+
+/* ===== TOOLBAR ===== */
+#toolbar {
+    height: 10%; display: flex; align-items: center; justify-content: space-evenly;
+    background: linear-gradient(90deg, #1a1a1a, #333, #1a1a1a);
+    border-bottom: 2px solid #555; font-size: 12px;
+}
+.tool-btn { background: #444; padding: 6px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+.tool-btn:active { background: #666; }
+#song-title { color: gold; font-weight: bold; font-size: 12px; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ===== GAME AREA ===== */
+#game-area {
+    height: 70%; position: relative; background: #000;
+    border-left: 2px solid gold; border-right: 2px solid gold; overflow: hidden;
+}
+canvas { width: 100%; height: 100%; display: block; }
+
+/* ===== HUD ĐIỂM ===== */
+#hud {
+    position: absolute; top: 8px; left: 0; width: 100%;
+    display: flex; justify-content: space-between;
+    padding: 0 12px; pointer-events: none; z-index: 3;
+    font-family: Arial, sans-serif; font-weight: bold;
+}
+#score-display {
+    color: gold; font-size: 22px;
+    text-shadow: 0 0 10px gold;
+}
+#best-display {
+    color: #888; font-size: 12px;
+    text-align: right;
+}
+#combo-display {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 60px; color: #fff; font-weight: bold; opacity: 0;
+    text-shadow: 0 0 20px #fff, 0 0 40px gold; pointer-events: none;
+    transition: opacity 0.3s;
+    font-family: Arial;
+}
+#combo-display.show { opacity: 1; animation: comboPop 0.4s ease-out; }
+@keyframes comboPop {
+    0% { transform: translate(-50%, -50%) scale(0.3); }
+    50% { transform: translate(-50%, -50%) scale(1.3); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ===== 3 NÚT ===== */
+#buttons {
+    height: 20%; display: flex; background: #1a1a1a;
+    border-top: 2px solid #333;
+}
+.note-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: bold; color: white;
+    border: none; cursor: pointer; transition: transform 0.08s, filter 0.08s;
+    font-family: Arial, sans-serif;
+}
+.note-btn:active { transform: scale(0.95); filter: brightness(1.4); }
+
+#btn-tron   { background: #ff3060; }
+#btn-vuong  { background: #00d0ff; color: #001a22; }
+#btn-meo    { background: #ffcc00; color: #221a00; }
+
+/* ===== POPUP THƯ VIỆN ===== */
+#popup {
+    display: none; position: absolute; top: 10%; left: 10%; width: 80%; max-height: 70%;
+    background: rgba(0,0,0,0.95); border: 2px solid gold; z-index: 10;
+    flex-direction: column; padding: 15px; border-radius: 10px;
+}
+#popup h3 { color: gold; margin-bottom: 10px; text-align: center; }
+#song-list { overflow-y: auto; max-height: 300px; }
+.song-item {
+    padding: 12px; margin: 5px 0; background: #222; border: 1px solid #555;
+    border-radius: 5px; cursor: pointer; color: #ccc;
+    display: flex; justify-content: space-between;
+}
+.song-item:active { background: #444; }
+.song-item.active { background: #333; border-color: gold; color: gold; }
+.song-item .best { color: #ffcc00; font-size: 11px; }
+#popup button {
+    margin-top: 10px; padding: 10px; background: gold; color: black;
+    font-weight: bold; border: none; border-radius: 5px; cursor: pointer;
+}
+
+/* ===== ĐẾM NGƯỢC ===== */
+#countdown {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.7); z-index: 5;
+    font-size: 100px; font-weight: bold; color: gold;
+    text-shadow: 0 0 30px gold, 0 0 60px gold;
+    font-family: Arial, sans-serif;
+}
+
+/* ===== TỔNG KẾT ===== */
+#summary {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.95); border: 2px solid gold; border-radius: 12px;
+    padding: 25px 35px; z-index: 8; display: none; text-align: center;
+    min-width: 260px;
+}
+#summary h2 { color: gold; margin-bottom: 15px; font-size: 22px; }
+#summary .row { display: flex; justify-content: space-between; margin: 8px 0; font-size: 15px; }
+#summary .row span:last-child { color: gold; font-weight: bold; }
+#summary button {
+    margin-top: 18px; padding: 10px 25px; background: gold; color: black;
+    border: none; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+    <div class="tool-btn" id="btn-code">📚 Thư viện</div>
+    <div id="song-title">— Chưa chọn bài —</div>
+    <div class="tool-btn" id="btn-explore">🔍 Khám phá</div>
+</div>
+
+<div id="game-area">
+    <canvas id="canvas"></canvas>
+    <div id="hud">
+        <div id="score-display">0</div>
+        <div id="best-display"></div>
+    </div>
+    <div id="combo-display"></div>
+    <div id="countdown"></div>
+    <div id="summary">
+        <h2>🎉 HOÀN THÀNH!</h2>
+        <div class="row"><span>Điểm bài này:</span><span id="sum-score">0</span></div>
+        <div class="row"><span>Hit / Miss:</span><span id="sum-hit">0 / 0</span></div>
+        <div class="row"><span>Combo cao nhất:</span><span id="sum-combo">0</span></div>
+        <div class="row"><span>Kỷ lục bài:</span><span id="sum-best">0</span></div>
+        <button id="btn-close-summary">Đóng</button>
+    </div>
+</div>
+
+<div id="buttons">
+    <button class="note-btn" id="btn-tron">Tròn</button>
+    <button class="note-btn" id="btn-vuong">Vuông</button>
+    <button class="note-btn" id="btn-meo">Méo</button>
+</div>
+
+<div id="popup">
+    <h3>📚 Thư viện nhạc</h3>
+    <div id="song-list"></div>
+</div>
+
+<script>
+// ==========================================
+// === 1. BẢNG TẦN SỐ NỐT NHẠC ==============
+// ==========================================
+const NOTE_FREQ = {
+    "C3":130.81, "D3":146.83, "E3":164.81, "F3":174.61, "G3":196.00, "A3":220.00, "B3":246.94,
+    "C4":261.63, "D4":293.66, "E4":329.63, "F4":349.23, "G4":392.00, "A4":440.00, "B4":493.88,
+    "C5":523.25, "D5":587.33, "E5":659.25, "F5":698.46, "G5":783.99, "A5":880.00, "B5":987.77,
+    "C6":1046.50, "D6":1174.66, "E6":1318.51
+};
+
+// ==========================================
+// === 2. THÔNG SỐ GAME =====================
+// ==========================================
+let TEMPO = 120;
+const BEAT_MS = 60000 / TEMPO;
+const COUNTDOWN_SEC = 5;
+const FALL_DURATION = 3.0;
+
+// ==========================================
+// === 3. ĐIỂM SỐ + LOCALSTORAGE ============
+// ==========================================
+const STORAGE_KEY = 'piano_rhythm_scores_v1';
+
+// scores = { "1.txt": 150, "happy.txt": 320, ... }
+function loadScores() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    } catch (e) { return {}; }
+}
+function saveScores(scores) {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+    } catch (e) {}
+}
+
+let scores = loadScores();
+let currentSongFile = null;      // file bài đang chơi
+let currentScore = 0;            // điểm bài hiện tại đang chơi
+let currentCombo = 0;
+let maxCombo = 0;
+let totalHit = 0;
+let totalMiss = 0;
+
+// ==========================================
+// === 4. AUDIO CONTEXT =====================
+// ==========================================
+let audioCtx = null;
+function getCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+}
+
+// ==========================================
+// === 5. PHÁT ÂM THANH ÊM ==================
+// ==========================================
+function playTone(freq, duration = 0.6) {
+    const ctx = getCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+
+    const now = ctx.currentTime;
+    const peak = 0.35;
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(peak, now + 0.06);
+    gain.gain.linearRampToValueAtTime(peak * 0.7, now + duration * 0.5);
+    gain.gain.linearRampToValueAtTime(0, now + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + duration + 0.05);
+}
+
+// ==========================================
+// === 6. GIỌNG ĐỌC =========================
+// ==========================================
+let voices = [];
+function loadVoices() { voices = speechSynthesis.getVoices(); }
+loadVoices();
+if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = loadVoices;
+
+function warmupSpeech() {
+    if (!window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0; u.rate = 10;
+    speechSynthesis.speak(u);
+}
+window.addEventListener('load', () => {
+    setTimeout(warmupSpeech, 100);
+    setTimeout(warmupSpeech, 800);
+});
+document.body.addEventListener('touchstart', () => warmupSpeech(), { once: true });
+
+function speak(text) {
+    if (!window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'vi-VN';
+    u.rate = 1.3; u.pitch = 1.1; u.volume = 0.8;
+    const viVoice = voices.find(v => v.lang.toLowerCase().startsWith('vi'));
+    if (viVoice) u.voice = viVoice;
+    speechSynthesis.speak(u);
+}
+
+// ==========================================
+// === 7. ĐỐI TƯỢNG NỐT =====================
+// ==========================================
+const NOTE_META = {
+    t: { shape: 'circle',  color: '#ff3060', text: 'tròn' },
+    v: { shape: 'square',  color: '#00d0ff', text: 'vuông' },
+    m: { shape: 'diamond', color: '#ffcc00', text: 'méo' }
+};
+const COL_INDEX = { t: 0, v: 1, m: 2 };
+
+// ==========================================
+// === 8. LOAD & PARSE BÀI HÁT ==============
+// ==========================================
+async function loadSong(fileName) {
+    try {
+        const res = await fetch(fileName);
+        if (!res.ok) throw new Error("Not found");
+        const text = await res.text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length === 0) throw new Error("Empty");
+
+        const title = lines[0].trim();
+        const noteStr = lines.slice(1).join(' ');
+        const tokens = noteStr.split(/\s+/).filter(Boolean);
+
+        const notes = [];
+        let currentBeat = 0;
+
+        for (const token of tokens) {
+            const match = token.match(/^([tvm])(\d+\/\d+|\d+)?([A-G]\d)?/i);
+            if (!match) continue;
+
+            const type = match[1].toLowerCase();
+            const durStr = match[2] || "1";
+            const pitch = match[3] || "C4";
+
+            let dur = 1;
+            if (durStr.includes('/')) {
+                const [a, b] = durStr.split('/').map(Number);
+                dur = a / b;
+            } else {
+                dur = Number(durStr);
+            }
+
+            notes.push({
+                type, pitch,
+                freq: NOTE_FREQ[pitch] || 440,
+                startBeat: currentBeat,
+                durationBeat: dur,
+                state: 'waiting',
+                y: -100
+            });
+
+            currentBeat += dur;
+        }
+
+        return { title, notes, totalBeats: currentBeat };
+    } catch (err) {
+        return { title: fileName.replace('.txt', ''), notes: [], missing: true };
+    }
+}
+
+// ==========================================
+// === 9. THƯ VIỆN ==========================
+// ==========================================
+const TOTAL_SONGS = 20;
+const songList = [];
+for (let i = 1; i <= TOTAL_SONGS; i++) songList.push({ file: `${i}.txt`, label: `${i}` });
+
+async function preloadTitles() {
+    for (const song of songList) {
+        try {
+            const res = await fetch(song.file);
+            if (res.ok) {
+                const text = await res.text();
+                const firstLine = text.split(/\r?\n/)[0].trim();
+                if (firstLine) song.label = firstLine;
+            }
+        } catch (e) {}
+    }
+    renderSongList();
+}
+
+function renderSongList() {
+    const container = document.getElementById('song-list');
+    container.innerHTML = '';
+    songList.forEach(song => {
+        const div = document.createElement('div');
+        div.className = 'song-item';
+        const bestScore = scores[song.file] || 0;
+        div.innerHTML = `
+            <span>${song.label}</span>
+            <span class="best">${bestScore > 0 ? '🏅 ' + bestScore : ''}</span>
+        `;
+        div.addEventListener('click', () => selectSong(song.file));
+        container.appendChild(div);
+    });
+}
+
+// ==========================================
+// === 10. CHỌN BÀI & BẮT ĐẦU ===============
+// ==========================================
+let currentNotes = [];
+let totalBeats = 0;
+let songStartTime = 0;
+let isPlaying = false;
+let gamePhase = 'idle';
+
+async function selectSong(file) {
+    document.getElementById('popup').style.display = 'none';
+    document.getElementById('summary').style.display = 'none';
+    const result = await loadSong(file);
+    document.getElementById('song-title').textContent = result.title;
+
+    if (result.missing || result.notes.length === 0) {
+        alert(`Không tìm thấy file ${file}`);
+        return;
+    }
+
+    currentSongFile = file;
+    currentNotes = result.notes.map(n => ({ ...n, state: 'waiting', y: -100 }));
+    totalBeats = result.totalBeats;
+
+    // Reset điểm bài mới
+    currentScore = 0;
+    currentCombo = 0;
+    maxCombo = 0;
+    totalHit = 0;
+    totalMiss = 0;
+    updateScoreHUD();
+    updateBestHUD();
+
+    startCountdown();
+}
+
+function updateScoreHUD() {
+    document.getElementById('score-display').textContent = currentScore;
+}
+function updateBestHUD() {
+    const best = scores[currentSongFile] || 0;
+    document.getElementById('best-display').textContent = best > 0 ? `🏅 Kỷ lục: ${best}` : '';
+}
+
+// ==========================================
+// === 11. ĐẾM NGƯỢC ========================
+// ==========================================
+function startCountdown() {
+    const cdEl = document.getElementById('countdown');
+    cdEl.style.display = 'flex';
+
+    let sec = COUNTDOWN_SEC;
+    cdEl.textContent = sec;
+    gamePhase = 'countdown';
+
+    const timer = setInterval(() => {
+        sec--;
+        if (sec > 0) {
+            cdEl.textContent = sec;
+        } else {
+            cdEl.textContent = 'GO!';
+            clearInterval(timer);
+            setTimeout(() => {
+                cdEl.style.display = 'none';
+                beginGame();
+            }, 600);
+        }
+    }, 1000);
+}
+
+function beginGame() {
+    gamePhase = 'playing';
+    isPlaying = true;
+    currentNotes.forEach(n => { n.state = 'waiting'; n.y = -100; });
+    songStartTime = performance.now();
+    getCtx();
+}
+
+// ==========================================
+// === 12. VÙNG MIỆNG HỐ ====================
+// ==========================================
+function getHoleRange(canvasH) {
+    return { top: canvasH * 0.50, bottom: canvasH * 0.70 };
+}
+
+// ==========================================
+// === 13. TÍNH VỊ TRÍ Y ====================
+// ==========================================
+function getNoteY(note, elapsedMs, canvasH) {
+    const holeBottom = canvasH * 0.70;
+    const noteSize = 40;
+    const hitMs = note.startBeat * BEAT_MS;
+    const spawnMs = hitMs - FALL_DURATION * 1000;
+
+    if (elapsedMs < spawnMs) return -noteSize * 2;
+    if (elapsedMs > hitMs + 500) return holeBottom + 100;
+
+    const t = (elapsedMs - spawnMs) / (FALL_DURATION * 1000);
+    const startY = -noteSize;
+    const endY = holeBottom;
+    return startY + (endY - startY) * t;
+}
+
+// Pixel tương ứng 1 nhịp (dùng cho đuôi nốt)
+function getTailPx(canvasH) {
+    const holeBottom = canvasH * 0.70;
+    const startY = -40;
+    const fallPxPerSec = (holeBottom - startY) / FALL_DURATION;
+    return (BEAT_MS / 1000) * fallPxPerSec;
+}
+
+// ==========================================
+// === 14. PHÁO HOA =========================
+// ==========================================
+const particles = [];
+function spawnFirework(x, y, color) {
+    const count = 25;
+    for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+        const speed = 2 + Math.random() * 4;
+        particles.push({
+            x, y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1.0, color
+        });
+    }
+}
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx; p.y += p.vy;
+        p.vy += 0.15; p.vx *= 0.98;
+        p.life -= 0.025;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+// ==========================================
+// === 15. VẼ ĐUÔI NỐT (CÓ HIỆU ỨNG) =======
+// ==========================================
+function drawTail(ctx, x, y, durationBeat, color, canvasH, alpha) {
+    const tailUnit = getTailPx(canvasH);
+    const tailLen = durationBeat * tailUnit;
+    if (tailLen < 5) return;
+
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.55;
+
+    // Nền đuôi: gradient mờ dần lên trên
+    const grad = ctx.createLinearGradient(x, y, x, y - tailLen);
+    grad.addColorStop(0, color);
+    grad.addColorStop(0.4, color + '66');
+    grad.addColorStop(1, 'transparent');
+
+    const width = 22;
+    ctx.fillStyle = grad;
+    ctx.fillRect(x - width / 2, y - tailLen, width, tailLen);
+
+    // Viền neon 2 bên
+    ctx.globalAlpha = alpha * 0.9;
+    ctx.strokeStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x - width / 2, y);
+    ctx.lineTo(x - width / 2, y - tailLen);
+    ctx.moveTo(x + width / 2, y);
+    ctx.lineTo(x + width / 2, y - tailLen);
+    ctx.stroke();
+
+    // Gợn sóng nhấp nhô bên trong đuôi (sin wave)
+    const time = performance.now() / 200;
+    ctx.globalAlpha = alpha * 0.35;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    const segments = 20;
+    const segLen = tailLen / segments;
+    for (let i = 0; i <= segments; i++) {
+        const yy = y - i * segLen;
+        const wave = Math.sin(time + i * 0.5) * 3;
+        if (i === 0) ctx.moveTo(x + wave, yy);
+        else ctx.lineTo(x + wave, yy);
+    }
+    ctx.stroke();
+
+    // Chấm sáng nhỏ ở đầu đuôi
+    ctx.globalAlpha = alpha * 0.9;
+    ctx.fillStyle = color;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(x, y - tailLen, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hạt đom đóm bay lên dọc đuôi
+    for (let i = 0; i < 4; i++) {
+        const t = ((time * 0.5 + i * 0.25) % 1);
+        const hx = x + Math.sin(time * 2 + i) * 6;
+        const hy = y - t * tailLen;
+        ctx.globalAlpha = alpha * (1 - t) * 0.9;
+        ctx.beginPath();
+        ctx.arc(hx, hy, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    ctx.restore();
+}
+
+// ==========================================
+// === 16. VẼ NỐT ===========================
+// ==========================================
+function drawNote(ctx, x, y, size, shape, color, alpha = 1) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 15;
+    if (shape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (shape === 'square') {
+        ctx.fillRect(x - size / 2, y - size / 2, size, size);
+    } else if (shape === 'diamond') {
+        const w = size * 0.95;
+        const h = size * 0.55;
+        ctx.beginPath();
+        ctx.moveTo(x, y - h / 2);
+        ctx.lineTo(x + w / 2, y);
+        ctx.lineTo(x, y + h / 2);
+        ctx.lineTo(x - w / 2, y);
+        ctx.closePath();
+        ctx.fill();
+    }
+    ctx.restore();
+}
+
+// ==========================================
+// === 17. VẼ MIỆNG HỐ ======================
+// ==========================================
+function drawHole(ctx, W, H) {
+    const { top, bottom } = getHoleRange(H);
+    const grad = ctx.createLinearGradient(0, top, 0, bottom);
+    grad.addColorStop(0, 'rgba(80, 0, 120, 0.6)');
+    grad.addColorStop(0.5, 'rgba(10, 0, 20, 0.95)');
+    grad.addColorStop(1, 'rgba(80, 0, 120, 0.6)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, top, W, bottom - top);
+
+    ctx.save();
+    ctx.strokeStyle = '#a0f';
+    ctx.shadowColor = '#a0f';
+    ctx.shadowBlur = 20;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, top); ctx.lineTo(W, top);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, bottom); ctx.lineTo(W, bottom);
+    ctx.stroke();
+    ctx.restore();
+}
+
+// ==========================================
+// === 18. COMBO DISPLAY ====================
+// ==========================================
+let comboTimeout = null;
+function showCombo(combo) {
+    if (combo < 3) return;
+    const el = document.getElementById('combo-display');
+    el.textContent = `${combo}x`;
+    el.classList.add('show');
+    clearTimeout(comboTimeout);
+    comboTimeout = setTimeout(() => el.classList.remove('show'), 700);
+    // Retrigger animation
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = '';
+}
+
+// ==========================================
+// === 19. NHẤN NÚT =========================
+// ==========================================
+function pressButton(type) {
+    const meta = NOTE_META[type];
+    if (!meta) return;
+
+    speak(meta.text);
+
+    if (gamePhase !== 'playing') {
+        const defaultFreq = { t: 392.00, v: 523.25, m: 659.25 }[type];
+        playTone(defaultFreq, 0.4);
+        return;
+    }
+
+    const canvasEl = document.getElementById('canvas');
+    const H = canvasEl.height;
+    const { top, bottom } = getHoleRange(H);
+
+    let hitNote = null;
+    for (const n of currentNotes) {
+        if (n.state !== 'falling' && n.state !== 'waiting') continue;
+        if (n.type !== type) continue;
+        const ny = n.y;
+        if (ny >= top - 30 && ny <= bottom + 30) {
+            hitNote = n;
+            break;
+        }
+    }
+
+    if (hitNote) {
+        hitNote.state = 'hit';
+        playTone(hitNote.freq, 0.7);
+
+        const colWidth = canvasEl.width / 3;
+        const cx = COL_INDEX[type] * colWidth + colWidth / 2;
+        spawnFirework(cx, hitNote.y, meta.color);
+
+        // ==== CỘNG ĐIỂM ====
+        currentCombo++;
+        if (currentCombo > maxCombo) maxCombo = currentCombo;
+        totalHit++;
+
+        // Combo ≥ 5 → x1.5 điểm
+        let points = 10;
+        if (currentCombo >= 5) points = Math.round(points * 1.5);
+        if (currentCombo >= 10) points = 15;
+        if (currentCombo >= 20) points = 20;
+
+        currentScore += points;
+        updateScoreHUD();
+        showCombo(currentCombo);
+    } else {
+        // Bấm trượt (không có nốt trong hố)
+        const defaultFreq = { t: 392.00, v: 523.25, m: 659.25 }[type];
+        playTone(defaultFreq, 0.4);
+        // Reset combo khi bấm sai
+        currentCombo = 0;
+    }
+}
+
+// ==========================================
+// === 20. XỬ LÝ MISS =======================
+// ==========================================
+function handleMiss(note) {
+    currentCombo = 0;
+    totalMiss++;
+    currentScore = Math.max(0, currentScore - 5);
+    updateScoreHUD();
+}
+
+// ==========================================
+// === 21. GẮN SỰ KIỆN NÚT ==================
+// ==========================================
+function bindButton(id, type) {
+    const btn = document.getElementById(id);
+    let lastTouch = 0;
+    btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        lastTouch = Date.now();
+        pressButton(type);
+    }, { passive: false });
+    btn.addEventListener('click', () => {
+        if (Date.now() - lastTouch < 500) return;
+        pressButton(type);
+    });
+}
+bindButton('btn-tron', 't');
+bindButton('btn-vuong', 'v');
+bindButton('btn-meo', 'm');
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'a' || e.key === 'A') pressButton('t');
+    if (e.key === 's' || e.key === 'S') pressButton('v');
+    if (e.key === 'd' || e.key === 'D') pressButton('m');
+});
+
+// ==========================================
+// === 22. TOOLBAR & POPUP ==================
+// ==========================================
+document.getElementById('btn-code').addEventListener('click', () => {
+    const popup = document.getElementById('popup');
+    popup.style.display = popup.style.display === 'flex' ? 'none' : 'flex';
+});
+document.getElementById('btn-explore').addEventListener('click', () => {
+    window.location.href = 'tuongzalo.html';
+});
+document.getElementById('btn-close-summary').addEventListener('click', () => {
+    document.getElementById('summary').style.display = 'none';
+});
+
+// ==========================================
+// === 23. VÒNG LẶP GAME ====================
+// ==========================================
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function gameLoop() {
+    const W = canvas.width;
+    const H = canvas.height;
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    const colWidth = W / 3;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(colWidth * i, 0);
+        ctx.lineTo(colWidth * i, H);
+        ctx.stroke();
+    }
+    ctx.restore();
+
+    drawHole(ctx, W, H);
+
+    if (gamePhase === 'playing') {
+        const elapsedMs = performance.now() - songStartTime;
+        const { top, bottom } = getHoleRange(H);
+        let allDone = true;
+
+        for (const n of currentNotes) {
+            if (n.state === 'hit') continue;
+
+            const y = getNoteY(n, elapsedMs, H);
+            n.y = y;
+
+            if (n.state === 'waiting' && y > -40) n.state = 'falling';
+
+            if ((n.state === 'falling' || n.state === 'waiting') && y > bottom + 5) {
+                n.state = 'missed';
+                n.missAlpha = 1;
+                handleMiss(n);
+            }
+
+            const cx = COL_INDEX[n.type] * colWidth + colWidth / 2;
+
+            if ((n.state === 'falling' || n.state === 'waiting') && y > -200 && y < H + 50) {
+                let alpha = 1;
+                if (y > top) {
+                    alpha = Math.max(0.15, 1 - (y - top) / (bottom - top) * 0.85);
+                }
+                // Vẽ đuôi trước
+                drawTail(ctx, cx, y, n.durationBeat, NOTE_META[n.type].color, H, alpha);
+                // Rồi vẽ nốt lên
+                drawNote(ctx, cx, y, 40, NOTE_META[n.type].shape, NOTE_META[n.type].color, alpha);
+                allDone = false;
+            } else if (n.state === 'missed') {
+                n.missAlpha -= 0.012;
+                if (n.missAlpha > 0) {
+                    ctx.save();
+                    ctx.globalAlpha = n.missAlpha * 0.6;
+                    ctx.fillStyle = '#888';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('MISS', cx, bottom + 25);
+                    ctx.restore();
+                    allDone = false;
+                }
+            }
+        }
+
+        // Kết thúc
+        if ((allDone && currentNotes.length > 0) ||
+            (elapsedMs > (totalBeats * BEAT_MS) + 3000)) {
+            endGame();
+        }
+    }
+
+    updateParticles();
+    for (const p of particles) {
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+// ==========================================
+// === 24. KẾT THÚC BÀI =====================
+// ==========================================
+function endGame() {
+    gamePhase = 'done';
+    isPlaying = false;
+
+    // Cập nhật kỷ lục
+    const oldBest = scores[currentSongFile] || 0;
+    if (currentScore > oldBest) {
+        scores[currentSongFile] = currentScore;
+        saveScores(scores);
+    }
+    const newBest = scores[currentSongFile] || 0;
+
+    updateBestHUD();
+    renderSongList(); // refresh kỷ lục trong thư viện
+
+    // Hiện tổng kết
+    document.getElementById('sum-score').textContent = currentScore;
+    document.getElementById('sum-hit').textContent = `${totalHit} / ${totalMiss}`;
+    document.getElementById('sum-combo').textContent = maxCombo;
+    document.getElementById('sum-best').textContent = newBest;
+    document.getElementById('summary').style.display = 'block';
+}
+
+// ==========================================
+// === 25. KHỞI ĐỘNG ========================
+// ==========================================
+renderSongList();
+preloadTitles();
+gameLoop();
+
+</script>
+</body>
+</html>
