@@ -102,9 +102,6 @@
     <audio id="music" preload="auto" style="display:none"></audio>
     
     <script>
-    // ==========================================================
-    // THAY ĐƯỜNG DẪN GITHUB RAW CỦA BẠN VÀO ĐÂY (Nhớ có dấu / ở cuối)
-    // ==========================================================
     const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/xuanhoai78hp-oss/tranh-ba-game/refs/heads/main/";
 
     const FALL = 3.0;
@@ -128,6 +125,17 @@
     let totalMs   = { t:0, v:0, m:0 };
     let heldMs    = { t:0, v:0, m:0 };
     const holds = new Map();
+
+    // Mở khóa Audio cho iOS Safari
+    document.addEventListener('pointerdown', function unlockAudio() {
+        if (music && music.paused) {
+            music.play().then(() => {
+                music.pause();
+                music.currentTime = 0;
+            }).catch(() => {});
+        }
+        document.removeEventListener('pointerdown', unlockAudio);
+    }, { once: true });
 
     function clearSelection() { const sel = window.getSelection(); if (sel && sel.rangeCount > 0) sel.removeAllRanges(); }
     for (const el of [document.getElementById('pad'), document.getElementById('stage')]) {
@@ -240,9 +248,12 @@
         fillPercent = { t:0, v:0, m:0 };
         updateGlassFill();
         startTs = performance.now();
-        if (musicReady) {
+        
+        if (music) {
             music.currentTime = 0;
-            music.play().catch(()=>{});
+            music.play().catch(err => {
+                console.log("Autoplay bị Safari chặn:", err);
+            });
         }
     }
 
