@@ -308,6 +308,10 @@
                 combo++;
                 if (combo > maxCombo) maxCombo = combo;
                 hitCount++;
+               // <<< THÊM LỆNH RUNG VÀO ĐÂY >>>
+                if (navigator.vibrate) {
+                    navigator.vibrate(25); // Rung nhẹ trong 25 mili-giây
+                }
                 uiScore();
                 showCombo(combo);
             }
