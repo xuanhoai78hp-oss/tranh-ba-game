@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI Piano 36 Notes - Tháp Bóng Nổ Dây Chuyền Hoàn Chỉnh</title>
+<style>
+:root{--bg:#0b0c10;--panel:#1f2833;--cyan:#45f3ff;--pink:#ff007f;--green:#00ff66;--wk:linear-gradient(to bottom,#fff,#e6e6e6);--bk:linear-gradient(to bottom,#333,#000)}
+*{box-sizing:border-box;touch-action:manipulation;user-select:none}
+body{margin:0;padding:0;font-family:Segoe UI,sans-serif;background:var(--bg);color:#fff;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+
+.top-panel{height:14%;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;background:var(--panel);box-shadow:0 2px 10px rgba(0,0,0,0.5);z-index:10}
+.side-box{display:flex;align-items:center;gap:6px}
+.lib-select{background:#000;color:var(--cyan);border:1px solid #6b3fa0;padding:5px 8px;border-radius:4px;font-size:11px;font-weight:bold;text-align:center}
+.play-btn{background:var(--green);color:#000;padding:6px 14px;border-radius:4px;border:none;font-weight:bold;cursor:pointer;font-size:11px}
+.explore-btn{background:linear-gradient(135deg,#ff007f,#7928ca);color:#fff;padding:6px 12px;border-radius:4px;border:none;font-weight:bold;cursor:pointer;text-decoration:none;font-size:11px;display:inline-block}
+.title{font-weight:bold;color:var(--cyan);letter-spacing:1px;font-size:12px;text-align:center}
+
+.game-container{flex:1;position:relative;background:radial-gradient(circle at center,#111,#000);overflow:hidden;border-bottom:1px solid #222}
+.score-board{position:absolute;top:8px;right:15px;font-family:monospace;font-size:13px;color:var(--green);background:rgba(0,0,0,0.7);padding:3px 8px;border-radius:4px;border:1px solid var(--green);z-index:20}
+
+.bubble{position:absolute;width:26px;height:32px;border-radius:50% 50% 50% 50% / 40% 40% 60% 60%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:bold;box-shadow:inset -2px -2px 6px rgba(0,0,0,0.4), 0 0 6px rgba(255,255,255,0.2);transition:transform 0.15s, opacity 0.15s}
+.bubble.white{background:linear-gradient(135deg,#ffffff,#d0d0d0);color:#333}
+.bubble.red{background:linear-gradient(135deg,#ff4b4b,#c41e3a);color:#fff;box-shadow:inset -2px -2px 6px rgba(0,0,0,0.4), 0 0 12px var(--pink);animation:glow 0.8s infinite alternate}
+@keyframes glow{to{transform:scale(1.06)}}
+
+.piano-container{height:46%;position:relative;display:flex;background:#000;padding:0 2px;align-items:flex-start;touch-action:none;overflow:hidden}
+.key{position:relative;flex-shrink:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding-bottom:6px;font-weight:bold;cursor:pointer}
+.white-key{width:calc(100vw / 24);height:100%;background:var(--wk);z-index:1;border-radius:0 0 4px 4px;color:#222;font-size:9px;border:1px solid #999}
+.black-key{width:calc(100vw / 36);height:60%;background:var(--bk);margin-left:calc( -1 * 100vw / 72 );margin-right:calc( -1 * 100vw / 72 );z-index:2;border-radius:0 0 3px 3px;color:#fff;font-size:7px}
+.key.active{background:var(--cyan)!important;transform:translateY(2px);box-shadow:0 0 12px var(--cyan);color:#000!important}
+.sound-label{font-size:7px;opacity:.7;margin-top:2px;color:#ff007f}
+</style>
+</head>
+<body>
+
+<div class="top-panel">
+  <div class="side-box">
+    <div style="font-size:9px;color:#aaa">Bài:</div>
+    <select class="lib-select" id="libSelect" onchange="loadSong(this.value)">
+      <option value="">-- Chọn --</option>
+      <option value="a">a (50 Nốt)</option>
+      <option value="b">b (Demo)</option>
+    </select>
+  </div>
+  <div class="title">PIANO 36 NỐT - THÁP BÓNG HOÀN CHỈNH</div>
+  <div class="side-box">
+    <button class="play-btn" onclick="startBallGame()">▶ BẮT ĐẦU</button>
+    <a href="tuongzalo.html" class="explore-btn">🧭 KHÁM PHÁ</a>
+  </div>
+</div>
+
+<div class="game-container" id="gameContainer">
+  <div class="score-board">ĐIỂM: <span id="scoreVal">0</span></div>
+</div>
+
+<div class="piano-container" id="piano"></div>
+
+<script>
+var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+var notes = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+var piano = document.getElementById('piano');
+var keyElements = [];
+var sequenceNotes = [];
+
+var songLibrary = {
+  "a": `20 20 22 0 20 0 25 0 24 0 0 0
+20 20 22 0 20 0 27 0 25 0 0 0
+20 20 32 0 29 0 25 0 24 0 22 0 0 0
+30 30 29 0 25 0 27 0 25 0 0 0
+1 0 0 5 0 10 0 15 0 20 0 25
+2 0 0 6 0 11 0 16 0 21 0 26
+3 0 0 7 0 12 0 17 0 22 0 27
+4 0 0 8 0 13 0 18 0 23 0 28
+5 10 15 20 25 30 35 0 0 0 0 0
+12 14 16 18 20 22 24 26 28 30 32 34`,
+  "b": `1 5 10 15 20 25 30 35 2 6 11 16 21 26 31 36`
+};
+
+for(var i = 0; i < 36; i++){
+  var baseMidi = i + 60; 
+  var keyNoteName = notes[baseMidi % 12];
+  var isBlack = keyNoteName.includes('#');
+  var key = document.createElement('div');
+  key.className = 'key ' + (isBlack ? 'black-key' : 'white-key');
+  key.dataset.baseMidi = baseMidi;
+  key.dataset.index = i + 1;
+  key.innerHTML = '<div>' + keyNoteName + '</div><div class="sound-label">' + (i + 1) + '</div>';
+  
+  key.onmousedown = key.ontouchstart = (function(idx, midi, el){
+    return function(e){
+      e.preventDefault();
+      playNote(midi, el);
+      checkPlayerHit(idx);
+    };
+  })(i + 1, baseMidi, key);
+  
+  piano.appendChild(key);
+  keyElements.push(key);
+}
+
+function playNote(midiIndex, element){
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  var osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(440 * Math.pow(2, (midiIndex - 69) / 12), audioCtx.currentTime);
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.7, audioCtx.currentTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.8);
+  if(element){
+    element.classList.add('active');
+    setTimeout(() => element.classList.remove('active'), 120);
+  }
+}
+
+function loadSong(key){
+  if(!key || !songLibrary[key]) return;
+  var data = songLibrary[key];
+  var tokens = data.trim().split(/\s+/);
+  sequenceNotes = [];
+  tokens.forEach(t => {
+    var num = parseInt(t);
+    if(!isNaN(num)) sequenceNotes.push(num);
+  });
+  alert("Đã tải bài '" + key + "' gồm " + sequenceNotes.length + " nốt nhạc!");
+}
+
+var activeWaves = [];
+var gameInterval = null;
+var score = 0;
+const BUBBLE_HEIGHT = 30;
+
+function startBallGame(){
+  if(sequenceNotes.length === 0) return alert("Vui lòng chọn bài từ thư viện trước!");
+  
+  var gameContainer = document.getElementById('gameContainer');
+  gameContainer.querySelectorAll('.bubble').forEach(b => b.remove());
+  if(gameInterval) clearInterval(gameInterval);
+  
+  score = 0;
+  document.getElementById('scoreVal').innerText = score;
+  activeWaves = [];
+  
+  var noteIdx = 0;
+  gameInterval = setInterval(() => {
+    if(noteIdx >= sequenceNotes.length){
+      clearInterval(gameInterval);
+      return;
+    }
+    spawnSingleNoteWave(sequenceNotes[noteIdx]);
+    noteIdx++;
+  }, 900);
+}
+
+function spawnSingleNoteWave(targetNoteNum){
+  var gameContainer = document.getElementById('gameContainer');
+  var bubbles = [];
+  var hasRed = (targetNoteNum >= 1 && targetNoteNum <= 36);
+  
+  for(let i = 0; i < 36; i++){
+    var bubble = document.createElement('div');
+    var currentNoteNumber = i + 1;
+    var isTarget = (hasRed && currentNoteNumber === targetNoteNum);
+    
+    bubble.className = 'bubble ' + (isTarget ? 'red' : 'white');
+    bubble.innerText = isTarget ? notes[(i + 60) % 12] : '';
+    
+    var keyLeft = keyElements[i].offsetLeft + 2;
+    bubble.style.left = keyLeft + 'px';
+    bubble.style.bottom = '0px';
+    
+    gameContainer.appendChild(bubble);
+    bubbles.push({element: bubble, isTarget: isTarget, targetNote: currentNoteNumber});
+  }
+  
+  var wave = {
+    bubbles: bubbles,
+    posY: 0,
+    targetNoteNum: targetNoteNum,
+    hasRed: hasRed,
+    hit: false,
+    stopped: false,
+    stopY: 0,
+    startTime: Date.now()
+  };
+  
+  activeWaves.push(wave);
+  
+  var anim = setInterval(() => {
+    if(wave.hit || wave.stopped){
+      clearInterval(anim);
+      return;
+    }
+    
+    var maxHeight = gameContainer.clientHeight - 40;
+    var waveIdx = activeWaves.indexOf(wave);
+    
+    // 1. Kiểm tra nếu chạm trần màn hình -> tự động nổ búng ngay lập tức
+    if(wave.posY >= maxHeight){
+      wave.stopped = true;
+      wave.stopY = maxHeight;
+      wave.hit = true;
+      explosionEffect(wave);
+      cleanupWave(wave);
+      clearInterval(anim);
+      return;
+    }
+    
+    // 2. Xếp chồng khi gặp hàng trước đã dừng
+    if(waveIdx > 0){
+      var prevWave = activeWaves[waveIdx - 1];
+      if(prevWave.stopped){
+        var stackLimit = prevWave.stopY + BUBBLE_HEIGHT;
+        if(wave.posY >= stackLimit){
+          wave.stopped = true;
+          wave.stopY = stackLimit;
+          
+          // Nếu hàng không có bóng đỏ, tự động nổ luôn khi chạm hàng trên
+          if(!wave.hasRed){
+            wave.hit = true;
+            explosionEffect(wave);
+            cleanupWave(wave);
+          } else {
+            wave.bubbles.forEach(b => {
+              b.element.style.transform = 'scale(0.8)';
+              b.element.style.opacity = '0.3';
+              setTimeout(() => b.element.remove(), 200);
+            });
+          }
+          
+          clearInterval(anim);
+          return;
+        }
+      }
+    }
+    
+    wave.posY += 3;
+    wave.bubbles.forEach(b => {
+      b.element.style.bottom = wave.posY + 'px';
+    });
+  }, 25);
+}
+
+function checkPlayerHit(noteIndex){
+  var wave = activeWaves.find(w => !w.hit && w.hasRed);
+  if(!wave) return;
+  
+  if(noteIndex === wave.targetNoteNum){
+    wave.hit = true;
+    playNote(59 + noteIndex, keyElements[noteIndex - 1]);
+    
+    var elapsed = Date.now() - wave.startTime;
+    var pts = Math.max(1, 10 - Math.floor(elapsed / 150));
+    score += pts;
+    document.getElementById('scoreVal').innerText = score;
+    
+    // Nổ hàng được bấm
+    explosionEffect(wave);
+    cleanupWave(wave);
+    
+    // --- NỔ DÂY CHUYỀN XUỐNG CÁC HÀNG BÊN DƯỚI (KHÔNG TÍNH ĐIỂM, KHÔNG ÂM THANH) ---
+    let currentIndex = activeWaves.indexOf(wave);
+    let nextIndex = currentIndex + 1;
+    
+    while(nextIndex < activeWaves.length){
+      let nextWave = activeWaves[nextIndex];
+      if(!nextWave.hit && !nextWave.hasRed){
+        nextWave.hit = true;
+        explosionEffect(nextWave);
+        cleanupWave(nextWave);
+        nextIndex++;
+      } else {
+        break; // Dừng lại ngay khi gặp hàng có bóng đỏ tiếp theo
+      }
+    }
+  }
+}
+
+function explosionEffect(w){
+  w.bubbles.forEach(b => {
+    b.element.style.transform = 'scale(1.4)';
+    b.element.style.opacity = '0';
+    setTimeout(() => b.element.remove(), 200);
+  });
+}
+
+function cleanupWave(w){
+  setTimeout(() => {
+    var idx = activeWaves.indexOf(w);
+    if(idx > -1) activeWaves.splice(idx, 1);
+  }, 200);
+}
+</script>
+</body>
+</html>
