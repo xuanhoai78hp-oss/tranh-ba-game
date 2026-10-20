@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sói Hứng Trứng - Không Môn Đăng Hộ Đối</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #2b3e50, #1a252f);
+            color: #fff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 360px;
+            height: 640px;
+            background: #111;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            overflow: hidden;
+        }
+
+        /* Hình nền đồi núi mờ mờ phía xa */
+        .background-hills {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 20%, #4a6fa5 0%, #2c3e50 50%, #1a252f 100%);
+            z-index: 1;
+        }
+        .background-hills::after {
+            content: '';
+            position: absolute;
+            bottom: 150px;
+            left: -50px;
+            width: 500px;
+            height: 200px;
+            background: rgba(30, 40, 50, 0.6);
+            border-radius: 50% 50% 0 0;
+            box-shadow: 100px -20px 0 10px rgba(25, 35, 45, 0.5);
+            z-index: 1;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+        }
+
+        /* Bảng điều khiển 3 nút phía dưới */
+        #controls {
+            position: absolute;
+            bottom: 15px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .ctrl-btn {
+            width: 65px;
+            height: 65px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: white;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.1s, transform 0.1s;
+            backdrop-filter: blur(4px);
+        }
+
+        .ctrl-btn:active, .ctrl-btn.active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.92);
+        }
+
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #start-btn {
+            padding: 12px 30px;
+            font-size: 18px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+            transition: 0.2s;
+        }
+        #start-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div class="background-hills"></div>
+        <canvas id="gameCanvas" width="360" height="640"></canvas>
+
+        <!-- 3 Nút điều khiển: Mũi tên trái, Tổ chim (giữa), Mũi tên phải -->
+        <div id="controls">
+            <div class="ctrl-btn" id="btn-left">◀</div>
+            <div class="ctrl-btn" id="btn-center">🪺</div>
+            <div class="ctrl-btn" id="btn-right">▶</div>
+        </div>
+
+        <div id="start-screen">
+            <h2>SÓI HỨNG TRỨNG</h2>
+            <p style="font-size: 14px; color: #ccc; margin-bottom: 20px; max-width: 280px;">
+                Thể loại: Không môn đăng hộ đối<br>Trứng rơi theo tempo, hứng trúng có tiếng "bịch" & rung giỏ!
+            </p>
+            <button id="start-btn">BẮT ĐẦU CHƠI</button>
+        </div>
+    </div>
+
+    <audio id="bgm" src="khongmondanghodoi.mp3" preload="auto"></audio>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const bgm = document.getElementById('bgm');
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+
+        // Dữ liệu bài hát mẫu với định dạng khoảng thời gian (start;end) và Tempo chia trứng
+        // Tempo mặc định: cứ mỗi 400ms trong khoảng thời gian dài sẽ sinh ra 1 quả trứng rơi
+        const rawSongData = `
+            t18556;20921 t21223;22829 t23106;24644
+            m25824;26472 m26754;27362 t29463;30539
+            v31697;31921 t32205;32436 v32646;32870
+            t42205;42395 v42687;42838 t43156;43304
+            v53155;53286 v54079;54203 v54980;55103
+        `;
+
+        let notes = [];
+        const tempoInterval = 450; // Khoảng cách thời gian (ms) giữa các quả trứng khi nốt kéo dài
+        const fallDuration = 1500; // Thời gian trứng từ cành cây rơi xuống giỏ (ms)
+
+        // Phân tích dữ liệu chuỗi thành danh sách các quả trứng dựa theo tempo
+        function parseSongData(dataStr) {
+            let parsedNotes = [];
+            let tokens = dataStr.trim().split(/\s+/);
+            
+            tokens.forEach(token => {
+                if(!token) return;
+                let type = token[0]; // m, v, t tương ứng 3 cột trái, giữa, phải
+                let parts = token.substring(1).split(';');
+                let startTime = parseInt(parts[0]);
+                let endTime = parts.length > 1 ? parseInt(parts[1]) : startTime + 200;
+
+                let col = (type === 'm') ? 0 : (type === 'v') ? 1 : 2;
+
+                // Chia nốt dài thành các quả trứng dựa vào tempo
+                let t = startTime;
+                while (t <= endTime) {
+                    parsedNotes.push({
+                        hitTime: t,
+                        col: col,
+                        hit: false
+                    });
+                    t += tempoInterval;
+                }
+            });
+            return parsedNotes;
+        }
+
+        notes = parseSongData(rawSongData);
+
+        // Vị trí 3 cột của giỏ (Trái, Giữa, Phải)
+        const columns = [90, 180, 270];
+        let wolfLane = 1; // 0: Trái, 1: Giữa, 2: Phải
+        let score = 0;
+        let activeRumble = 0; // Hiệu ứng rung giỏ khi hứng trứng
+
+        // Xử lý nút bấm điều khiển
+        const btnLeft = document.getElementById('btn-left');
+        const btnCenter = document.getElementById('btn-center');
+        const btnRight = document.getElementById('btn-right');
+
+        btnLeft.addEventListener('touchstart', () => { wolfLane = 0; highlightBtn(btnLeft); });
+        btnLeft.addEventListener('mousedown', () => { wolfLane = 0; highlightBtn(btnLeft); });
+        
+        btnCenter.addEventListener('touchstart', () => { wolfLane = 1; highlightBtn(btnCenter); });
+        btnCenter.addEventListener('mousedown', () => { wolfLane = 1; highlightBtn(btnCenter); });
+        
+        btnRight.addEventListener('touchstart', () => { wolfLane = 2; highlightBtn(btnRight); });
+        btnRight.addEventListener('mousedown', () => { wolfLane = 2; highlightBtn(btnRight); });
+
+        function highlightBtn(btn) {
+            btn.classList.add('active');
+            setTimeout(() => btn.classList.remove('active'), 150);
+        }
+
+        // Tạo âm thanh "bịch" giả lập bằng Web Audio API khi trứng vào giỏ
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playThudSound() {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.1);
+            
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        startBtn.addEventListener('click', () => {
+            startScreen.style.display = 'none';
+            bgm.currentTime = 0;
+            bgm.play();
+            requestAnimationFrame(gameLoop);
+        });
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let currentTime = bgm.currentTime * 1000; // Đổi ra mili-giây
+
+            // Vẽ cành cây phía trên
+            ctx.strokeStyle = '#5a3d28';
+            ctx.lineWidth = 12;
+            ctx.beginPath();
+            ctx.moveTo(0, 80);
+            ctx.lineTo(360, 80);
+            ctx.stroke();
+
+            // Vẽ 3 chú chim non đang đậu trên cành nhìn xuống
+            drawBirdsOnBranch();
+
+            // Cập nhật và vẽ các quả trứng rơi
+            notes.forEach(note => {
+                let spawnTime = note.hitTime - fallDuration;
+                if (currentTime >= spawnTime && currentTime <= note.hitTime + 200) {
+                    let progress = (currentTime - spawnTime) / fallDuration;
+                    let x = columns[note.col];
+                    let y = 80 + progress * 420; // Rơi từ cành cây xuống gần giỏ (y ~ 500)
+
+                    // Kiểm tra khi trứng rơi trúng giỏ
+                    if (!note.hit && Math.abs(currentTime - note.hitTime) < 80) {
+                        if (note.col === wolfLane) {
+                            note.hit = true;
+                            score += 10;
+                            playThudSound(); // Phát âm thanh bịch
+                            activeRumble = 10; // Kích hoạt khung giỏ rung lên
+                        }
+                    }
+
+                    // Vẽ quả trứng ngộ nghĩnh
+                    if (!note.hit) {
+                        ctx.fillStyle = '#f1c40f';
+                        ctx.beginPath();
+                        ctx.ellipse(x, y, 10, 14, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.strokeStyle = '#d4ac0d';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                }
+            });
+
+            // Hiệu ứng rung giỏ
+            let rumbleOffsetX = 0;
+            let rumbleOffsetY = 0;
+            if (activeRumble > 0) {
+                rumbleOffsetX = (Math.random() - 0.5) * 6;
+                rumbleOffsetY = (Math.random() - 0.5) * 6;
+                activeRumble--;
+            }
+
+            // Vẽ chú sói "Hãy đợi đấy!" ở phía dưới ngước nhìn lên & đuôi ve vẩy
+            drawWolf(columns[wolfLane] + rumbleOffsetX, 500 + rumbleOffsetY, currentTime);
+
+            // Hiển thị điểm số
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText(`Điểm: ${score}`, 20, 35);
+
+            if (!bgm.ended) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Hàm vẽ chú sói đang cầm giỏ và đuôi ve vẩy theo thời gian
+        function drawWolf(basketX, basketY, time) {
+            let wolfCenterX = basketX;
+            let wolfCenterY = basketY + 30;
+
+            // Thân sói mặc áo sơ mi vàng/đỏ đặc trưng
+            ctx.fillStyle = '#e67e22';
+            ctx.beginPath();
+            ctx.arc(wolfCenterX, wolfCenterY + 20, 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Đuôi sói ve vẩy (dùng hàm sin theo thời gian)
+            let tailAngle = Math.sin(time / 150) * 0.4;
+            ctx.save();
+            ctx.translate(wolfCenterX - 20, wolfCenterY + 30);
+            ctx.rotate(tailAngle);
+            ctx.strokeStyle = '#d35400';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(-20, -10, -30, -25);
+            ctx.stroke();
+            ctx.restore();
+
+            // Đầu sói ngước mặt lên trên nhìn trứng
+            ctx.fillStyle = '#bdc3c7';
+            ctx.beginPath();
+            ctx.arc(wolfCenterX, wolfCenterY - 15, 22, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Mõm dài đặc trưng của sói
+            ctx.beginPath();
+            ctx.moveTo(wolfCenterX - 10, wolfCenterY - 10);
+            ctx.lineTo(wolfCenterX + 12, wolfCenterY - 15);
+            ctx.lineTo(wolfCenterX - 5, wolfCenterY - 25);
+            ctx.fill();
+
+            // Mắt sói hướng lên trên
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(wolfCenterX + 2, wolfCenterY - 20, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Tay cầm chiếc tổ chim (giỏ hứng) đưa lên cao
+            ctx.strokeStyle = '#8e44ad';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(wolfCenterX - 15, wolfCenterY);
+            ctx.lineTo(basketX - 20, basketY);
+            ctx.moveTo(wolfCenterX + 15, wolfCenterY);
+            ctx.lineTo(basketX + 20, basketY);
+            ctx.stroke();
+
+            // Vẽ chiếc giỏ / tổ chim hình bầu dục để hứng trứng
+            ctx.fillStyle = '#795548';
+            ctx.beginPath();
+            ctx.ellipse(basketX, basketY, 32, 16, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#5d4037';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        // Vẽ 3 chú chim non trên cành cây
+        function drawBirdsOnBranch() {
+            columns.forEach(cx => {
+                // Thân chim
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.arc(cx, 68, 10, 0, Math.PI * 2);
+                ctx.fill();
+                // Mỏ chim
+                ctx.fillStyle = '#f1c40f';
+                ctx.beginPath();
+                ctx.moveTo(cx + 8, 68);
+                ctx.lineTo(cx + 16, 66);
+                ctx.lineTo(cx + 8, 70);
+                ctx.fill();
+            });
+        }
+    </script>
+</body>
+</html>
