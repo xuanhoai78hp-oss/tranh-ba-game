@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Sói Hứng Trứng - Chế Độ Ghi Nốt</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+        html,body{height:100%;overflow:hidden;background:#111;color:#fff;font-family:Arial;touch-action:none}
+        #app{display:flex;flex-direction:column;height:100dvh}
+        #top{height:9%;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#1a1a1a;border-bottom:2px solid #444;gap:8px;z-index:10}
+        #title{color:gold;font-weight:bold;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:15px}
+        .tb{background:#444;padding:10px 14px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:18px;min-width:44px;text-align:center}
+        .tb:active{background:#666;filter:brightness(1.2)}
+        
+        #stage{flex:1;position:relative;background:linear-gradient(to bottom, #2b3e50, #1a252f);overflow:hidden;border-left:2px solid gold;border-right:2px solid gold;min-height:0}
+        .hills-bg {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 45%;
+            background: rgba(20, 30, 40, 0.5);
+            border-radius: 50% 50% 0 0 / 30% 30% 0 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #cv{width:100%;height:100%;display:block;position:relative;z-index:2}
+        #hud{position:absolute;top:8px;left:0;right:0;display:flex;justify-content:space-between;padding:0 12px;pointer-events:none;font-weight:bold;z-index:4}
+        #mode-tag{color:#00ffcc;font-size:14px;text-shadow:0 0 8px #00ffcc}
+        
+        #cd{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:15;font-size:100px;font-weight:bold;color:gold;text-shadow:0 0 30px gold}
+        
+        /* Bảng hiển thị khung nhập liệu kết quả ghi nốt */
+        #sum{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.96);border:2px solid gold;border-radius:12px;padding:20px;z-index:18;display:none;text-align:center;min-width:320px;max-width:92%}
+        #sum h2{color:gold;margin-bottom:10px;font-size:18px}
+        #output-code{width:100%;height:130px;background:#111;color:#0f0;border:1px solid #555;border-radius:6px;padding:8px;font-family:monospace;font-size:13px;resize:none;margin-bottom:12px;user-select:text;-webkit-user-select:text}
+        #sum .btns{display:flex;gap:8px}
+        #sum button{flex:1;padding:10px;background:gold;color:#000;border:none;border-radius:6px;font-weight:bold;cursor:pointer}
+        #sum button.sec{background:#444;color:#fff}
+        
+        /* 3 Nút điều khiển dưới đáy */
+        #pad{height:25%;display:flex;border-top:2px solid #333;padding:8px;gap:8px;background:#0a0a0a;z-index:10}
+        .btn{flex:1;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:bold;border:3px solid rgba(255,255,255,0.3);border-radius:12px;background:#1a1a1a;color:#fff;cursor:pointer;transition:transform .05s,background .1s,box-shadow .1s}
+        .btn:active, .btn.on{transform:scale(0.95);background:#333;box-shadow:0 0 20px gold}
+        
+        #pop{display:none;position:absolute;top:8%;left:8%;width:84%;max-height:74%;background:rgba(0,0,0,.97);border:2px solid gold;border-radius:12px;z-index:20;flex-direction:column;padding:16px}
+        #pop h3{color:gold;text-align:center;margin-bottom:12px;font-size:16px}
+        #list{overflow-y:auto;max-height:320px}
+        .item{padding:14px;margin:6px 0;background:#222;border:1px solid #555;border-radius:6px;display:flex;justify-content:space-between;cursor:pointer;font-size:14px}
+        .item:active{background:#444}
+        #pop #close{margin-top:12px;padding:12px;background:gold;color:#000;font-weight:bold;border:none;border-radius:6px;cursor:pointer;font-size:14px}
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="top">
+            <div class="tb" id="openLib">🎵</div>
+            <div id="title">— Chọn nhạc để ghi nốt —</div>
+            <div class="tb" id="explore">🔍</div>
+        </div>
+        <div id="stage">
+            <div class="hills-bg"></div>
+            <canvas id="cv"></canvas>
+            <div id="hud"><div id="mode-tag">CHẾ ĐỘ: GHI NỐT (RECORDER)</div></div>
+            <div id="cd"></div>
+            
+            <!-- Bảng kết quả xuất chuỗi ký hiệu sau khi ghi xong -->
+            <div id="sum">
+                <h2>📝 KẾT QUẢ GHI NỐT</h2>
+                <textarea id="output-code" readonly placeholder="Chuỗi ký hiệu sẽ hiển thị ở đây..."></textarea>
+                <div class="btns">
+                    <button class="sec" id="copy-btn">📋 Sao chép</button>
+                    <button id="cls">Tiếp tục ghi</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3 nút điều khiển: Mũi tên trái, Tổ chim (giữa), Mũi tên phải -->
+        <div id="pad">
+            <button class="btn" id="b-left" data-col="0">◀</button>
+            <button class="btn" id="b-center" data-col="1">🪺</button>
+            <button class="btn" id="b-right" data-col="2">▶</button>
+        </div>
+    </div>
+    
+    <div id="pop"><h3>🎵 CHỌN NHẠC NỀN (.mp3/.m4a)</h3><div id="list"></div><button id="close">Đóng</button></div>
+    <audio id="music" preload="auto" style="display:none"></audio>
+
+    <script>
+        const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/xuanhoai78hp-oss/tranh-ba-game/refs/heads/main/";
+        const FALL_SEC = 2.5; // Độ trễ thời gian trứng rơi từ cành cây xuống giỏ (tính bằng giây)
+        const CD_SEC = 3;
+        
+        const music = document.getElementById('music');
+        let musicReady = false;
+        let curFile = null;
+        let phase = 'idle';
+        let wolfLane = 1; // 0: Trái, 1: Giữa, 2: Phải
+        let recordedNotes = []; // Danh sách các nốt ghi lại
+        let activePresses = {}; // Theo dõi các phím đang giữ để tạo start;end
+
+        document.addEventListener('pointerdown', function unlockAudio() {
+            if (music && music.paused) {
+                music.play().then(() => { music.pause(); music.currentTime = 0; }).catch(() => {});
+            }
+            document.removeEventListener('pointerdown', unlockAudio);
+        }, { once: true });
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playThud() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(130, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.12);
+        }
+
+        async function loadSong(file) {
+            try {
+                music.pause();
+                music.currentTime = 0;
+                music.removeAttribute('src');
+                musicReady = false;
+
+                const base = file.replace(/\.(txt|mp3|m4a)$/i, '');
+                const tryLoad = (src) => new Promise(res => {
+                    music.src = src;
+                    music.load();
+                    const onOk = () => { music.removeEventListener('error', onErr); musicReady = true; res(true); };
+                    const onErr = () => { music.removeEventListener('canplaythrough', onOk); res(false); };
+                    music.addEventListener('canplaythrough', onOk, { once: true });
+                    music.addEventListener('error', onErr, { once: true });
+                    setTimeout(() => res(musicReady), 2000);
+                });
+
+                let okM = await tryLoad(GITHUB_RAW_BASE + base + '.mp3');
+                if (!okM) await tryLoad(GITHUB_RAW_BASE + base + '.m4a');
+
+                document.getElementById('title').textContent = "Đang ghi: " + base;
+                curFile = file;
+                recordedNotes = [];
+                countdown();
+                document.getElementById('pop').style.display = 'none';
+            } catch (e) {
+                alert('Không thể load file nhạc: ' + e.message);
+            }
+        }
+
+        function countdown() {
+            const el = document.getElementById('cd');
+            el.style.display = 'flex';
+            let s = CD_SEC;
+            el.textContent = s;
+            const timer = setInterval(() => {
+                s--;
+                if (s > 0) el.textContent = s;
+                else {
+                    el.textContent = 'GO!';
+                    clearInterval(timer);
+                    setTimeout(() => { el.style.display = 'none'; startRecording(); }, 500);
+                }
+            }, 700);
+        }
+
+        function startRecording() {
+            phase = 'recording';
+            recordedNotes = [];
+            activePresses = {};
+            if (music) {
+                music.currentTime = 0;
+                music.play().catch(err => console.log(err));
+            }
+        }
+
+        function elapsedMs() {
+            if (musicReady && !music.paused) return music.currentTime * 1000;
+            return 0;
+        }
+
+        // Xử lý sự kiện bấm / giữ nút để ghi nhận thời điểm bắt đầu và kết thúc
+        function handlePressStart(col, keyId) {
+            if (phase !== 'recording') return;
+            wolfLane = col;
+            playThud();
+            
+            // Bù độ trễ thời gian trứng rơi (cộng thêm FALL_SEC để khi chơi lại, trứng rơi đúng lúc nhạc cất lên)
+            let currentMs = Math.round(elapsedMs() + FALL_SEC * 1000);
+            activePresses[keyId] = { col: col, start: currentMs };
+        }
+
+        function handlePressEnd(keyId) {
+            if (phase !== 'recording' || !activePresses[keyId]) return;
+            let pressObj = activePresses[keyId];
+            let currentMs = Math.round(elapsedMs() + FALL_SEC * 1000);
+            
+            let startT = pressObj.start;
+            let endT = Math.max(currentMs, startT + 100); // Đảm bảo thời gian kết thúc lớn hơn bắt đầu ít nhất 100ms
+            
+            let typeCode = (pressObj.col === 0) ? 'm' : (pressObj.col === 1) ? 'v' : 't';
+            recordedNotes.push({
+                type: typeCode,
+                start: startT,
+                end: endT
+            });
+
+            delete activePresses[keyId];
+        }
+
+        // Lắng nghe sự kiện cảm ứng (Mobile / Chuột)
+        document.querySelectorAll('.btn').forEach(btn => {
+            let col = parseInt(btn.getAttribute('data-col'));
+            let btnId = btn.id;
+
+            btn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                btn.classList.add('on');
+                handlePressStart(col, btnId);
+            });
+            btn.addEventListener('pointerup', (e) => {
+                e.preventDefault();
+                btn.classList.remove('on');
+                handlePressEnd(btnId);
+            });
+            btn.addEventListener('pointercancel', (e) => {
+                btn.classList.remove('on');
+                handlePressEnd(btnId);
+            });
+        });
+
+        // Hỗ trợ phím bàn phím (Mũi tên Trái, Xuống/Cách, Mũi tên Phải)
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'TEXTAREA') return;
+            if (e.key === 'ArrowLeft') { document.getElementById('b-left').classList.add('on'); handlePressStart(0, 'key_left'); }
+            if (e.key === 'ArrowDown' || e.key === ' ') { document.getElementById('b-center').classList.add('on'); handlePressStart(1, 'key_center'); }
+            if (e.key === 'ArrowRight') { document.getElementById('b-right').classList.add('on'); handlePressStart(2, 'key_right'); }
+        });
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') { document.getElementById('b-left').classList.remove('on'); handlePressEnd('key_left'); }
+            if (e.key === 'ArrowDown' || e.key === ' ') { document.getElementById('b-center').classList.remove('on'); handlePressEnd('key_center'); }
+            if (e.key === 'ArrowRight') { document.getElementById('b-right').classList.remove('on'); handlePressEnd('key_right'); }
+        });
+
+        const cv = document.getElementById('cv');
+        const ctx = cv.getContext('2d');
+
+        function resize() {
+            cv.width = cv.parentElement.clientWidth * window.devicePixelRatio;
+            cv.height = cv.parentElement.clientHeight * window.devicePixelRatio;
+            cv.logicalW = cv.parentElement.clientWidth;
+            cv.logicalH = cv.parentElement.clientHeight;
+            ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        function loop() {
+            const W = cv.logicalW, H = cv.logicalH;
+            ctx.clearRect(0, 0, W, H);
+
+            // Cành cây phía trên
+            ctx.strokeStyle = '#5a3d28';
+            ctx.lineWidth = 14;
+            ctx.beginPath();
+            ctx.moveTo(0, 75);
+            ctx.lineTo(W, 75);
+            ctx.stroke();
+
+            const colW = W / 3;
+            const columns = [colW * 0.5, colW * 1.5, colW * 2.5];
+
+            // Vẽ 3 chú chim non trên cành
+            columns.forEach(cx => {
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath(); ctx.arc(cx, 62, 14, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(cx + 6, 48, 9, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#000';
+                ctx.beginPath(); ctx.arc(cx + 8, 46, 2, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#f1c40f';
+                ctx.beginPath();
+                ctx.moveTo(cx + 14, 48); ctx.lineTo(cx + 22, 45); ctx.lineTo(cx + 14, 52);
+                ctx.fill();
+            });
+
+            if (phase === 'recording') {
+                let ms = elapsedMs();
+                // Tự động dừng khi nhạc kết thúc
+                if (music.ended) {
+                    stopRecording();
+                }
+            }
+
+            // Vẽ chú sói ở vị trí đang chọn
+            drawWolf(columns[wolfLane], H * 0.7, performance.now());
+
+            requestAnimationFrame(loop);
+        }
+
+        function drawWolf(basketX, basketY, time) {
+            let wx = basketX;
+            let wy = basketY - 15;
+
+            ctx.fillStyle = '#e67e22';
+            ctx.beginPath(); ctx.arc(wx, wy + 28, 28, 0, Math.PI * 2); ctx.fill();
+
+            let tailAngle = Math.sin(time / 120) * 0.5;
+            ctx.save();
+            ctx.translate(wx - 18, wy + 32);
+            ctx.rotate(tailAngle);
+            ctx.strokeStyle = '#d35400';
+            ctx.lineWidth = 7;
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-18, -10, -30, -22); ctx.stroke();
+            ctx.restore();
+
+            ctx.fillStyle = '#bdc3c7';
+            ctx.beginPath(); ctx.arc(wx, wy - 8, 21, 0, Math.PI * 2); ctx.fill();
+
+            // Tai tam giác
+            ctx.beginPath();
+            ctx.moveTo(wx - 16, wy - 22); ctx.lineTo(wx - 24, wy - 38); ctx.lineTo(wx - 8, wy - 26);
+            ctx.moveTo(wx + 16, wy - 22); ctx.lineTo(wx + 24, wy - 38); ctx.lineTo(wx + 8, wy - 26);
+            ctx.fillStyle = '#95a5a6';
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(wx - 8, wy - 4); ctx.lineTo(wx + 12, wy - 12); ctx.lineTo(wx - 4, wy - 18);
+            ctx.fill();
+
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); 
+            ctx.arc(wx - 3, wy - 15, 2.5, 0, Math.PI * 2);
+            ctx.arc(wx + 5, wy - 15, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#795548';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(wx - 14, wy); ctx.lineTo(basketX - 18, basketY);
+            ctx.moveTo(wx + 14, wy); ctx.lineTo(basketX + 18, basketY);
+            ctx.stroke();
+
+            ctx.fillStyle = '#6d4c41';
+            ctx.beginPath();
+            ctx.ellipse(basketX, basketY, 30, 15, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#4e342e';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function stopRecording() {
+            if (phase !== 'recording') return;
+            phase = 'done';
+            if (!music.paused) music.pause();
+
+            // Sắp xếp các nốt theo thứ tự thời gian bắt đầu
+            recordedNotes.sort((a, b) => a.start - b.start);
+
+            // Định dạng thành chuỗi ký hiệu yêu cầu: t18556;20921 v20500;24644 ...
+            let resultString = recordedNotes.map(n => `${n.type}${n.start};${n.end}`).join(' ');
+
+            document.getElementById('output-code').value = resultString;
+            document.getElementById('sum').style.display = 'block';
+        }
+
+        // Nút sao chép nội dung ô nhập liệu
+        document.getElementById('copy-btn').onclick = () => {
+            const textarea = document.getElementById('output-code');
+            textarea.select();
+            document.execCommand('copy');
+            alert('Đã sao chép chuỗi ký hiệu vào bộ nhớ tạm!');
+        };
+
+        document.getElementById('cls').onclick = () => {
+            document.getElementById('sum').style.display = 'none';
+            countdown();
+        };
+
+        document.getElementById('explore').onclick = () => { location.href = 'tuongzalo.html'; };
+        document.getElementById('openLib').onclick = () => {
+            const p = document.getElementById('pop');
+            p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
+        };
+        document.getElementById('close').onclick = () => document.getElementById('pop').style.display = 'none';
+
+        // Tạo sẵn danh sách 20 bài hát để load nhạc mp3 tương ứng
+        const TOTAL_SONGS = 20;
+        const songList = Array.from({ length: TOTAL_SONGS }, (_, i) => ({ file: `${i+1}.mp3`, label: `Bài số ${i+1}` }));
+
+        function renderSongList() {
+            const el = document.getElementById('list');
+            el.innerHTML = '';
+            for (const s of songList) {
+                const d = document.createElement('div');
+                d.className = 'item';
+                d.innerHTML = `<span>🎵 ${s.label}</span>`;
+                d.onclick = () => loadSong(s.file);
+                el.appendChild(d);
+            }
+        }
+
+        renderSongList();
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
