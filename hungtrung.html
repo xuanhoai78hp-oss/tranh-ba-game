@@ -9,14 +9,13 @@
         *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
         html,body{height:100%;overflow:hidden;background:#111;color:#fff;font-family:Arial;touch-action:none}
         #app{display:flex;flex-direction:column;height:100dvh}
-        #top{height:9%;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#1a1a1a;border-bottom:2px solid #444;gap:8px;z-index:10}
+        #top{height:10%;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#1a1a1a;border-bottom:2px solid #444;gap:12px;z-index:10}
         #title{color:gold;font-weight:bold;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:15px}
-        .tb{background:#444;padding:12px 18px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:22px;min-width:52px;text-align:center}
-        .tb:active{background:#666;filter:brightness(1.2)}
+        /* Kéo dài nút Thư viện và Khám phá cho to rõ hơn */
+        .tb{background:#333;padding:10px 24px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:15px;text-align:center;border:1px solid gold;color:gold;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 0 8px rgba(255,215,0,0.3)}
+        .tb:active{background:#555;filter:brightness(1.2)}
         
         #stage{flex:1;position:relative;background:linear-gradient(to bottom, #2b3e50, #1a252f);overflow:hidden;border-left:2px solid gold;border-right:2px solid gold;min-height:0}
-        
-        /* Hiệu ứng đồi núi mờ ảo phía xa */
         .hills-bg {
             position: absolute;
             bottom: 0; left: 0; width: 100%; height: 50%;
@@ -25,7 +24,6 @@
             pointer-events: none;
             z-index: 1;
         }
-
         #cv{width:100%;height:100%;display:block;position:relative;z-index:2}
         #hud{position:absolute;top:8px;left:0;right:0;display:flex;justify-content:space-between;padding:0 12px;pointer-events:none;font-weight:bold;z-index:4}
         #score{color:gold;font-size:24px;text-shadow:0 0 10px gold}
@@ -46,7 +44,7 @@
         
         /* 3 Nút điều khiển dưới đáy */
         #pad{height:25%;display:flex;border-top:2px solid #333;padding:8px;gap:8px;background:#0a0a0a;z-index:10}
-        .btn{flex:1;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:bold;border:3px solid rgba(255,255,255,0.3);border-radius:12px;background:#1a1a1a;color:#fff;cursor:pointer;transition:transform .05s,background .1s,box-shadow .1s}
+        .btn{flex:1;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;border:3px solid rgba(255,255,255,0.3);border-radius:12px;background:#1a1a1a;color:#fff;cursor:pointer;transition:transform .05s,background .1s,box-shadow .1s}
         .btn:active, .btn.on{transform:scale(0.95);background:#333;box-shadow:0 0 20px gold}
         
         #pop{display:none;position:absolute;top:8%;left:8%;width:84%;max-height:74%;background:rgba(0,0,0,.97);border:2px solid gold;border-radius:12px;z-index:20;flex-direction:column;padding:16px}
@@ -61,9 +59,9 @@
 <body>
     <div id="app">
         <div id="top">
-            <div class="tb" id="openLib">📚</div>
+            <div class="tb" id="openLib">📚 Thư viện</div>
             <div id="title">— Chọn bài hát —</div>
-            <div class="tb" id="explore">🔍</div>
+            <div class="tb" id="explore">🔍 Khám phá</div>
         </div>
         <div id="stage">
             <div class="hills-bg"></div>
@@ -85,20 +83,19 @@
         </div>
         <!-- 3 nút điều khiển dưới đáy -->
         <div id="pad">
-            <button class="btn" id="b-left">◀</button>
-            <button class="btn" id="b-center">🪺</button>
-            <button class="btn" id="b-right">▶</button>
+            <button class="btn" id="b-left">◀ Trái</button>
+            <button class="btn" id="b-center">🪺 Giữa</button>
+            <button class="btn" id="b-right">▶ Phải</button>
         </div>
     </div>
     
     <div id="pop"><h3>📚 THƯ VIỆN BÀI HÁT</h3><div id="list"></div><button id="close">Đóng</button></div>
     <audio id="music" preload="auto" style="display:none"></audio>
-
     <script>
         const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/xuanhoai78hp-oss/tranh-ba-game/refs/heads/main/";
-        const FALL_SEC = 2.5; 
+        const FALL_SEC = 2.5;
         const CD_SEC = 3;
-        const KEY = 'soi_hung_trung_v2';
+        const KEY = 'soi_hung_trung_v3';
         
         let scores = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {} } catch { return {} } })();
         const saveScores = () => { try { localStorage.setItem(KEY, JSON.stringify(scores)) } catch {} };
@@ -110,8 +107,13 @@
         let phase = 'idle';
         let score = 0, combo = 0, maxCombo = 0, hitCount = 0, missCount = 0;
         let wolfLane = 1; // 0: Trái, 1: Giữa, 2: Phải
-        let activeRumble = 0; 
-        let brokenEggs = []; // Danh sách các trứng vỡ dưới đất khi miss
+        let activeRumble = 0;
+        let brokenEggs = []; 
+        let sparkles = []; // Mảng chứa hiệu ứng pháo hoa/tóe lửa khi hứng trứng
+
+        // Trạng thái giữ nút của từng lane (0, 1, 2)
+        const lanePressed = [false, false, false];
+        const lanePressTimer = [null, null, null]; // Tự động hạ giỏ sau một khoảng thời gian nếu người chơi giữ quá lâu
 
         document.addEventListener('pointerdown', function unlockAudio() {
             if (music && music.paused) {
@@ -122,7 +124,6 @@
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        // Âm thanh "bịch" trầm khi hứng trúng trứng
         function playThud() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             let osc = audioCtx.createOscillator();
@@ -138,7 +139,6 @@
             osc.stop(audioCtx.currentTime + 0.12);
         }
 
-        // Âm thanh ly bể / trứng vỡ khi rớt xuống đất
         function playGlassBreak() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             let osc = audioCtx.createOscillator();
@@ -158,8 +158,7 @@
             const lines = text.split(/\r?\n/);
             const title = (lines[0] || '').trim();
             const arr = [];
-            const tempoInterval = 400; 
-
+            const tempoInterval = 400;
             for (let i = 1; i < lines.length; i++) {
                 const toks = lines[i].trim().split(/\s+/).filter(Boolean);
                 for (const tok of toks) {
@@ -169,9 +168,7 @@
                     let s = parseInt(m[2]);
                     let e = m[3] ? parseInt(m[3]) : s + 200;
                     if (e <= s) e = s + 200;
-
                     let col = (type === 'm') ? 0 : (type === 'v') ? 1 : 2;
-
                     let tTime = s;
                     while (tTime <= e) {
                         arr.push({
@@ -194,12 +191,10 @@
                 const text = await r.text();
                 const parsed = parseSong(text);
                 if (parsed.notes.length === 0) throw new Error('File không có nốt nhạc');
-
                 music.pause();
                 music.currentTime = 0;
                 music.removeAttribute('src');
                 musicReady = false;
-
                 const base = file.replace(/\.txt$/i, '');
                 const tryLoad = (src) => new Promise(res => {
                     music.src = src;
@@ -210,15 +205,13 @@
                     music.addEventListener('error', onErr, { once: true });
                     setTimeout(() => res(musicReady), 2000);
                 });
-
                 let okM = await tryLoad(GITHUB_RAW_BASE + base + '.m4a');
                 if (!okM) await tryLoad(GITHUB_RAW_BASE + base + '.mp3');
-
                 document.getElementById('title').textContent = parsed.title;
                 curFile = file;
                 notes = parsed.notes;
                 brokenEggs = [];
-
+                sparkles = [];
                 score = 0; combo = 0; maxCombo = 0; hitCount = 0; missCount = 0;
                 uiScore(); uiBest(); countdown();
                 document.getElementById('pop').style.display = 'none';
@@ -250,6 +243,7 @@
             phase = 'play';
             for (const n of notes) n.state = 'wait';
             brokenEggs = [];
+            sparkles = [];
             if (music) {
                 music.currentTime = 0;
                 music.play().catch(err => console.log(err));
@@ -261,19 +255,37 @@
             return 0;
         }
 
-        function setLane(lane) {
+        // Logic nhấn nút: Sói giơ tổ lên (lanePressed = true). Sau 250ms tự hạ xuống nếu không nhấn tiếp (đảm bảo phải nhịp liên tục)
+        function pressLane(lane) {
             wolfLane = lane;
+            lanePressed[lane] = true;
+            
+            // Cập nhật giao diện nút sáng lên
+            document.querySelectorAll('.btn').forEach((b, idx) => {
+                if (idx === lane) b.classList.add('on');
+                else b.classList.remove('on');
+            });
+
             checkHit();
+
+            // Clear timer cũ nếu có
+            if (lanePressTimer[lane]) clearTimeout(lanePressTimer[lane]);
+            
+            // Sau 250ms tổ chim sẽ tự hạ xuống, đòi hỏi người chơi phải nhấp/nhấn liên tục theo nhịp
+            lanePressTimer[lane] = setTimeout(() => {
+                lanePressed[lane] = false;
+                document.getElementById(['b-left', 'b-center', 'b-right'][lane]).classList.remove('on');
+            }, 250);
         }
 
-        document.getElementById('b-left').onclick = () => setLane(0);
-        document.getElementById('b-center').onclick = () => setLane(1);
-        document.getElementById('b-right').onclick = () => setLane(2);
+        document.getElementById('b-left').onclick = () => pressLane(0);
+        document.getElementById('b-center').onclick = () => pressLane(1);
+        document.getElementById('b-right').onclick = () => pressLane(2);
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft') setLane(0);
-            if (e.key === 'ArrowDown' || e.key === ' ') setLane(1);
-            if (e.key === 'ArrowRight') setLane(2);
+            if (e.key === 'ArrowLeft') pressLane(0);
+            if (e.key === 'ArrowDown' || e.key === ' ') pressLane(1);
+            if (e.key === 'ArrowRight') pressLane(2);
         });
 
         function checkHit() {
@@ -281,7 +293,7 @@
             const ms = elapsedMs();
             for (const n of notes) {
                 if (n.state === 'wait' && Math.abs(ms - n.hitTime) < 160) {
-                    if (n.col === wolfLane) {
+                    if (n.col === wolfLane && lanePressed[wolfLane]) {
                         n.state = 'hit';
                         score += 10;
                         combo++;
@@ -292,9 +304,31 @@
                         if (navigator.vibrate) navigator.vibrate(25);
                         uiScore();
                         showCombo(combo);
+
+                        // Tạo hiệu ứng tóe lửa (sparkles burst) tại vị trí hứng trúng
+                        const colW = cv.logicalW / 3;
+                        const columns = [colW * 0.5, colW * 1.5, colW * 2.5];
+                        createSparkles(columns[n.col], cv.logicalH * 0.7);
                         break;
                     }
                 }
+            }
+        }
+
+        // Hàm tạo hạt pháo hoa lấp lánh
+        function createSparkles(x, y) {
+            for (let i = 0; i < 15; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 5;
+                sparkles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    alpha: 1.0,
+                    color: ['#f1c40f', '#e67e22', '#fff', '#f39c12'][Math.floor(Math.random() * 4)],
+                    size: 2 + Math.random() * 3
+                });
             }
         }
 
@@ -310,7 +344,6 @@
 
         const cv = document.getElementById('cv');
         const ctx = cv.getContext('2d');
-
         function resize() {
             cv.width = cv.parentElement.clientWidth * window.devicePixelRatio;
             cv.height = cv.parentElement.clientHeight * window.devicePixelRatio;
@@ -336,23 +369,19 @@
             const colW = W / 3;
             const columns = [colW * 0.5, colW * 1.5, colW * 2.5];
 
-            // Vẽ 3 chú chim non to rõ nét, đầy đủ lông và mắt trên cành
+            // Vẽ 3 chú chim non trên cành
             columns.forEach(cx => {
-                // Thân chim
                 ctx.fillStyle = '#e74c3c';
                 ctx.beginPath();
                 ctx.arc(cx, 62, 14, 0, Math.PI * 2);
                 ctx.fill();
-                // Đầu chim
                 ctx.beginPath();
                 ctx.arc(cx + 6, 48, 9, 0, Math.PI * 2);
                 ctx.fill();
-                // Mắt chim
                 ctx.fillStyle = '#000';
                 ctx.beginPath();
                 ctx.arc(cx + 8, 46, 2, 0, Math.PI * 2);
                 ctx.fill();
-                // Mỏ chim há to ngước nhìn
                 ctx.fillStyle = '#f1c40f';
                 ctx.beginPath();
                 ctx.moveTo(cx + 14, 48);
@@ -363,8 +392,6 @@
 
             if (phase === 'play') {
                 const ms = elapsedMs();
-
-                // Cập nhật trứng rơi
                 for (const n of notes) {
                     let spawnTime = n.hitTime - FALL_SEC * 1000;
                     if (ms >= spawnTime && ms <= n.hitTime + 300) {
@@ -372,17 +399,16 @@
                         let x = columns[n.col];
                         let y = 75 + progress * (H * 0.65 - 75);
 
-                        // Trứng rớt xuống đất (miss)
+                        // Trứng rớt xuống đất (miss do không nhấn hoặc nhấn trượt)
                         if (n.state === 'wait' && ms > n.hitTime + 180) {
                             n.state = 'missed';
                             missCount++;
                             score = Math.max(0, score - 5);
                             combo = 0;
                             uiScore();
-                            playGlassBreak(); // Âm thanh ly bể / trứng vỡ
-                            brokenEggs.push({ x: x, y: H * 0.82, alpha: 1.0 }); // Lưu lại vết trứng vỡ dưới đất
+                            playGlassBreak();
+                            brokenEggs.push({ x: x, y: H * 0.82, alpha: 1.0 });
                         }
-
                         if (n.state === 'wait') {
                             ctx.fillStyle = '#f1c40f';
                             ctx.beginPath();
@@ -394,13 +420,12 @@
                         }
                     }
                 }
-
                 if (ms > (notes[notes.length - 1]?.hitTime || 0) + 3000) {
                     endGame();
                 }
             }
 
-            // Vẽ các mảnh trứng vỡ dưới đất mờ dần
+            // Vẽ mảnh trứng vỡ dưới đất mờ dần
             brokenEggs.forEach(be => {
                 ctx.save();
                 ctx.globalAlpha = be.alpha;
@@ -408,7 +433,6 @@
                 ctx.beginPath();
                 ctx.ellipse(be.targetX || be.x, H * 0.83, 16, 6, 0, 0, Math.PI * 2);
                 ctx.fill();
-                // Vỏ trứng vỡ văng ra xung quanh
                 ctx.strokeStyle = '#fff';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -416,11 +440,25 @@
                 ctx.moveTo(be.x + 12, H * 0.83); ctx.lineTo(be.x + 22, H * 0.84);
                 ctx.stroke();
                 ctx.restore();
-                be.alpha -= 0.008; // Mờ dần theo thời gian
+                be.alpha -= 0.008;
             });
             brokenEggs = brokenEggs.filter(be => be.alpha > 0);
 
-            // Hiệu ứng rung giỏ
+            // Cập nhật và vẽ các hạt pháo hoa lấp lánh (sparkles)
+            sparkles.forEach(sp => {
+                ctx.save();
+                ctx.globalAlpha = sp.alpha;
+                ctx.fillStyle = sp.color;
+                ctx.beginPath();
+                ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                sp.x += sp.vx;
+                sp.y += sp.vy;
+                sp.alpha -= 0.03;
+            });
+            sparkles = sparkles.filter(sp => sp.alpha > 0);
+
             let rumbleX = 0, rumbleY = 0;
             if (activeRumble > 0) {
                 rumbleX = (Math.random() - 0.5) * 6;
@@ -428,22 +466,24 @@
                 activeRumble--;
             }
 
-            // Vẽ chú sói: 2 mắt, 2 tai tam giác, giỏ đưa lên sát tai ngước nhìn và đuôi ve vẩy
-            drawWolf(columns[wolfLane] + rumbleX, H * 0.7 + rumbleY, performance.now());
+            // Truyền trạng thái nhấn tổ chim (lanePressed) vào hàm vẽ sói
+            let isBasketUp = lanePressed[wolfLane];
+            drawWolf(columns[wolfLane] + rumbleX, H * 0.7 + rumbleY, performance.now(), isBasketUp);
 
             requestAnimationFrame(loop);
         }
 
-        // Hàm vẽ chú sói đầy đủ chi tiết theo yêu cầu
-        function drawWolf(basketX, basketY, time) {
+        // Hàm vẽ sói: Khi nhấn nút, tổ chim được giơ lên sát tai ngước nhìn; khi nhả ra, tổ hạ thấp xuống
+        function drawWolf(basketX, basketY, time, isUp) {
             let wx = basketX;
             let wy = basketY - 15;
+            let actualBasketY = isUp ? wy - 25 : wy + 10; // Giơ lên cao khi nhấn, hạ xuống khi thả
 
-            // Thân sói mặc áo cam/vàng đặc trưng
+            // Thân sói
             ctx.fillStyle = '#e67e22';
             ctx.beginPath(); ctx.arc(wx, wy + 28, 28, 0, Math.PI * 2); ctx.fill();
 
-            // Đuôi sói ve vẩy liên tục
+            // Đuôi sói ve vẩy
             let tailAngle = Math.sin(time / 120) * 0.5;
             ctx.save();
             ctx.translate(wx - 18, wy + 32);
@@ -453,43 +493,43 @@
             ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-18, -10, -30, -22); ctx.stroke();
             ctx.restore();
 
-            // Đầu sói ngước mặt lên trời
+            // Đầu sói
             ctx.fillStyle = '#bdc3c7';
             ctx.beginPath(); ctx.arc(wx, wy - 8, 21, 0, Math.PI * 2); ctx.fill();
 
-            // 2 tai hình tam giác trên đầu
+            // 2 tai tam giác
             ctx.beginPath();
             ctx.moveTo(wx - 16, wy - 22); ctx.lineTo(wx - 24, wy - 38); ctx.lineTo(wx - 8, wy - 26);
             ctx.moveTo(wx + 16, wy - 22); ctx.lineTo(wx + 24, wy - 38); ctx.lineTo(wx + 8, wy - 26);
             ctx.fillStyle = '#95a5a6';
             ctx.fill();
 
-            // Mõm sói dài ngước lên
+            // Mõm sói
             ctx.beginPath();
             ctx.moveTo(wx - 8, wy - 4);
             ctx.lineTo(wx + 12, wy - 12);
             ctx.lineTo(wx - 4, wy - 18);
             ctx.fill();
 
-            // Hai mắt sói đang mở to nhìn lên
+            // Mắt sói
             ctx.fillStyle = '#000';
-            ctx.beginPath(); 
-            ctx.arc(wx - 3, wy - 15, 2.5, 0, Math.PI * 2); // Mắt trái
-            ctx.arc(wx + 5, wy - 15, 2.5, 0, Math.PI * 2); // Mắt phải
+            ctx.beginPath();
+            ctx.arc(wx - 3, wy - 15, 2.5, 0, Math.PI * 2);
+            ctx.arc(wx + 5, wy - 15, 2.5, 0, Math.PI * 2);
             ctx.fill();
 
-            // Tay cầm giỏ đưa lên cao sát ngang đầu/tai để hứng trứng
+            // Tay cầm giỏ
             ctx.strokeStyle = '#795548';
             ctx.lineWidth = 4;
             ctx.beginPath();
-            ctx.moveTo(wx - 14, wy); ctx.lineTo(basketX - 18, basketY);
-            ctx.moveTo(wx + 14, wy); ctx.lineTo(basketX + 18, basketY);
+            ctx.moveTo(wx - 14, wy); ctx.lineTo(basketX - 18, actualBasketY);
+            ctx.moveTo(wx + 14, wy); ctx.lineTo(basketX + 18, actualBasketY);
             ctx.stroke();
 
-            // Chiếc tổ chim / giỏ hứng trứng
+            // Giỏ hứng trứng (Tổ chim)
             ctx.fillStyle = '#6d4c41';
             ctx.beginPath();
-            ctx.ellipse(basketX, basketY, 30, 15, 0, 0, Math.PI * 2);
+            ctx.ellipse(basketX, actualBasketY, 30, 15, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.strokeStyle = '#4e342e';
             ctx.lineWidth = 3;
@@ -503,7 +543,7 @@
             
             const old = scores[curFile] || 0;
             if (score > old) { scores[curFile] = score; saveScores(); }
-            
+
             document.getElementById('s-score').textContent = score;
             document.getElementById('s-hm').textContent = `${hitCount}/${missCount}`;
             document.getElementById('s-combo').textContent = maxCombo;
@@ -511,11 +551,9 @@
             document.getElementById('sum').style.display = 'block';
         }
 
-        // Khám phá link đến trang tuongzalo cùng thư mục
-        document.getElementById('explore').onclick = () => { 
-            location.href = 'tuongzalo.html'; 
+        document.getElementById('explore').onclick = () => {
+            location.href = 'tuongzalo.html';
         };
-
         document.getElementById('openLib').onclick = () => {
             const p = document.getElementById('pop');
             p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
@@ -525,7 +563,7 @@
 
         const TOTAL_SONGS = 20;
         const songList = Array.from({ length: TOTAL_SONGS }, (_, i) => ({ file: `${i+1}.txt`, label: `${i+1}` }));
-
+        
         async function preloadLibrary() {
             for (const s of songList) {
                 try {
