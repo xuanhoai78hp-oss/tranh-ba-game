@@ -21,7 +21,7 @@
         #score{color:#00ffff;font-size:24px;text-shadow:0 0 10px #00ffff}
         #best{color:#888;font-size:13px;align-self:center}
         
-        #combo{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);font-size:50px;font-weight:bold;color:#ff00ff;text-shadow:0 0 20px #ff00ff,0 0 40px #00ffff;pointer-events:none;opacity:0;transition:opacity .2s;z-index:5;text-align:center}
+        #combo{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);font-size:50px;font-weight:bold;color:#ff00ff;text-shadow:0 0 20px #ff00ff,0 0 40px #00ffff;pointer-events:none;opacity:0;transition:opacity .2s;z-index:5;text-align:center}
         #cd{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.8);z-index:15;font-size:100px;font-weight:bold;color:#00ffff;text-shadow:0 0 30px #00ffff}
         
         #sum{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,10,20,0.96);border:2px solid #00ffff;border-radius:12px;padding:20px;z-index:18;display:none;text-align:center;min-width:280px;max-width:92%;box-shadow:0 0 25px rgba(0,255,255,0.4)}
@@ -32,7 +32,7 @@
         #sum button{flex:1;padding:10px;background:#00ffff;color:#000;border:none;border-radius:6px;font-weight:bold;cursor:pointer}
         #sum button.sec{background:#333;color:#fff}
         
-        /* 3 Nút bắn dưới đáy */
+        /* 3 Nút bắn dưới đáy tương ứng 3 làn Súng */
         #pad{height:25%;display:flex;border-top:2px solid #333;padding:8px;gap:8px;background:#0a0a12;z-index:10}
         .btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:16px;font-weight:bold;border:2px solid rgba(0,255,255,0.4);border-radius:12px;background:#141426;color:#00ffff;cursor:pointer;transition:transform .05s,background .1s,box-shadow .1s;gap:4px}
         .btn:active, .btn.on{transform:scale(0.95);background:#00ffff;color:#000;box-shadow:0 0 20px #00ffff}
@@ -71,7 +71,7 @@
                 </div>
             </div>
         </div>
-        <!-- 3 nút súng điều khiển dưới đáy -->
+        <!-- 3 nút súng điều khiển dưới đáy tương ứng 3 làn (Súng - Đĩa - Súng - Đĩa - Súng - Đĩa) -->
         <div id="pad">
             <button class="btn" id="b-left">🚀 Súng Trái</button>
             <button class="btn" id="b-center">🛸 Súng Giữa</button>
@@ -86,7 +86,7 @@
         const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/xuanhoai78hp-oss/tranh-ba-game/refs/heads/main/";
         const FALL_SEC = 2.5;
         const CD_SEC = 3;
-        const KEY = 'ufo_shooter_v1';
+        const KEY = 'ufo_shooter_v5';
         
         let scores = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {} } catch { return {} } })();
         const saveScores = () => { try { localStorage.setItem(KEY, JSON.stringify(scores)) } catch {} };
@@ -97,9 +97,9 @@
         let notes = [];
         let phase = 'idle';
         let score = 0, combo = 0, maxCombo = 0, hitCount = 0, missCount = 0;
-        let activeGun = 1;
-        let bullets = []; // Lưu các tia laser/đạn bắn từ súng lên
-        let sparkles = []; // Hiệu ứng nổ tung UFO
+        let activeGun = 0;
+        let bullets = []; 
+        let sparkles = []; 
         
         const lanePressed = [false, false, false];
         const lanePressTimer = [null, null, null];
@@ -250,11 +250,17 @@
             });
             
             playLaser();
-            const colW = cv.logicalW / 3;
-            const columns = [colW * 0.5, colW * 1.5, colW * 2.5];
+            const W = cv.logicalW;
+            // Vị trí 3 khẩu súng (Súng 1, Súng 2, Súng 3) nằm ở các mốc xen kẽ theo mẫu: S - Đĩa - S - Đĩa - S - Đĩa
+            const gunXs = [W * 0.20, W * 0.50, W * 0.80];
             
-            // Tạo tia đạn laser bay từ súng lên trên
-            bullets.push({ x: columns[lane], y: cv.logicalH * 0.75, targetY: cv.logicalH * 0.2, alpha: 1.0 });
+            // Đạn bắn chéo nhẹ từ súng bay chếch sang phải để cắt ngang đường bay của đĩa bay
+            bullets.push({ 
+                x: gunXs[lane], 
+                y: cv.logicalH * 0.78, 
+                vx: 5, 
+                vy: -26 
+            });
             
             checkHit(lane);
             
@@ -279,14 +285,12 @@
             if (phase !== 'play') return;
             const ms = elapsedMs();
             for (const n of notes) {
-                // Kiểm tra nốt ở đúng làn và trong khung thời gian đạt tầm cao yêu cầu
                 if (n.state === 'wait' && n.col === lane && Math.abs(ms - n.hitTime) < 180) {
                     n.state = 'hit';
                     score += 10;
                     combo++;
                     if (combo > maxCombo) maxCombo = combo;
                     
-                    // Nếu combo tròn chục, thưởng ngay 200 điểm
                     if (combo > 0 && combo % 10 === 0) {
                         score += 200;
                         showCombo(`🔥 COMBO ${combo}!\n+200 ĐIỂM!`);
@@ -299,11 +303,10 @@
                     if (navigator.vibrate) navigator.vibrate(25);
                     uiScore();
                     
-                    const colW = cv.logicalW / 3;
-                    const columns = [colW * 0.5, colW * 1.5, colW * 2.5];
-                    // Tính tọa độ UFO ở tầm cao khi trúng đạn
-                    let progress = 0.55; // Tầm giữa màn hình (đã bay lên cao)
-                    createSparkles(columns[n.col], 75 + progress * (cv.logicalH * 0.65 - 75));
+                    const W = cv.logicalW;
+                    // Vị trí đĩa bay tương ứng lệch sang phải so với súng (mô phỏng xen kẽ S - Đĩa - S - Đĩa - S - Đĩa)
+                    const ufoXs = [W * 0.35, W * 0.65, W * 0.92];
+                    createSparkles(ufoXs[n.col] - 30, cv.logicalH * 0.42);
                     break;
                 }
             }
@@ -349,8 +352,9 @@
             const W = cv.logicalW, H = cv.logicalH;
             ctx.clearRect(0, 0, W, H);
             
-            const colW = W / 3;
-            const columns = [colW * 0.5, colW * 1.5, colW * 2.5];
+            // Xếp so le: Súng ở các vị trí, Đĩa bay ở các vị trí xen kẽ bên cạnh (S - Đĩa - S - Đĩa - S - Đĩa)
+            const gunXs = [W * 0.20, W * 0.50, W * 0.80];
+            const ufoXs = [W * 0.35, W * 0.65, W * 0.92];
             
             if (phase === 'play') {
                 const ms = elapsedMs();
@@ -358,13 +362,11 @@
                     let spawnTime = n.hitTime - FALL_SEC * 1000;
                     if (ms >= spawnTime && ms <= n.hitTime + 300) {
                         let progress = (ms - spawnTime) / (FALL_SEC * 1000);
-                        let x = columns[n.col];
-                        // Đĩa bay bay từ dưới thấp lên cao (từ H*0.8 lên H*0.2)
-                        let y = (H * 0.8) - progress * (H * 0.6);
-                        // Càng lên cao càng nhỏ dần (hiệu ứng xa dần)
-                        let scale = Math.max(0.3, 1.0 - progress * 0.7);
+                        // Đĩa bay bay từ dưới lên trên và hơi lượn chéo để giao thoa với đường đạn
+                        let x = ufoXs[n.col] - progress * 30; 
+                        let y = (H * 0.85) - progress * (H * 0.6);
+                        let scale = Math.max(0.3, 1.0 - progress * 0.7); // Càng lên cao càng nhỏ dần (hiệu ứng xa dần)
                         
-                        // Kiểm tra nếu bay qua tầm cao mà không bắn trúng -> Miss (-5 điểm)
                         if (n.state === 'wait' && ms > n.hitTime + 200) {
                             n.state = 'missed';
                             missCount++;
@@ -384,7 +386,7 @@
                 }
             }
             
-            // Vẽ đạn laser bay lên
+            // Vẽ đạn bay chéo nhẹ giao cắt với đĩa bay
             bullets.forEach(b => {
                 ctx.save();
                 ctx.strokeStyle = '#00ffff';
@@ -393,14 +395,15 @@
                 ctx.shadowBlur = 10;
                 ctx.beginPath();
                 ctx.moveTo(b.x, b.y);
-                ctx.lineTo(b.x, b.y - 40);
+                ctx.lineTo(b.x + 4, b.y - 35);
                 ctx.stroke();
                 ctx.restore();
-                b.y -= 25;
+                b.x += b.vx;
+                b.y += b.vy;
             });
             bullets = bullets.filter(b => b.y > 0);
             
-            // Vẽ hiệu ứng pháo hoa nổ tung
+            // Vẽ hiệu ứng nổ
             sparkles.forEach(sp => {
                 ctx.save();
                 ctx.globalAlpha = sp.alpha;
@@ -417,21 +420,19 @@
             });
             sparkles = sparkles.filter(sp => sp.alpha > 0);
             
-            // Vẽ 3 khẩu súng ở dưới đáy
-            columns.forEach((cx, idx) => {
-                drawCannon(cx, H * 0.82, lanePressed[idx]);
+            // Vẽ 3 khẩu pháo ở các vị trí súng tương ứng
+            gunXs.forEach((cx, idx) => {
+                drawCannon(cx, H * 0.85, lanePressed[idx]);
             });
             
             requestAnimationFrame(loop);
         }
         
-        // Hàm vẽ đĩa bay UFO (càng lên cao scale càng nhỏ)
         function drawUFO(x, y, scale) {
             ctx.save();
             ctx.translate(x, y);
             ctx.scale(scale, scale);
             
-            // Thân đĩa bay hình đĩa
             ctx.fillStyle = '#b2bec3';
             ctx.beginPath();
             ctx.ellipse(0, 0, 35, 12, 0, 0, Math.PI * 2);
@@ -440,14 +441,12 @@
             ctx.lineWidth = 2;
             ctx.stroke();
             
-            // Buồng lái kính sáng phía trên
             ctx.fillStyle = 'rgba(0, 255, 255, 0.6)';
             ctx.beginPath();
             ctx.arc(0, -5, 14, Math.PI, 0, false);
             ctx.fill();
             ctx.stroke();
             
-            // Đèn nhấp nháy bên dưới đĩa bay
             ctx.fillStyle = Math.floor(Date.now() / 150) % 2 === 0 ? '#ff00ff' : '#00ffff';
             for (let i = -20; i <= 20; i += 20) {
                 ctx.beginPath();
@@ -457,12 +456,10 @@
             ctx.restore();
         }
         
-        // Hàm vẽ khẩu súng dưới đáy
         function drawCannon(x, y, isFiring) {
             ctx.save();
             ctx.translate(x, y);
             
-            // Đế súng
             ctx.fillStyle = '#2d3436';
             ctx.beginPath();
             ctx.arc(0, 10, 22, Math.PI, 0, true);
@@ -471,17 +468,19 @@
             ctx.lineWidth = 3;
             ctx.stroke();
             
-            // Nòng súng hướng thẳng lên trời
+            // Nòng pháo hơi chếch nghiêng hướng về phía đĩa bay để tạo góc giao nhau
+            ctx.save();
+            ctx.rotate(0.18);
             ctx.fillStyle = '#636e72';
-            ctx.fillRect(-6, -18, 12, 24);
+            ctx.fillRect(-6, -24, 12, 28);
+            ctx.restore();
             
             if (isFiring) {
-                // Hiệu ứng lóe lửa khi bấm bắn
                 ctx.fillStyle = '#00ffff';
                 ctx.shadowColor = '#00ffff';
                 ctx.shadowBlur = 15;
                 ctx.beginPath();
-                ctx.arc(0, -22, 10, 0, Math.PI * 2);
+                ctx.arc(6, -28, 10, 0, Math.PI * 2);
                 ctx.fill();
             }
             ctx.restore();
