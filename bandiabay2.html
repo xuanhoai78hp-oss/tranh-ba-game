@@ -29,18 +29,16 @@
             width: 100%;
             height: 100%;
         }
-
-        /* Virtual Controls Overlay */
+        /* Virtual Controls Overlay - Đã nâng vị trí cao hơn để tránh Safari/Chrome */
         .touch-control {
             position: absolute;
             z-index: 10;
             touch-action: none;
         }
-
         /* Joystick Base */
         #joystick-base {
-            bottom: 60px;
-            left: 30px;
+            bottom: 90px;
+            left: 35px;
             width: 120px;
             height: 120px;
             background: rgba(0, 255, 204, 0.15);
@@ -60,7 +58,6 @@
             transform: translate(0, 0);
             pointer-events: none;
         }
-
         /* Action Buttons */
         .btn-action {
             width: 75px;
@@ -81,30 +78,21 @@
             transform: scale(0.92);
             filter: brightness(1.2);
         }
-
         #btn-fire {
-            bottom: 75px;
-            right: 30px;
+            bottom: 105px;
+            right: 35px;
             background: radial-gradient(circle, rgba(255,50,50,0.85) 0%, rgba(150,0,0,0.85) 100%);
             border-color: #ff3333;
             animation: firePulse 1s infinite;
         }
-
         @keyframes firePulse {
-            0% {
-                box-shadow: 0 0 10px rgba(255,0,0,.4);
-            }
-            50% {
-                box-shadow: 0 0 30px rgba(255,0,0,.8);
-            }
-            100% {
-                box-shadow: 0 0 10px rgba(255,0,0,.4);
-            }
+            0% { box-shadow: 0 0 10px rgba(255,0,0,.4); }
+            50% { box-shadow: 0 0 30px rgba(255,0,0,.8); }
+            100% { box-shadow: 0 0 10px rgba(255,0,0,.4); }
         }
-
         #btn-boost {
-            bottom: 175px;
-            right: 40px;
+            bottom: 205px;
+            right: 45px;
             width: 60px;
             height: 60px;
             background: radial-gradient(circle, rgba(255,200,0,0.85) 0%, rgba(180,100,0,0.85) 100%);
@@ -112,8 +100,6 @@
             box-shadow: 0 0 15px rgba(255, 204, 0, 0.6);
             font-size: 11px;
         }
-
-        /* Nút Khám phá ở góc trên bên trái */
         #explore-btn {
             position: absolute;
             top: 15px;
@@ -136,7 +122,6 @@
         #explore-btn:active {
             background: rgba(0, 255, 204, 0.2);
         }
-
         #sound-notice {
             position: absolute;
             top: 50%;
@@ -156,28 +141,19 @@
     </style>
 </head>
 <body>
-
     <div id="game-container">
-        <!-- Canvas Screen -->
         <canvas id="gameCanvas"></canvas>
-
         <div id="sound-notice">CHẠM MÀN HÌNH ĐỂ BẬT ÂM THANH</div>
-
-        <!-- Nút Khám phá dẫn tới trang tuongzalo.html -->
         <a id="explore-btn" href="tuongzalo.html">🔍 Khám phá</a>
-
-        <!-- Touch Controls -->
         <div id="joystick-base" class="touch-control">
             <div id="joystick-stick"></div>
         </div>
         <div id="btn-fire" class="touch-control btn-action">FIRE</div>
         <div id="btn-boost" class="touch-control btn-action">BOOST</div>
     </div>
-
     <script>
         // --- SOUND SYNTHESIZER (Web Audio API) ---
         let audioCtx = null;
-
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -191,7 +167,6 @@
                 audioCtx.resume();
             }
         }
-
         window.addEventListener('touchstart', initAudio, { once: true });
         window.addEventListener('mousedown', initAudio, { once: true });
         window.addEventListener('keydown', initAudio, { once: true });
@@ -200,40 +175,30 @@
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(880, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.12);
-
             gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
-
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
             osc.start();
             osc.stop(audioCtx.currentTime + 0.12);
         }
-
         function playHitSound() {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-
             osc.type = 'square';
             osc.frequency.setValueAtTime(220, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.15);
-
             gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
             osc.start();
             osc.stop(audioCtx.currentTime + 0.15);
         }
-
         function playExplosionSound() {
             if (!audioCtx) return;
             const bufferSize = audioCtx.sampleRate * 0.5;
@@ -242,23 +207,18 @@
             for (let i = 0; i < bufferSize; i++) {
                 data[i] = Math.random() * 2 - 1;
             }
-
             const noise = audioCtx.createBufferSource();
             noise.buffer = buffer;
-
             const filter = audioCtx.createBiquadFilter();
             filter.type = 'lowpass';
             filter.frequency.setValueAtTime(300, audioCtx.currentTime);
             filter.frequency.linearRampToValueAtTime(20, audioCtx.currentTime + 0.5);
-
             const gain = audioCtx.createGain();
             gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-
             noise.connect(filter);
             filter.connect(gain);
             gain.connect(audioCtx.destination);
-
             noise.start();
             noise.stop(audioCtx.currentTime + 0.5);
         }
@@ -266,26 +226,22 @@
         // --- DYNAMIC TEXTURE GENERATOR ---
         let mapImage = new Image();
         let ufoImage = new Image();
-
         function createMapTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 2400;
             canvas.height = 800;
             const ctx = canvas.getContext('2d');
-
             const skyGrad = ctx.createLinearGradient(0, 0, 0, 350);
             skyGrad.addColorStop(0, '#0a1128');
             skyGrad.addColorStop(0.5, '#1c2541');
             skyGrad.addColorStop(1, '#480ca8');
             ctx.fillStyle = skyGrad;
             ctx.fillRect(0, 0, canvas.width, 350);
-
             const horizonGrad = ctx.createLinearGradient(0, 280, 0, 360);
             horizonGrad.addColorStop(0, '#f72585');
             horizonGrad.addColorStop(1, '#7209b7');
             ctx.fillStyle = horizonGrad;
             ctx.fillRect(0, 280, canvas.width, 80);
-
             ctx.fillStyle = '#0b090a';
             ctx.beginPath();
             ctx.moveTo(0, 350);
@@ -297,7 +253,6 @@
             ctx.lineTo(0, 500);
             ctx.closePath();
             ctx.fill();
-
             ctx.fillStyle = '#161a1d';
             ctx.beginPath();
             ctx.moveTo(0, 360);
@@ -309,14 +264,12 @@
             ctx.lineTo(0, 500);
             ctx.closePath();
             ctx.fill();
-
             const lakeGrad = ctx.createLinearGradient(0, 360, 0, 800);
             lakeGrad.addColorStop(0, '#3a0ca3');
             lakeGrad.addColorStop(0.3, '#03045e');
             lakeGrad.addColorStop(1, '#023e8a');
             ctx.fillStyle = lakeGrad;
             ctx.fillRect(0, 360, canvas.width, 440);
-
             ctx.strokeStyle = 'rgba(247, 37, 133, 0.18)';
             ctx.lineWidth = 2;
             for (let y = 370; y < 800; y += 12) {
@@ -327,34 +280,28 @@
                 }
                 ctx.stroke();
             }
-
             return canvas;
         }
-
         function createUFOTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 256;
             canvas.height = 128;
             const ctx = canvas.getContext('2d');
-
             ctx.fillStyle = '#a8dede';
             ctx.beginPath();
             ctx.arc(128, 55, 35, Math.PI, 0);
             ctx.fill();
-
             const bodyGrad = ctx.createLinearGradient(0, 45, 0, 85);
             bodyGrad.addColorStop(0, '#e0e1dd');
             bodyGrad.addColorStop(0.5, '#778da9');
             bodyGrad.addColorStop(1, '#1b263b');
             ctx.fillStyle = bodyGrad;
-
             ctx.beginPath();
             ctx.ellipse(128, 65, 90, 25, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.strokeStyle = '#3d5a80';
             ctx.lineWidth = 3;
             ctx.stroke();
-
             const lightColors = ['#ff0055', '#00ffff', '#ffcc00', '#00ff66', '#ff0055'];
             for (let i = 0; i < 5; i++) {
                 ctx.fillStyle = lightColors[i];
@@ -364,20 +311,16 @@
                 ctx.arc(58 + i * 35, 68, 6, 0, Math.PI * 2);
                 ctx.fill();
             }
-
             return canvas;
         }
-
         const mapCanvas = createMapTexture();
         mapImage.src = mapCanvas.toDataURL();
-
         const ufoCanvas = createUFOTexture();
         ufoImage.src = ufoCanvas.toDataURL();
 
         // --- GAME LOGIC & CONTROLS ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -386,7 +329,6 @@
         resizeCanvas();
 
         const DIRECTIONS = ["Bắc", "Bắc Đông Bắc", "Đông Đông Bắc", "Đông", "Đông Đông Nam", "Nam Đông Nam", "Nam", "Nam Tây Nam", "Tây Tây Nam", "Tây", "Tây Tây Bắc", "Bắc Tây Bắc"];
-
         const player = {
             heading: 0,
             pitch: 0,
@@ -397,7 +339,10 @@
             y: 500,
             z: 0
         };
-
+        let gameScore = {
+            ufoDestroyed: 0,
+            level: 1
+        };
         let ufo = {
             x: 100,
             y: 500,
@@ -409,14 +354,13 @@
             alive: true,
             explodeTimer: 0
         };
-
         let bullets = [];
+        let ufoBullets = [];
         let particles = [];
-
-        const joystick = { x: 0, y: 0, active: false };
+        let joystick = { x: 0, y: 0, active: false };
         let isFiring = false;
         let fireCooldown = 0;
-
+        let ufoFireCooldown = 0;
         const stickEl = document.getElementById('joystick-stick');
         const baseEl = document.getElementById('joystick-base');
 
@@ -424,20 +368,16 @@
             const rect = baseEl.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
-
             let dx = touchX - centerX;
             let dy = touchY - centerY;
             const dist = Math.hypot(dx, dy);
             const maxDist = rect.width / 2;
-
             if (dist > maxDist) {
                 dx = (dx / dist) * maxDist;
                 dy = (dy / dist) * maxDist;
             }
-
-            joystick.x = dx / maxDist; 
-            joystick.y = dy / maxDist; 
-
+            joystick.x = -(dx / maxDist);
+            joystick.y = -(dy / maxDist);
             stickEl.style.transform = `translate(${dx}px, ${dy}px)`;
         }
 
@@ -468,7 +408,6 @@
 
         const btnFire = document.getElementById('btn-fire');
         const btnBoost = document.getElementById('btn-boost');
-
         const bindButtonEvents = (btn, onPress, onRelease) => {
             btn.addEventListener('touchstart', (e) => { e.preventDefault(); btn.classList.add('active'); onPress(); }, { passive: false });
             btn.addEventListener('touchend', (e) => { e.preventDefault(); btn.classList.remove('active'); onRelease(); }, { passive: false });
@@ -476,7 +415,6 @@
             btn.addEventListener('mouseup', (e) => { e.preventDefault(); btn.classList.remove('active'); onRelease(); });
             btn.addEventListener('mouseleave', () => { btn.classList.remove('active'); onRelease(); });
         };
-
         bindButtonEvents(btnFire, () => { isFiring = true; }, () => { isFiring = false; });
         bindButtonEvents(btnBoost, () => { player.boosting = true; }, () => { player.boosting = false; });
 
@@ -496,18 +434,18 @@
             ufo.z = player.z + 1200 + Math.random() * 500;
             ufo.heading = Math.random() * 360;
             ufo.hits = 0;
+            // Số lần bắn trúng yêu cầu tăng theo cấp số nhân (Level 1: 10, Level 2: 20, Level 3: 30...)
+            ufo.maxHits = gameScore.level * 10;
             ufo.alive = true;
         }
 
         // --- UPDATE GAME ENGINE ---
         function updateGame(dt) {
             let kX = 0, kY = 0;
-            
             if (keys['KeyA'] || keys['ArrowLeft']) kX -= 1;
             if (keys['KeyD'] || keys['ArrowRight']) kX += 1;
             if (keys['KeyW'] || keys['ArrowUp']) kY -= 1;
             if (keys['KeyS'] || keys['ArrowDown']) kY += 1;
-
             const inputX = joystick.active ? joystick.x : kX;
             const inputY = joystick.active ? joystick.y : kY;
 
@@ -517,10 +455,8 @@
 
             const targetRoll = -inputX * 0.35;
             player.roll += (targetRoll - player.roll) * 0.12;
-
             player.pitch += inputY * 140 * dt;
             player.pitch = Math.max(-150, Math.min(150, player.pitch));
-
             player.speed = player.boosting ? 270 : 150;
 
             const radH = player.heading * Math.PI / 180;
@@ -528,6 +464,29 @@
             player.z += Math.cos(radH) * player.speed * dt;
 
             if (ufo.alive) {
+                if (gameScore.level >= 2) {
+                    // Level 2 trở lên: UFO đuổi theo bám đuôi máy bay và bắn trả
+                    const angleToPlayer = Math.atan2(player.x - ufo.x, player.z - ufo.z) * 180 / Math.PI;
+                    let diff = angleToPlayer - ufo.heading;
+                    while (diff < -180) diff += 360;
+                    while (diff > 180) diff -= 360;
+                    ufo.heading += Math.sign(diff) * Math.min(Math.abs(diff), 40 * dt);
+                    
+                    ufoFireCooldown -= dt;
+                    if (ufoFireCooldown <= 0) {
+                        ufoFireCooldown = 1.5;
+                        const distToP = Math.hypot(player.x - ufo.x, player.y - ufo.y, player.z - ufo.z);
+                        if (distToP < 1200) {
+                            ufoBullets.push({
+                                x: ufo.x, y: ufo.y, z: ufo.z,
+                                vx: (player.x - ufo.x) / distToP * 500,
+                                vy: (player.y - ufo.y) / distToP * 500,
+                                vz: (player.z - ufo.z) / distToP * 500,
+                                life: 2.5
+                            });
+                        }
+                    }
+                }
                 const ufoRad = ufo.heading * Math.PI / 180;
                 ufo.x += Math.sin(ufoRad) * ufo.speed * dt;
                 ufo.z += Math.cos(ufoRad) * ufo.speed * dt;
@@ -538,14 +497,12 @@
 
             fireCooldown -= dt;
             if (isFiring && fireCooldown <= 0) {
-                fireCooldown = 0.12; 
+                fireCooldown = 0.12;
                 playLaserSound();
-
                 const aimDist = 600;
                 const targetX = player.x + Math.sin(radH) * aimDist;
-                const targetY = player.y + player.pitch * 2; 
+                const targetY = player.y + player.pitch * 2;
                 const targetZ = player.z + Math.cos(radH) * aimDist;
-
                 bullets.push({
                     x: player.x,
                     y: player.y - 10,
@@ -563,7 +520,6 @@
                 b.x += b.vx * dt;
                 b.y += b.vy * dt;
                 b.z += b.vz * dt;
-
                 if (ufo.alive) {
                     const distToUFO = Math.hypot(b.x - ufo.x, b.y - ufo.y, b.z - ufo.z);
                     if (distToUFO < 75) {
@@ -571,18 +527,36 @@
                         bullets.splice(i, 1);
                         playHitSound();
                         createExplosion(b.x, b.y, b.z, 12, '#00ffff');
-
                         if (ufo.hits >= ufo.maxHits) {
                             ufo.alive = false;
                             ufo.explodeTimer = 2.5;
+                            gameScore.ufoDestroyed++;
+                            
+                            // Cứ mỗi 10 UFO tiêu diệt sẽ tăng lên 1 Level
+                            gameScore.level = Math.floor(gameScore.ufoDestroyed / 10) + 1;
+
                             playExplosionSound();
                             createExplosion(ufo.x, ufo.y, ufo.z, 65, '#ff3300');
                         }
                         continue;
                     }
                 }
-
                 if (b.life <= 0) bullets.splice(i, 1);
+            }
+
+            for (let i = ufoBullets.length - 1; i >= 0; i--) {
+                let ub = ufoBullets[i];
+                ub.life -= dt;
+                ub.x += ub.vx * dt;
+                ub.y += ub.vy * dt;
+                ub.z += ub.vz * dt;
+                const distToPlayer = Math.hypot(ub.x - player.x, ub.y - player.y, ub.z - player.z);
+                if (distToPlayer < 40) {
+                    ufoBullets.splice(i, 1);
+                    createExplosion(player.x, player.y, player.z, 10, '#ffcc00');
+                    continue;
+                }
+                if (ub.life <= 0) ufoBullets.splice(i, 1);
             }
 
             for (let i = particles.length - 1; i >= 0; i--) {
@@ -611,17 +585,14 @@
         // --- RENDER GAME SCENE & HUD ---
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             ctx.save();
             ctx.translate(canvas.width / 2, canvas.height / 2);
             ctx.rotate(player.roll);
             ctx.translate(-canvas.width / 2, -canvas.height / 2);
-
             const panoWidth = mapImage.width || 2400;
             const headingRatio = player.heading / 360;
-            let bgX = -headingRatio * panoWidth; 
+            let bgX = -headingRatio * panoWidth;
             let bgY = (canvas.height / 2) - (mapImage.height / 2) + player.pitch;
-
             ctx.drawImage(mapImage, bgX, bgY);
             ctx.drawImage(mapImage, bgX - panoWidth, bgY);
             ctx.drawImage(mapImage, bgX + panoWidth, bgY);
@@ -629,32 +600,25 @@
             const dx = ufo.x - player.x;
             const dz = ufo.z - player.z;
             const distanceToUFO = Math.hypot(dx, dz);
-
             let angleToUFO = Math.atan2(dx, dz) * 180 / Math.PI;
             if (angleToUFO < 0) angleToUFO += 360;
-
             let relAngle = angleToUFO - player.heading;
             if (relAngle > 180) relAngle -= 360;
             if (relAngle < -180) relAngle += 360;
-
             let ufoScreenX = canvas.width / 2 + (relAngle / 60) * (canvas.width / 2);
             let ufoScreenY = canvas.height / 2 + player.pitch + ((player.y - ufo.y) / Math.max(1, distanceToUFO)) * 300;
-
             if (ufo.alive && Math.abs(relAngle) < 70 && distanceToUFO > 25) {
                 const scale = Math.max(0.15, Math.min(2.0, 400 / distanceToUFO));
                 const w = ufoImage.width * scale;
                 const h = ufoImage.height * scale;
-
                 ctx.drawImage(ufoImage, ufoScreenX - w / 2, ufoScreenY - h / 2, w, h);
-
                 if (distanceToUFO < 800) {
                     ctx.strokeStyle = '#ff0033';
                     ctx.lineWidth = 2;
                     ctx.strokeRect(ufoScreenX - w / 2 - 10, ufoScreenY - h / 2 - 10, w + 20, h + 20);
-
                     ctx.fillStyle = '#ff0033';
                     ctx.font = 'bold 12px monospace';
-                    ctx.fillText(`LOCK [${Math.round(distanceToUFO)}m]`, ufoScreenX - w / 2 - 10, ufoScreenY - h / 2 - 16);
+                    ctx.fillText(`LOCK [HP: ${ufo.maxHits - ufo.hits}/${ufo.maxHits}]`, ufoScreenX - w / 2 - 10, ufoScreenY - h / 2 - 16);
                 }
             }
 
@@ -665,7 +629,6 @@
                 let bAngle = Math.atan2(bdx, bdz) * 180 / Math.PI - player.heading;
                 if (bAngle > 180) bAngle -= 360;
                 if (bAngle < -180) bAngle += 360;
-
                 if (Math.abs(bAngle) < 60) {
                     const bx = canvas.width / 2 + (bAngle / 60) * (canvas.width / 2);
                     const by = canvas.height / 2 + player.pitch + ((player.y - b.y) / Math.max(1, bDist)) * 300;
@@ -679,6 +642,23 @@
                 }
             });
 
+            ufoBullets.forEach(ub => {
+                const ubdx = ub.x - player.x;
+                const ubdz = ub.z - player.z;
+                const ubDist = Math.hypot(ubdx, ubdz);
+                let ubAngle = Math.atan2(ubdx, ubdz) * 180 / Math.PI - player.heading;
+                if (ubAngle > 180) ubAngle -= 360;
+                if (ubAngle < -180) ubAngle += 360;
+                if (Math.abs(ubAngle) < 60) {
+                    const ubx = canvas.width / 2 + (ubAngle / 60) * (canvas.width / 2);
+                    const uby = canvas.height / 2 + player.pitch + ((player.y - ub.y) / Math.max(1, ubDist)) * 300;
+                    ctx.fillStyle = '#ff3300';
+                    ctx.beginPath();
+                    ctx.arc(ubx, uby, Math.max(3, 400 / ubDist), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
             particles.forEach(p => {
                 const pdx = p.x - player.x;
                 const pdz = p.z - player.z;
@@ -686,7 +666,6 @@
                 let pAngle = Math.atan2(pdx, pdz) * 180 / Math.PI - player.heading;
                 if (pAngle > 180) pAngle -= 360;
                 if (pAngle < -180) pAngle += 360;
-
                 if (Math.abs(pAngle) < 60) {
                     const px = canvas.width / 2 + (pAngle / 60) * (canvas.width / 2);
                     const py = canvas.height / 2 + player.pitch + ((player.y - p.y) / Math.max(1, pDist)) * 300;
@@ -696,9 +675,7 @@
                     ctx.fill();
                 }
             });
-
             ctx.restore();
-
             drawCockpitHUD(distanceToUFO, relAngle, angleToUFO);
         }
 
@@ -706,15 +683,14 @@
         function drawCockpitHUD(distToTarget, relAngle, targetAbsoluteHeading) {
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
-
             ctx.strokeStyle = '#00ffcc';
             ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.arc(cx, cy, 18, 0, Math.PI * 2);
             ctx.moveTo(cx - 28, cy); ctx.lineTo(cx - 8, cy);
-            ctx.moveTo(cx + 8, cy);  ctx.lineTo(cx + 28, cy);
+            ctx.moveTo(cx + 8, cy); ctx.lineTo(cx + 28, cy);
             ctx.moveTo(cx, cy - 28); ctx.lineTo(cx, cy - 8);
-            ctx.moveTo(cx, cy + 8);  ctx.lineTo(cx, cy + 28);
+            ctx.moveTo(cx, cy + 8); ctx.lineTo(cx, cy + 28);
             ctx.stroke();
 
             ctx.strokeStyle = 'rgba(0, 255, 204, 0.25)';
@@ -726,24 +702,21 @@
 
             const dirIndex = Math.floor(((player.heading + 15) % 360) / 30);
             const currentDirText = DIRECTIONS[dirIndex];
-
             ctx.fillStyle = '#00ffcc';
             ctx.font = 'bold 15px Courier New';
             ctx.textAlign = 'center';
             ctx.fillText(`| ${Math.round(player.heading)}° ${currentDirText.toUpperCase()} |`, cx, 40);
 
-            // ĐÃ CHUYỂN 4 DÒNG THÔNG TIN LÊN DƯỚI NÚT KHÁM PHÁ (GÓC TRÊN BÊN TRÁI)
             ctx.textAlign = 'left';
             ctx.font = '13px monospace';
-            ctx.fillText(`TỐC ĐỘ : ${Math.round(player.speed)} m/s`, 15, 75);
-            ctx.fillText(`ĐỘ CAO : ${Math.round(player.y)} m`, 15, 95);
-            ctx.fillText(`MỤC TIÊU : ${ufo.alive ? 'UFO-X' : 'DESTROYED'}`, 15, 115);
-            ctx.fillText(`KHOẢNG CÁCH: ${ufo.alive ? Math.round(distToTarget) + 'm' : '---'}`, 15, 135);
+            ctx.fillText(`CẤP ĐỘ : ${gameScore.level} (Đã hạ: ${gameScore.ufoDestroyed})`, 15, 75);
+            ctx.fillText(`MÁU UFO : ${ufo.alive ? (ufo.maxHits - ufo.hits) + '/' + ufo.maxHits : '0'}`, 15, 95);
+            ctx.fillText(`TỐC ĐỘ : ${Math.round(player.speed)} m/s`, 15, 115);
+            ctx.fillText(`ĐỘ CAO : ${Math.round(player.y)} m`, 15, 135);
 
             const radarSize = 110;
             const rx = canvas.width - radarSize - 20;
             const ry = 20;
-
             ctx.save();
             ctx.fillStyle = 'rgba(0, 20, 30, 0.8)';
             ctx.strokeStyle = '#00ffcc';
@@ -764,11 +737,9 @@
                 const radarScale = (radarSize / 2) / 1500;
                 const blipRad = relAngle * Math.PI / 180;
                 const blipDist = Math.min(distToTarget, 1500) * radarScale;
-
                 const blipX = rx + radarSize / 2 + Math.sin(blipRad) * blipDist;
                 const blipY = ry + radarSize / 2 - Math.cos(blipRad) * blipDist;
-
-                ctx.fillStyle = '#ff0033';
+                ctx.fillStyle = gameScore.level >= 2 ? '#ff3300' : '#ff0033';
                 ctx.beginPath();
                 ctx.arc(blipX, blipY, 4, 0, Math.PI * 2);
                 ctx.fill();
@@ -781,12 +752,10 @@
                 ctx.lineTo(blipX + Math.sin(tRad) * 10, blipY - Math.cos(tRad) * 10);
                 ctx.stroke();
             }
-
             ctx.fillStyle = '#00ffcc';
             ctx.beginPath();
             ctx.arc(rx + radarSize / 2, ry + radarSize / 2, 3, 0, Math.PI * 2);
             ctx.fill();
-
             ctx.restore();
         }
 
@@ -794,13 +763,10 @@
         function gameLoop(now) {
             const dt = Math.min((now - lastTime) / 1000, 0.1);
             lastTime = now;
-
             updateGame(dt);
             render();
-
             requestAnimationFrame(gameLoop);
         }
-
         resetUFO();
         requestAnimationFrame(gameLoop);
     </script>
