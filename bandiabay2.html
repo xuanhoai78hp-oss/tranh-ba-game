@@ -39,7 +39,7 @@
 
         /* Joystick Base */
         #joystick-base {
-            bottom: 30px;
+            bottom: 60px;
             left: 30px;
             width: 120px;
             height: 120px;
@@ -81,15 +81,29 @@
             transform: scale(0.92);
             filter: brightness(1.2);
         }
+
         #btn-fire {
-            bottom: 35px;
+            bottom: 75px;
             right: 30px;
             background: radial-gradient(circle, rgba(255,50,50,0.85) 0%, rgba(150,0,0,0.85) 100%);
             border-color: #ff3333;
-            box-shadow: 0 0 15px rgba(255, 51, 51, 0.6);
+            animation: firePulse 1s infinite;
         }
+
+        @keyframes firePulse {
+            0% {
+                box-shadow: 0 0 10px rgba(255,0,0,.4);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(255,0,0,.8);
+            }
+            100% {
+                box-shadow: 0 0 10px rgba(255,0,0,.4);
+            }
+        }
+
         #btn-boost {
-            bottom: 125px;
+            bottom: 175px;
             right: 40px;
             width: 60px;
             height: 60px;
@@ -489,12 +503,8 @@
         function updateGame(dt) {
             let kX = 0, kY = 0;
             
-            // HOÁN ĐỔI NÚT A VÀ D THEO YÊU CẦU:
-            // Khi nhấn A (hoặc mũi tên trái), máy hiểu là D (gán giá trị sang phải: +1)
-            // Khi nhấn D (hoặc mũi tên phải), máy hiểu là A (gán giá trị sang trái: -1)
             if (keys['KeyA'] || keys['ArrowLeft']) kX -= 1;
             if (keys['KeyD'] || keys['ArrowRight']) kX += 1;
-            
             if (keys['KeyW'] || keys['ArrowUp']) kY -= 1;
             if (keys['KeyS'] || keys['ArrowDown']) kY += 1;
 
@@ -722,14 +732,13 @@
             ctx.textAlign = 'center';
             ctx.fillText(`| ${Math.round(player.heading)}° ${currentDirText.toUpperCase()} |`, cx, 40);
 
+            // ĐÃ CHUYỂN 4 DÒNG THÔNG TIN LÊN DƯỚI NÚT KHÁM PHÁ (GÓC TRÊN BÊN TRÁI)
             ctx.textAlign = 'left';
             ctx.font = '13px monospace';
-            ctx.fillText(`TỐC ĐỘ : ${Math.round(player.speed)} m/s`, 20, canvas.height - 110);
-            ctx.fillText(`ĐỘ CAO : ${Math.round(player.y)} m`, 20, canvas.height - 90);
-
-            ctx.textAlign = 'right';
-            ctx.fillText(`MỤC TIÊU : ${ufo.alive ? 'UFO-X' : 'DESTROYED'}`, canvas.width - 20, canvas.height - 110);
-            ctx.fillText(`KHOẢNG CÁCH: ${ufo.alive ? Math.round(distToTarget) + 'm' : '---'}`, canvas.width - 20, canvas.height - 90);
+            ctx.fillText(`TỐC ĐỘ : ${Math.round(player.speed)} m/s`, 15, 75);
+            ctx.fillText(`ĐỘ CAO : ${Math.round(player.y)} m`, 15, 95);
+            ctx.fillText(`MỤC TIÊU : ${ufo.alive ? 'UFO-X' : 'DESTROYED'}`, 15, 115);
+            ctx.fillText(`KHOẢNG CÁCH: ${ufo.alive ? Math.round(distToTarget) + 'm' : '---'}`, 15, 135);
 
             const radarSize = 110;
             const rx = canvas.width - radarSize - 20;
