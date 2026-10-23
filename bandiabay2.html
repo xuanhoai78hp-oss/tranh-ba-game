@@ -2,546 +2,798 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>UFO Shooter | Bắn Đĩa Bay</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Fighter Jet - UFO Hunter</title>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
-        html,body{height:100%;overflow:hidden;background:#05050a;color:#fff;font-family:Arial,sans-serif;touch-action:none}
-        #app{display:flex;flex-direction:column;height:100dvh}
-        #top{height:10%;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#0f0f1a;border-bottom:2px solid #333;gap:12px;z-index:10}
-        #title{color:#00ffff;font-weight:bold;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:15px;text-shadow:0 0 8px rgba(0,255,255,0.5)}
-        .tb{background:#1a1a2e;padding:10px 20px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;text-align:center;border:1px solid #00ffff;color:#00ffff;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 0 8px rgba(0,255,255,0.3)}
-        .tb:active{background:#2a2a4e;filter:brightness(1.2)}
-        
-        #stage{flex:1;position:relative;background:radial-gradient(circle at center, #1b1b3a 0%, #080814 100%);overflow:hidden;border-left:2px solid #333;border-right:2px solid #333;min-height:0}
-        .stars-bg{position:absolute;inset:0;background-image:radial-gradient(white 1px, transparent 0);background-size:30px 30px;opacity:0.3;pointer-events:none}
-        #cv{width:100%;height:100%;display:block;position:relative;z-index:2}
-        #hud{position:absolute;top:8px;left:0;right:0;display:flex;justify-content:space-between;padding:0 12px;pointer-events:none;font-weight:bold;z-index:4}
-        #score{color:#00ffff;font-size:24px;text-shadow:0 0 10px #00ffff}
-        #best{color:#888;font-size:13px;align-self:center}
-        
-        #combo{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);font-size:50px;font-weight:bold;color:#ff00ff;text-shadow:0 0 20px #ff00ff,0 0 40px #00ffff;pointer-events:none;opacity:0;transition:opacity .2s;z-index:5;text-align:center}
-        #cd{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.8);z-index:15;font-size:100px;font-weight:bold;color:#00ffff;text-shadow:0 0 30px #00ffff}
-        
-        #sum{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,10,20,0.96);border:2px solid #00ffff;border-radius:12px;padding:20px;z-index:18;display:none;text-align:center;min-width:280px;max-width:92%;box-shadow:0 0 25px rgba(0,255,255,0.4)}
-        #sum h2{color:#00ffff;margin-bottom:12px}
-        #sum .r{display:flex;justify-content:space-between;gap:20px;margin:6px 0;font-size:14px}
-        #sum .r span:last-child{color:#00ffff;font-weight:bold}
-        #sum .btns{display:flex;gap:8px;margin-top:14px}
-        #sum button{flex:1;padding:10px;background:#00ffff;color:#000;border:none;border-radius:6px;font-weight:bold;cursor:pointer}
-        #sum button.sec{background:#333;color:#fff}
-        
-        /* 3 Nút bắn dưới đáy */
-        #pad{height:25%;display:flex;border-top:2px solid #333;padding:8px;gap:8px;background:#0a0a12;z-index:10}
-        .btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:16px;font-weight:bold;border:2px solid rgba(0,255,255,0.4);border-radius:12px;background:#141426;color:#00ffff;cursor:pointer;transition:transform .05s,background .1s,box-shadow .1s;gap:4px}
-        .btn:active, .btn.on{transform:scale(0.95);background:#00ffff;color:#000;box-shadow:0 0 20px #00ffff}
-        
-        #pop{display:none;position:absolute;top:8%;left:8%;width:84%;max-height:74%;background:rgba(10,10,20,0.97);border:2px solid #00ffff;border-radius:12px;z-index:20;flex-direction:column;padding:16px;box-shadow:0 0 30px rgba(0,255,255,0.3)}
-        #pop h3{color:#00ffff;text-align:center;margin-bottom:12px;font-size:16px}
-        #list{overflow-y:auto;max-height:320px}
-        .item{padding:14px;margin:6px 0;background:#1a1a2e;border:1px solid #444;border-radius:6px;display:flex;justify-content:space-between;cursor:pointer;font-size:14px}
-        .item:active{background:#2a2a4e}
-        .item .bs{color:#00ffff;font-size:12px}
-        #pop #close{margin-top:12px;padding:12px;background:#00ffff;color:#000;font-weight:bold;border:none;border-radius:6px;cursor:pointer;font-size:14px}
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Virtual Controls Overlay */
+        .touch-control {
+            position: absolute;
+            z-index: 10;
+            touch-action: none;
+        }
+
+        /* Joystick Base */
+        #joystick-base {
+            bottom: 30px;
+            left: 30px;
+            width: 120px;
+            height: 120px;
+            background: rgba(0, 255, 204, 0.15);
+            border: 2px solid rgba(0, 255, 204, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #joystick-stick {
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, rgba(0,255,204,0.9) 0%, rgba(0,150,120,0.7) 100%);
+            border: 2px solid #00ffcc;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.7);
+            transform: translate(0, 0);
+            pointer-events: none;
+        }
+
+        /* Action Buttons */
+        .btn-action {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #fff;
+            text-shadow: 0 0 5px #000;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.6);
+        }
+        .btn-action:active, .btn-action.active {
+            transform: scale(0.92);
+            filter: brightness(1.2);
+        }
+        #btn-fire {
+            bottom: 35px;
+            right: 30px;
+            background: radial-gradient(circle, rgba(255,50,50,0.85) 0%, rgba(150,0,0,0.85) 100%);
+            border-color: #ff3333;
+            box-shadow: 0 0 15px rgba(255, 51, 51, 0.6);
+        }
+        #btn-boost {
+            bottom: 125px;
+            right: 40px;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(255,200,0,0.85) 0%, rgba(180,100,0,0.85) 100%);
+            border-color: #ffcc00;
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.6);
+            font-size: 11px;
+        }
+
+        /* Nút Khám phá ở góc trên bên trái */
+        #explore-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 20;
+            background: rgba(10, 10, 30, 0.85);
+            border: 2px solid #00ffcc;
+            color: #00ffcc;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 0 12px rgba(0, 255, 204, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        #explore-btn:active {
+            background: rgba(0, 255, 204, 0.2);
+        }
+
+        #sound-notice {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 30;
+            background: rgba(0,0,0,0.85);
+            border: 2px solid #00ffcc;
+            color: #00ffcc;
+            padding: 16px 24px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 14px;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
     </style>
 </head>
 <body>
-    <div id="app">
-        <div id="top">
-            <div class="tb" id="openLib">📚 Thư viện</div>
-            <div id="title">— Chọn bài hát —</div>
-            <div class="tb" id="explore">🔍 Khám phá</div>
+
+    <div id="game-container">
+        <!-- Canvas Screen -->
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="sound-notice">CHẠM MÀN HÌNH ĐỂ BẬT ÂM THANH</div>
+
+        <!-- Nút Khám phá dẫn tới trang tuongzalo.html -->
+        <a id="explore-btn" href="tuongzalo.html">🔍 Khám phá</a>
+
+        <!-- Touch Controls -->
+        <div id="joystick-base" class="touch-control">
+            <div id="joystick-stick"></div>
         </div>
-        <div id="stage">
-            <div class="stars-bg"></div>
-            <canvas id="cv"></canvas>
-            <div id="hud"><div id="score">0</div><div id="best"></div></div>
-            <div id="combo"></div>
-            <div id="cd"></div>
-            <div id="sum">
-                <h2>🎉 HOÀN THÀNH!</h2>
-                <div class="r"><span>Điểm:</span><span id="s-score">0</span></div>
-                <div class="r"><span>Bắn trúng/Trượt:</span><span id="s-hm">0/0</span></div>
-                <div class="r"><span>Combo max:</span><span id="s-combo">0</span></div>
-                <div class="r"><span>Kỷ lục:</span><span id="s-best">0</span></div>
-                <div class="btns">
-                    <button class="sec" id="save">📸 Lưu ảnh</button>
-                    <button id="cls">Đóng</button>
-                </div>
-            </div>
-        </div>
-        <!-- 3 nút súng điều khiển dưới đáy -->
-        <div id="pad">
-            <button class="btn" id="b-left">🚀 Súng Trái</button>
-            <button class="btn" id="b-center">🛸 Súng Giữa</button>
-            <button class="btn" id="b-right">🚀 Súng Phải</button>
-        </div>
+        <div id="btn-fire" class="touch-control btn-action">FIRE</div>
+        <div id="btn-boost" class="touch-control btn-action">BOOST</div>
     </div>
-    
-    <div id="pop"><h3>📚 THƯ VIỆN BÀI HÁT</h3><div id="list"></div><button id="close">Đóng</button></div>
-    <audio id="music" preload="auto" style="display:none"></audio>
-    
+
     <script>
-        const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/xuanhoai78hp-oss/tranh-ba-game/refs/heads/main/";
-        const FALL_SEC = 2.5;
-        const CD_SEC = 3;
-        const KEY = 'ufo_shooter_v1';
-        
-        let scores = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {} } catch { return {} } })();
-        const saveScores = () => { try { localStorage.setItem(KEY, JSON.stringify(scores)) } catch {} };
-        
-        const music = document.getElementById('music');
-        let musicReady = false;
-        let curFile = null;
-        let notes = [];
-        let phase = 'idle';
-        let score = 0, combo = 0, maxCombo = 0, hitCount = 0, missCount = 0;
-        let activeGun = 1;
-        let bullets = []; // Lưu các tia laser/đạn bắn từ súng lên
-        let sparkles = []; // Hiệu ứng nổ tung UFO
-        
-        const lanePressed = [false, false, false];
-        const lanePressTimer = [null, null, null];
-        
-        document.addEventListener('pointerdown', function unlockAudio() {
-            if (music && music.paused) {
-                music.play().then(() => { music.pause(); music.currentTime = 0; }).catch(() => {});
+        // --- SOUND SYNTHESIZER (Web Audio API) ---
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const notice = document.getElementById('sound-notice');
+                if (notice) {
+                    notice.style.opacity = '0';
+                    setTimeout(() => notice.remove(), 500);
+                }
             }
-            document.removeEventListener('pointerdown', unlockAudio);
-        }, { once: true });
-        
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        function playLaser() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        window.addEventListener('touchstart', initAudio, { once: true });
+        window.addEventListener('mousedown', initAudio, { once: true });
+        window.addEventListener('keydown', initAudio, { once: true });
+
+        function playLaserSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
             osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.12);
+
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+
             osc.connect(gain);
             gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.12);
+        }
+
+        function playHitSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.15);
+
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
             osc.start();
             osc.stop(audioCtx.currentTime + 0.15);
         }
-        
-        function playExplosion() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(200, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.25);
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-            osc.connect(gain);
+
+        function playExplosionSound() {
+            if (!audioCtx) return;
+            const bufferSize = audioCtx.sampleRate * 0.5;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(300, audioCtx.currentTime);
+            filter.frequency.linearRampToValueAtTime(20, audioCtx.currentTime + 0.5);
+
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+            noise.connect(filter);
+            filter.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.25);
+
+            noise.start();
+            noise.stop(audioCtx.currentTime + 0.5);
         }
-        
-        function parseSong(text) {
-            const lines = text.split(/\r?\n/);
-            const title = (lines[0] || '').trim();
-            const arr = [];
-            const tempoInterval = 400;
-            for (let i = 1; i < lines.length; i++) {
-                const toks = lines[i].trim().split(/\s+/).filter(Boolean);
-                for (const tok of toks) {
-                    const m = tok.match(/^([tvm])(\d+)(?:;(\d+))?$/i);
-                    if (!m) continue;
-                    let type = m[1].toLowerCase();
-                    let s = parseInt(m[2]);
-                    let e = m[3] ? parseInt(m[3]) : s + 200;
-                    if (e <= s) e = s + 200;
-                    let col = (type === 'm') ? 0 : (type === 'v') ? 1 : 2;
-                    let tTime = s;
-                    while (tTime <= e) {
-                        arr.push({ col: col, hitTime: tTime, state: 'wait' });
-                        tTime += tempoInterval;
-                    }
+
+        // --- DYNAMIC TEXTURE GENERATOR ---
+        let mapImage = new Image();
+        let ufoImage = new Image();
+
+        function createMapTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 2400;
+            canvas.height = 800;
+            const ctx = canvas.getContext('2d');
+
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, 350);
+            skyGrad.addColorStop(0, '#0a1128');
+            skyGrad.addColorStop(0.5, '#1c2541');
+            skyGrad.addColorStop(1, '#480ca8');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, canvas.width, 350);
+
+            const horizonGrad = ctx.createLinearGradient(0, 280, 0, 360);
+            horizonGrad.addColorStop(0, '#f72585');
+            horizonGrad.addColorStop(1, '#7209b7');
+            ctx.fillStyle = horizonGrad;
+            ctx.fillRect(0, 280, canvas.width, 80);
+
+            ctx.fillStyle = '#0b090a';
+            ctx.beginPath();
+            ctx.moveTo(0, 350);
+            for (let x = 0; x <= canvas.width; x += 30) {
+                let height = Math.sin(x * 0.01) * 60 + Math.cos(x * 0.025) * 40 + Math.sin(x * 0.005) * 80;
+                ctx.lineTo(x, 350 - height);
+            }
+            ctx.lineTo(canvas.width, 500);
+            ctx.lineTo(0, 500);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#161a1d';
+            ctx.beginPath();
+            ctx.moveTo(0, 360);
+            for (let x = 0; x <= canvas.width; x += 20) {
+                let height = Math.sin(x * 0.02 + 1) * 35 + Math.cos(x * 0.04) * 25;
+                ctx.lineTo(x, 360 - height);
+            }
+            ctx.lineTo(canvas.width, 500);
+            ctx.lineTo(0, 500);
+            ctx.closePath();
+            ctx.fill();
+
+            const lakeGrad = ctx.createLinearGradient(0, 360, 0, 800);
+            lakeGrad.addColorStop(0, '#3a0ca3');
+            lakeGrad.addColorStop(0.3, '#03045e');
+            lakeGrad.addColorStop(1, '#023e8a');
+            ctx.fillStyle = lakeGrad;
+            ctx.fillRect(0, 360, canvas.width, 440);
+
+            ctx.strokeStyle = 'rgba(247, 37, 133, 0.18)';
+            ctx.lineWidth = 2;
+            for (let y = 370; y < 800; y += 12) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                for (let x = 0; x < canvas.width; x += 50) {
+                    ctx.lineTo(x + Math.sin(x * 0.05 + y) * 5, y);
                 }
+                ctx.stroke();
             }
-            arr.sort((a, b) => a.hitTime - b.hitTime);
-            return { title, notes: arr };
+
+            return canvas;
         }
-        
-        async function loadSong(file) {
-            try {
-                const r = await fetch(GITHUB_RAW_BASE + file);
-                if (!r.ok) throw new Error('Không tìm thấy file txt');
-                const text = await r.text();
-                const parsed = parseSong(text);
-                if (parsed.notes.length === 0) throw new Error('File không có nốt nhạc');
-                music.pause();
-                music.currentTime = 0;
-                music.removeAttribute('src');
-                musicReady = false;
-                const base = file.replace(/\.txt$/i, '');
-                const tryLoad = (src) => new Promise(res => {
-                    music.src = src;
-                    music.load();
-                    const onOk = () => { music.removeEventListener('error', onErr); musicReady = true; res(true); };
-                    const onErr = () => { music.removeEventListener('canplaythrough', onOk); res(false); };
-                    music.addEventListener('canplaythrough', onOk, { once: true });
-                    music.addEventListener('error', onErr, { once: true });
-                    setTimeout(() => res(musicReady), 2000);
-                });
-                let okM = await tryLoad(GITHUB_RAW_BASE + base + '.m4a');
-                if (!okM) await tryLoad(GITHUB_RAW_BASE + base + '.mp3');
-                document.getElementById('title').textContent = parsed.title;
-                curFile = file;
-                notes = parsed.notes;
-                sparkles = [];
-                bullets = [];
-                score = 0; combo = 0; maxCombo = 0; hitCount = 0; missCount = 0;
-                uiScore(); uiBest(); countdown();
-                document.getElementById('pop').style.display = 'none';
-            } catch (e) {
-                alert('Lỗi load bài hát: ' + e.message);
+
+        function createUFOTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#a8dede';
+            ctx.beginPath();
+            ctx.arc(128, 55, 35, Math.PI, 0);
+            ctx.fill();
+
+            const bodyGrad = ctx.createLinearGradient(0, 45, 0, 85);
+            bodyGrad.addColorStop(0, '#e0e1dd');
+            bodyGrad.addColorStop(0.5, '#778da9');
+            bodyGrad.addColorStop(1, '#1b263b');
+            ctx.fillStyle = bodyGrad;
+
+            ctx.beginPath();
+            ctx.ellipse(128, 65, 90, 25, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#3d5a80';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            const lightColors = ['#ff0055', '#00ffff', '#ffcc00', '#00ff66', '#ff0055'];
+            for (let i = 0; i < 5; i++) {
+                ctx.fillStyle = lightColors[i];
+                ctx.shadowColor = lightColors[i];
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(58 + i * 35, 68, 6, 0, Math.PI * 2);
+                ctx.fill();
             }
+
+            return canvas;
         }
-        
-        function uiScore() { document.getElementById('score').textContent = score; }
-        function uiBest() { const b = scores[curFile] || 0; document.getElementById('best').textContent = b ? `🏅 ${b}` : ''; }
-        
-        function countdown() {
-            const el = document.getElementById('cd');
-            el.style.display = 'flex';
-            let s = CD_SEC;
-            el.textContent = s;
-            const timer = setInterval(() => {
-                s--;
-                if (s > 0) el.textContent = s;
-                else {
-                    el.textContent = 'GO!';
-                    clearInterval(timer);
-                    setTimeout(() => { el.style.display = 'none'; startGame(); }, 500);
-                }
-            }, 700);
+
+        const mapCanvas = createMapTexture();
+        mapImage.src = mapCanvas.toDataURL();
+
+        const ufoCanvas = createUFOTexture();
+        ufoImage.src = ufoCanvas.toDataURL();
+
+        // --- GAME LOGIC & CONTROLS ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
-        
-        function startGame() {
-            phase = 'play';
-            for (const n of notes) n.state = 'wait';
-            sparkles = [];
-            bullets = [];
-            if (music) {
-                music.currentTime = 0;
-                music.play().catch(err => console.log(err));
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const DIRECTIONS = ["Bắc", "Bắc Đông Bắc", "Đông Đông Bắc", "Đông", "Đông Đông Nam", "Nam Đông Nam", "Nam", "Nam Tây Nam", "Tây Tây Nam", "Tây", "Tây Tây Bắc", "Bắc Tây Bắc"];
+
+        const player = {
+            heading: 0,
+            pitch: 0,
+            roll: 0,
+            speed: 150,
+            boosting: false,
+            x: 0,
+            y: 500,
+            z: 0
+        };
+
+        let ufo = {
+            x: 100,
+            y: 500,
+            z: 800,
+            heading: 45,
+            speed: 140,
+            hits: 0,
+            maxHits: 10,
+            alive: true,
+            explodeTimer: 0
+        };
+
+        let bullets = [];
+        let particles = [];
+
+        const joystick = { x: 0, y: 0, active: false };
+        let isFiring = false;
+        let fireCooldown = 0;
+
+        const stickEl = document.getElementById('joystick-stick');
+        const baseEl = document.getElementById('joystick-base');
+
+        function updateJoystickPos(touchX, touchY) {
+            const rect = baseEl.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            let dx = touchX - centerX;
+            let dy = touchY - centerY;
+            const dist = Math.hypot(dx, dy);
+            const maxDist = rect.width / 2;
+
+            if (dist > maxDist) {
+                dx = (dx / dist) * maxDist;
+                dy = (dy / dist) * maxDist;
             }
+
+            joystick.x = dx / maxDist; 
+            joystick.y = dy / maxDist; 
+
+            stickEl.style.transform = `translate(${dx}px, ${dy}px)`;
         }
-        
-        function elapsedMs() {
-            if (musicReady && !music.paused && !music.ended) return music.currentTime * 1000;
-            return 0;
-        }
-        
-        function fireGun(lane) {
-            activeGun = lane;
-            lanePressed[lane] = true;
-            
-            document.querySelectorAll('.btn').forEach((b, idx) => {
-                if (idx === lane) b.classList.add('on');
-                else b.classList.remove('on');
-            });
-            
-            playLaser();
-            const colW = cv.logicalW / 3;
-            const columns = [colW * 0.5, colW * 1.5, colW * 2.5];
-            
-            // Tạo tia đạn laser bay từ súng lên trên
-            bullets.push({ x: columns[lane], y: cv.logicalH * 0.75, targetY: cv.logicalH * 0.2, alpha: 1.0 });
-            
-            checkHit(lane);
-            
-            if (lanePressTimer[lane]) clearTimeout(lanePressTimer[lane]);
-            lanePressTimer[lane] = setTimeout(() => {
-                lanePressed[lane] = false;
-                document.getElementById(['b-left', 'b-center', 'b-right'][lane]).classList.remove('on');
-            }, 250);
-        }
-        
-        document.getElementById('b-left').onclick = () => fireGun(0);
-        document.getElementById('b-center').onclick = () => fireGun(1);
-        document.getElementById('b-right').onclick = () => fireGun(2);
-        
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft') fireGun(0);
-            if (e.key === 'ArrowDown' || e.key === ' ') fireGun(1);
-            if (e.key === 'ArrowRight') fireGun(2);
-        });
-        
-        function checkHit(lane) {
-            if (phase !== 'play') return;
-            const ms = elapsedMs();
-            for (const n of notes) {
-                // Kiểm tra nốt ở đúng làn và trong khung thời gian đạt tầm cao yêu cầu
-                if (n.state === 'wait' && n.col === lane && Math.abs(ms - n.hitTime) < 180) {
-                    n.state = 'hit';
-                    score += 10;
-                    combo++;
-                    if (combo > maxCombo) maxCombo = combo;
-                    
-                    // Nếu combo tròn chục, thưởng ngay 200 điểm
-                    if (combo > 0 && combo % 10 === 0) {
-                        score += 200;
-                        showCombo(`🔥 COMBO ${combo}!\n+200 ĐIỂM!`);
-                    } else {
-                        showCombo(`${combo} COMBO`);
-                    }
-                    
-                    hitCount++;
-                    playExplosion();
-                    if (navigator.vibrate) navigator.vibrate(25);
-                    uiScore();
-                    
-                    const colW = cv.logicalW / 3;
-                    const columns = [colW * 0.5, colW * 1.5, colW * 2.5];
-                    // Tính tọa độ UFO ở tầm cao khi trúng đạn
-                    let progress = 0.55; // Tầm giữa màn hình (đã bay lên cao)
-                    createSparkles(columns[n.col], 75 + progress * (cv.logicalH * 0.65 - 75));
+
+        baseEl.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            joystick.active = true;
+            updateJoystickPos(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!joystick.active) return;
+            for (let i = 0; i < e.touches.length; i++) {
+                if (e.touches[i].target === baseEl || baseEl.contains(e.touches[i].target)) {
+                    updateJoystickPos(e.touches[i].clientX, e.touches[i].clientY);
                     break;
                 }
             }
+        }, { passive: false });
+
+        const resetJoystick = () => {
+            joystick.active = false;
+            joystick.x = 0;
+            joystick.y = 0;
+            stickEl.style.transform = `translate(0px, 0px)`;
+        };
+        window.addEventListener('touchend', resetJoystick);
+        window.addEventListener('touchcancel', resetJoystick);
+
+        const btnFire = document.getElementById('btn-fire');
+        const btnBoost = document.getElementById('btn-boost');
+
+        const bindButtonEvents = (btn, onPress, onRelease) => {
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); btn.classList.add('active'); onPress(); }, { passive: false });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); btn.classList.remove('active'); onRelease(); }, { passive: false });
+            btn.addEventListener('mousedown', (e) => { e.preventDefault(); btn.classList.add('active'); onPress(); });
+            btn.addEventListener('mouseup', (e) => { e.preventDefault(); btn.classList.remove('active'); onRelease(); });
+            btn.addEventListener('mouseleave', () => { btn.classList.remove('active'); onRelease(); });
+        };
+
+        bindButtonEvents(btnFire, () => { isFiring = true; }, () => { isFiring = false; });
+        bindButtonEvents(btnBoost, () => { player.boosting = true; }, () => { player.boosting = false; });
+
+        const keys = {};
+        window.addEventListener('keydown', e => {
+            keys[e.code] = true;
+            if (e.code === 'Space') isFiring = true;
+        });
+        window.addEventListener('keyup', e => {
+            keys[e.code] = false;
+            if (e.code === 'Space') isFiring = false;
+        });
+
+        function resetUFO() {
+            ufo.x = player.x + (Math.random() - 0.5) * 1000;
+            ufo.y = player.y + (Math.random() - 0.5) * 200;
+            ufo.z = player.z + 1200 + Math.random() * 500;
+            ufo.heading = Math.random() * 360;
+            ufo.hits = 0;
+            ufo.alive = true;
         }
-        
-        function createSparkles(x, y) {
-            for (let i = 0; i < 20; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const speed = 2 + Math.random() * 6;
-                sparkles.push({
-                    x: x, y: y,
-                    vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed,
-                    alpha: 1.0,
-                    color: ['#00ffff', '#ff00ff', '#ffffff', '#ffff00'][Math.floor(Math.random() * 4)],
-                    size: 2 + Math.random() * 4
+
+        // --- UPDATE GAME ENGINE ---
+        function updateGame(dt) {
+            let kX = 0, kY = 0;
+            
+            // HOÁN ĐỔI NÚT A VÀ D THEO YÊU CẦU:
+            // Khi nhấn A (hoặc mũi tên trái), máy hiểu là D (gán giá trị sang phải: +1)
+            // Khi nhấn D (hoặc mũi tên phải), máy hiểu là A (gán giá trị sang trái: -1)
+            if (keys['KeyA'] || keys['ArrowLeft']) kX -= 1;
+            if (keys['KeyD'] || keys['ArrowRight']) kX += 1;
+            
+            if (keys['KeyW'] || keys['ArrowUp']) kY -= 1;
+            if (keys['KeyS'] || keys['ArrowDown']) kY += 1;
+
+            const inputX = joystick.active ? joystick.x : kX;
+            const inputY = joystick.active ? joystick.y : kY;
+
+            player.heading += inputX * 50 * dt;
+            if (player.heading < 0) player.heading += 360;
+            if (player.heading >= 360) player.heading -= 360;
+
+            const targetRoll = -inputX * 0.35;
+            player.roll += (targetRoll - player.roll) * 0.12;
+
+            player.pitch += inputY * 140 * dt;
+            player.pitch = Math.max(-150, Math.min(150, player.pitch));
+
+            player.speed = player.boosting ? 270 : 150;
+
+            const radH = player.heading * Math.PI / 180;
+            player.x += Math.sin(radH) * player.speed * dt;
+            player.z += Math.cos(radH) * player.speed * dt;
+
+            if (ufo.alive) {
+                const ufoRad = ufo.heading * Math.PI / 180;
+                ufo.x += Math.sin(ufoRad) * ufo.speed * dt;
+                ufo.z += Math.cos(ufoRad) * ufo.speed * dt;
+            } else {
+                ufo.explodeTimer -= dt;
+                if (ufo.explodeTimer <= 0) resetUFO();
+            }
+
+            fireCooldown -= dt;
+            if (isFiring && fireCooldown <= 0) {
+                fireCooldown = 0.12; 
+                playLaserSound();
+
+                const aimDist = 600;
+                const targetX = player.x + Math.sin(radH) * aimDist;
+                const targetY = player.y + player.pitch * 2; 
+                const targetZ = player.z + Math.cos(radH) * aimDist;
+
+                bullets.push({
+                    x: player.x,
+                    y: player.y - 10,
+                    z: player.z,
+                    vx: (targetX - player.x) / aimDist * 900,
+                    vy: (targetY - (player.y - 10)) / aimDist * 900,
+                    vz: (targetZ - player.z) / aimDist * 900,
+                    life: 1.8
+                });
+            }
+
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i];
+                b.life -= dt;
+                b.x += b.vx * dt;
+                b.y += b.vy * dt;
+                b.z += b.vz * dt;
+
+                if (ufo.alive) {
+                    const distToUFO = Math.hypot(b.x - ufo.x, b.y - ufo.y, b.z - ufo.z);
+                    if (distToUFO < 75) {
+                        ufo.hits++;
+                        bullets.splice(i, 1);
+                        playHitSound();
+                        createExplosion(b.x, b.y, b.z, 12, '#00ffff');
+
+                        if (ufo.hits >= ufo.maxHits) {
+                            ufo.alive = false;
+                            ufo.explodeTimer = 2.5;
+                            playExplosionSound();
+                            createExplosion(ufo.x, ufo.y, ufo.z, 65, '#ff3300');
+                        }
+                        continue;
+                    }
+                }
+
+                if (b.life <= 0) bullets.splice(i, 1);
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.z += p.vz * dt;
+                p.life -= dt;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+
+        function createExplosion(x, y, z, count, color) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x, y, z,
+                    vx: (Math.random() - 0.5) * 220,
+                    vy: (Math.random() - 0.5) * 220,
+                    vz: (Math.random() - 0.5) * 220,
+                    life: 0.4 + Math.random() * 0.6,
+                    color
                 });
             }
         }
-        
-        function showCombo(text) {
-            const el = document.getElementById('combo');
-            el.textContent = text;
-            el.classList.add('show');
-            clearTimeout(el._t);
-            el._t = setTimeout(() => el.classList.remove('show'), 700);
-        }
-        
-        const cv = document.getElementById('cv');
-        const ctx = cv.getContext('2d');
-        
-        function resize() {
-            cv.width = cv.parentElement.clientWidth * window.devicePixelRatio;
-            cv.height = cv.parentElement.clientHeight * window.devicePixelRatio;
-            cv.logicalW = cv.parentElement.clientWidth;
-            cv.logicalH = cv.parentElement.clientHeight;
-            ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
-        }
-        resize();
-        window.addEventListener('resize', resize);
-        
-        function loop() {
-            const W = cv.logicalW, H = cv.logicalH;
-            ctx.clearRect(0, 0, W, H);
-            
-            const colW = W / 3;
-            const columns = [colW * 0.5, colW * 1.5, colW * 2.5];
-            
-            if (phase === 'play') {
-                const ms = elapsedMs();
-                for (const n of notes) {
-                    let spawnTime = n.hitTime - FALL_SEC * 1000;
-                    if (ms >= spawnTime && ms <= n.hitTime + 300) {
-                        let progress = (ms - spawnTime) / (FALL_SEC * 1000);
-                        let x = columns[n.col];
-                        // Đĩa bay bay từ dưới thấp lên cao (từ H*0.8 lên H*0.2)
-                        let y = (H * 0.8) - progress * (H * 0.6);
-                        // Càng lên cao càng nhỏ dần (hiệu ứng xa dần)
-                        let scale = Math.max(0.3, 1.0 - progress * 0.7);
-                        
-                        // Kiểm tra nếu bay qua tầm cao mà không bắn trúng -> Miss (-5 điểm)
-                        if (n.state === 'wait' && ms > n.hitTime + 200) {
-                            n.state = 'missed';
-                            missCount++;
-                            score = Math.max(0, score - 5);
-                            combo = 0;
-                            uiScore();
-                        }
-                        
-                        if (n.state === 'wait') {
-                            drawUFO(x, y, scale);
-                        }
-                    }
-                }
-                
-                if (ms > (notes[notes.length - 1]?.hitTime || 0) + 3000) {
-                    endGame();
+
+        // --- RENDER GAME SCENE & HUD ---
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(player.roll);
+            ctx.translate(-canvas.width / 2, -canvas.height / 2);
+
+            const panoWidth = mapImage.width || 2400;
+            const headingRatio = player.heading / 360;
+            let bgX = -headingRatio * panoWidth; 
+            let bgY = (canvas.height / 2) - (mapImage.height / 2) + player.pitch;
+
+            ctx.drawImage(mapImage, bgX, bgY);
+            ctx.drawImage(mapImage, bgX - panoWidth, bgY);
+            ctx.drawImage(mapImage, bgX + panoWidth, bgY);
+
+            const dx = ufo.x - player.x;
+            const dz = ufo.z - player.z;
+            const distanceToUFO = Math.hypot(dx, dz);
+
+            let angleToUFO = Math.atan2(dx, dz) * 180 / Math.PI;
+            if (angleToUFO < 0) angleToUFO += 360;
+
+            let relAngle = angleToUFO - player.heading;
+            if (relAngle > 180) relAngle -= 360;
+            if (relAngle < -180) relAngle += 360;
+
+            let ufoScreenX = canvas.width / 2 + (relAngle / 60) * (canvas.width / 2);
+            let ufoScreenY = canvas.height / 2 + player.pitch + ((player.y - ufo.y) / Math.max(1, distanceToUFO)) * 300;
+
+            if (ufo.alive && Math.abs(relAngle) < 70 && distanceToUFO > 25) {
+                const scale = Math.max(0.15, Math.min(2.0, 400 / distanceToUFO));
+                const w = ufoImage.width * scale;
+                const h = ufoImage.height * scale;
+
+                ctx.drawImage(ufoImage, ufoScreenX - w / 2, ufoScreenY - h / 2, w, h);
+
+                if (distanceToUFO < 800) {
+                    ctx.strokeStyle = '#ff0033';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(ufoScreenX - w / 2 - 10, ufoScreenY - h / 2 - 10, w + 20, h + 20);
+
+                    ctx.fillStyle = '#ff0033';
+                    ctx.font = 'bold 12px monospace';
+                    ctx.fillText(`LOCK [${Math.round(distanceToUFO)}m]`, ufoScreenX - w / 2 - 10, ufoScreenY - h / 2 - 16);
                 }
             }
-            
-            // Vẽ đạn laser bay lên
+
             bullets.forEach(b => {
-                ctx.save();
-                ctx.strokeStyle = '#00ffff';
-                ctx.lineWidth = 4;
-                ctx.shadowColor = '#00ffff';
-                ctx.shadowBlur = 10;
-                ctx.beginPath();
-                ctx.moveTo(b.x, b.y);
-                ctx.lineTo(b.x, b.y - 40);
-                ctx.stroke();
-                ctx.restore();
-                b.y -= 25;
+                const bdx = b.x - player.x;
+                const bdz = b.z - player.z;
+                const bDist = Math.hypot(bdx, bdz);
+                let bAngle = Math.atan2(bdx, bdz) * 180 / Math.PI - player.heading;
+                if (bAngle > 180) bAngle -= 360;
+                if (bAngle < -180) bAngle += 360;
+
+                if (Math.abs(bAngle) < 60) {
+                    const bx = canvas.width / 2 + (bAngle / 60) * (canvas.width / 2);
+                    const by = canvas.height / 2 + player.pitch + ((player.y - b.y) / Math.max(1, bDist)) * 300;
+                    ctx.fillStyle = '#00ffff';
+                    ctx.shadowColor = '#00ffff';
+                    ctx.shadowBlur = 8;
+                    ctx.beginPath();
+                    ctx.arc(bx, by, Math.max(3, 400 / bDist), 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
             });
-            bullets = bullets.filter(b => b.y > 0);
-            
-            // Vẽ hiệu ứng pháo hoa nổ tung
-            sparkles.forEach(sp => {
-                ctx.save();
-                ctx.globalAlpha = sp.alpha;
-                ctx.fillStyle = sp.color;
-                ctx.shadowColor = sp.color;
-                ctx.shadowBlur = 8;
-                ctx.beginPath();
-                ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-                sp.x += sp.vx;
-                sp.y += sp.vy;
-                sp.alpha -= 0.03;
+
+            particles.forEach(p => {
+                const pdx = p.x - player.x;
+                const pdz = p.z - player.z;
+                const pDist = Math.hypot(pdx, pdz);
+                let pAngle = Math.atan2(pdx, pdz) * 180 / Math.PI - player.heading;
+                if (pAngle > 180) pAngle -= 360;
+                if (pAngle < -180) pAngle += 360;
+
+                if (Math.abs(pAngle) < 60) {
+                    const px = canvas.width / 2 + (pAngle / 60) * (canvas.width / 2);
+                    const py = canvas.height / 2 + player.pitch + ((player.y - p.y) / Math.max(1, pDist)) * 300;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(px, py, Math.max(2, 800 / pDist), 0, Math.PI * 2);
+                    ctx.fill();
+                }
             });
-            sparkles = sparkles.filter(sp => sp.alpha > 0);
-            
-            // Vẽ 3 khẩu súng ở dưới đáy
-            columns.forEach((cx, idx) => {
-                drawCannon(cx, H * 0.82, lanePressed[idx]);
-            });
-            
-            requestAnimationFrame(loop);
-        }
-        
-        // Hàm vẽ đĩa bay UFO (càng lên cao scale càng nhỏ)
-        function drawUFO(x, y, scale) {
-            ctx.save();
-            ctx.translate(x, y);
-            ctx.scale(scale, scale);
-            
-            // Thân đĩa bay hình đĩa
-            ctx.fillStyle = '#b2bec3';
-            ctx.beginPath();
-            ctx.ellipse(0, 0, 35, 12, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#00ffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            // Buồng lái kính sáng phía trên
-            ctx.fillStyle = 'rgba(0, 255, 255, 0.6)';
-            ctx.beginPath();
-            ctx.arc(0, -5, 14, Math.PI, 0, false);
-            ctx.fill();
-            ctx.stroke();
-            
-            // Đèn nhấp nháy bên dưới đĩa bay
-            ctx.fillStyle = Math.floor(Date.now() / 150) % 2 === 0 ? '#ff00ff' : '#00ffff';
-            for (let i = -20; i <= 20; i += 20) {
-                ctx.beginPath();
-                ctx.arc(i, 4, 3, 0, Math.PI * 2);
-                ctx.fill();
-            }
+
             ctx.restore();
+
+            drawCockpitHUD(distanceToUFO, relAngle, angleToUFO);
         }
-        
-        // Hàm vẽ khẩu súng dưới đáy
-        function drawCannon(x, y, isFiring) {
-            ctx.save();
-            ctx.translate(x, y);
-            
-            // Đế súng
-            ctx.fillStyle = '#2d3436';
+
+        // --- DRAW HUD & RADAR ---
+        function drawCockpitHUD(distToTarget, relAngle, targetAbsoluteHeading) {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            ctx.strokeStyle = '#00ffcc';
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
-            ctx.arc(0, 10, 22, Math.PI, 0, true);
-            ctx.fill();
-            ctx.strokeStyle = '#636e72';
+            ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+            ctx.moveTo(cx - 28, cy); ctx.lineTo(cx - 8, cy);
+            ctx.moveTo(cx + 8, cy);  ctx.lineTo(cx + 28, cy);
+            ctx.moveTo(cx, cy - 28); ctx.lineTo(cx, cy - 8);
+            ctx.moveTo(cx, cy + 8);  ctx.lineTo(cx, cy + 28);
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(0, 255, 204, 0.25)';
             ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, 0); ctx.lineTo(cx * 0.4, cy * 0.5);
+            ctx.moveTo(canvas.width, 0); ctx.lineTo(canvas.width - cx * 0.4, cy * 0.5);
             ctx.stroke();
-            
-            // Nòng súng hướng thẳng lên trời
-            ctx.fillStyle = '#636e72';
-            ctx.fillRect(-6, -18, 12, 24);
-            
-            if (isFiring) {
-                // Hiệu ứng lóe lửa khi bấm bắn
-                ctx.fillStyle = '#00ffff';
-                ctx.shadowColor = '#00ffff';
-                ctx.shadowBlur = 15;
+
+            const dirIndex = Math.floor(((player.heading + 15) % 360) / 30);
+            const currentDirText = DIRECTIONS[dirIndex];
+
+            ctx.fillStyle = '#00ffcc';
+            ctx.font = 'bold 15px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText(`| ${Math.round(player.heading)}° ${currentDirText.toUpperCase()} |`, cx, 40);
+
+            ctx.textAlign = 'left';
+            ctx.font = '13px monospace';
+            ctx.fillText(`TỐC ĐỘ : ${Math.round(player.speed)} m/s`, 20, canvas.height - 110);
+            ctx.fillText(`ĐỘ CAO : ${Math.round(player.y)} m`, 20, canvas.height - 90);
+
+            ctx.textAlign = 'right';
+            ctx.fillText(`MỤC TIÊU : ${ufo.alive ? 'UFO-X' : 'DESTROYED'}`, canvas.width - 20, canvas.height - 110);
+            ctx.fillText(`KHOẢNG CÁCH: ${ufo.alive ? Math.round(distToTarget) + 'm' : '---'}`, canvas.width - 20, canvas.height - 90);
+
+            const radarSize = 110;
+            const rx = canvas.width - radarSize - 20;
+            const ry = 20;
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 20, 30, 0.8)';
+            ctx.strokeStyle = '#00ffcc';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(rx + radarSize / 2, ry + radarSize / 2, radarSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(0, 255, 204, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(rx + radarSize / 2, ry); ctx.lineTo(rx + radarSize / 2, ry + radarSize);
+            ctx.moveTo(rx, ry + radarSize / 2); ctx.lineTo(rx + radarSize, ry + radarSize / 2);
+            ctx.stroke();
+
+            if (ufo.alive) {
+                const radarScale = (radarSize / 2) / 1500;
+                const blipRad = relAngle * Math.PI / 180;
+                const blipDist = Math.min(distToTarget, 1500) * radarScale;
+
+                const blipX = rx + radarSize / 2 + Math.sin(blipRad) * blipDist;
+                const blipY = ry + radarSize / 2 - Math.cos(blipRad) * blipDist;
+
+                ctx.fillStyle = '#ff0033';
                 ctx.beginPath();
-                ctx.arc(0, -22, 10, 0, Math.PI * 2);
+                ctx.arc(blipX, blipY, 4, 0, Math.PI * 2);
                 ctx.fill();
+
+                const tRad = (targetAbsoluteHeading - player.heading) * Math.PI / 180;
+                ctx.strokeStyle = '#ffcc00';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(blipX, blipY);
+                ctx.lineTo(blipX + Math.sin(tRad) * 10, blipY - Math.cos(tRad) * 10);
+                ctx.stroke();
             }
+
+            ctx.fillStyle = '#00ffcc';
+            ctx.beginPath();
+            ctx.arc(rx + radarSize / 2, ry + radarSize / 2, 3, 0, Math.PI * 2);
+            ctx.fill();
+
             ctx.restore();
         }
-        
-        function endGame() {
-            if (phase === 'done') return;
-            phase = 'done';
-            if (!music.paused) music.pause();
-            
-            const old = scores[curFile] || 0;
-            if (score > old) { scores[curFile] = score; saveScores(); }
-            document.getElementById('s-score').textContent = score;
-            document.getElementById('s-hm').textContent = `${hitCount}/${missCount}`;
-            document.getElementById('s-combo').textContent = maxCombo;
-            document.getElementById('s-best').textContent = scores[curFile] || 0;
-            document.getElementById('sum').style.display = 'block';
+
+        let lastTime = performance.now();
+        function gameLoop(now) {
+            const dt = Math.min((now - lastTime) / 1000, 0.1);
+            lastTime = now;
+
+            updateGame(dt);
+            render();
+
+            requestAnimationFrame(gameLoop);
         }
-        
-        document.getElementById('explore').onclick = () => { location.href = 'tuongzalo.html'; };
-        document.getElementById('openLib').onclick = () => {
-            const p = document.getElementById('pop');
-            p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
-        };
-        document.getElementById('close').onclick = () => document.getElementById('pop').style.display = 'none';
-        document.getElementById('cls').onclick = () => document.getElementById('sum').style.display = 'none';
-        
-        const TOTAL_SONGS = 20;
-        const songList = Array.from({ length: TOTAL_SONGS }, (_, i) => ({ file: `${i+1}.txt`, label: `${i+1}` }));
-        
-        async function preloadLibrary() {
-            for (const s of songList) {
-                try {
-                    const r = await fetch(GITHUB_RAW_BASE + s.file);
-                    if (r.ok) {
-                        const t = await r.text();
-                        const titleLine = t.split(/\r?\n/)[0].trim();
-                        if (titleLine) s.label = titleLine;
-                    }
-                } catch {}
-            }
-            renderSongList();
-        }
-        
-        function renderSongList() {
-            const el = document.getElementById('list');
-            el.innerHTML = '';
-            for (const s of songList) {
-                const d = document.createElement('div');
-                d.className = 'item';
-                const b = scores[s.file] || 0;
-                d.innerHTML = `<span>${s.label}</span><span class="bs">${b ? '🏅 ' + b : ''}</span>`;
-                d.onclick = () => loadSong(s.file);
-                el.appendChild(d);
-            }
-        }
-        
-        renderSongList();
-        preloadLibrary();
-        requestAnimationFrame(loop);
+
+        resetUFO();
+        requestAnimationFrame(gameLoop);
     </script>
 </body>
 </html>
