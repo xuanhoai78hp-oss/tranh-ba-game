@@ -498,8 +498,8 @@
             if (keys['KeyW'] || keys['ArrowUp']) kY += 1;
             if (keys['KeyS'] || keys['ArrowDown']) kY -= 1;
 
-            const inputX = joystick.active ? joystick.x : kX;
-            const inputY = joystick.active ? joystick.y : kY;
+            const inputX = joystick.active ? joystick.x : kY;
+            const inputY = joystick.active ? joystick.y : kX;
 
             player.heading += inputX * 50 * dt;
             if (player.heading < 0) player.heading += 360;
