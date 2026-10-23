@@ -495,8 +495,8 @@
             if (keys['KeyA'] || keys['ArrowLeft']) kX -= 1;
             if (keys['KeyD'] || keys['ArrowRight']) kX += 1;
             
-            if (keys['KeyW'] || keys['ArrowUp']) kY -= 1;
-            if (keys['KeyS'] || keys['ArrowDown']) kY += 1;
+            if (keys['KeyW'] || keys['ArrowUp']) kY += 1;
+            if (keys['KeyS'] || keys['ArrowDown']) kY -= 1;
 
             const inputX = joystick.active ? joystick.x : kX;
             const inputY = joystick.active ? joystick.y : kY;
