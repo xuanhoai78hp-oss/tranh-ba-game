@@ -29,35 +29,46 @@
             width: 100%;
             height: 100%;
         }
-        /* Virtual Controls Overlay - Đã nâng vị trí cao hơn để tránh Safari/Chrome */
+        /* Virtual Controls Overlay */
         .touch-control {
             position: absolute;
             z-index: 10;
             touch-action: none;
         }
-        /* Joystick Base */
-        #joystick-base {
-            bottom: 90px;
-            left: 35px;
-            width: 120px;
-            height: 120px;
-            background: rgba(0, 255, 204, 0.15);
-            border: 2px solid rgba(0, 255, 204, 0.5);
-            border-radius: 50%;
+        /* Cụm phím điều hướng (D-Pad thay thế Joystick) */
+        #dpad-container {
+            position: absolute;
+            bottom: 80px;
+            left: 25px;
+            width: 150px;
+            height: 150px;
+            z-index: 10;
+        }
+        .dpad-btn {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 255, 204, 0.2);
+            border: 2px solid rgba(0, 255, 204, 0.6);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: #00ffcc;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+            cursor: pointer;
         }
-        #joystick-stick {
-            width: 50px;
-            height: 50px;
-            background: radial-gradient(circle, rgba(0,255,204,0.9) 0%, rgba(0,150,120,0.7) 100%);
-            border: 2px solid #00ffcc;
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(0, 255, 204, 0.7);
-            transform: translate(0, 0);
-            pointer-events: none;
+        .dpad-btn:active, .dpad-btn.active {
+            background: rgba(0, 255, 204, 0.5);
+            transform: scale(0.92);
         }
+        #btn-up { top: 0; left: 50px; }
+        #btn-down { bottom: 0; left: 50px; }
+        #btn-left { top: 50px; left: 0; }
+        #btn-right { top: 50px; right: 0; }
+
         /* Action Buttons */
         .btn-action {
             width: 75px;
@@ -143,17 +154,45 @@
 <body>
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
-        <div id="sound-notice">CHẠM MÀN HÌNH ĐỂ BẬT ÂM THANH</div>
+        <div id="sound-notice">CHẠM MÀN HÌNH ĐỂ BẬT ÂM THANH VÀ NHẠC NỀN</div>
         <a id="explore-btn" href="tuongzalo.html">🔍 Khám phá</a>
-        <div id="joystick-base" class="touch-control">
-            <div id="joystick-stick"></div>
+        
+        <!-- Cụm phím điều hướng D-Pad (WASD trên màn hình) -->
+        <div id="dpad-container" class="touch-control">
+            <div id="btn-up" class="dpad-btn">▲</div>
+            <div id="btn-left" class="dpad-btn">◀</div>
+            <div id="btn-right" class="dpad-btn">▶</div>
+            <div id="btn-down" class="dpad-btn">▼</div>
         </div>
+
         <div id="btn-fire" class="touch-control btn-action">FIRE</div>
         <div id="btn-boost" class="touch-control btn-action">BOOST</div>
     </div>
     <script>
-        // --- SOUND SYNTHESIZER (Web Audio API) ---
+        // --- RANDOM BGM & SOUND SYNTHESIZER ---
         let audioCtx = null;
+        let bgmAudio = null;
+
+        function playRandomBGM() {
+            // Chọn ngẫu nhiên một bài từ 1 đến 8
+            const randomTrack = Math.floor(Math.random() * 8) + 1;
+            if (bgmAudio) {
+                bgmAudio.pause();
+            }
+            bgmAudio = new Audio(`${randomTrack}.mp3`);
+            bgmAudio.volume = 0.5; // Âm lượng nhạc nền (50%)
+            bgmAudio.play().then(() => {
+                console.log(`Đang phát nhạc ngẫu nhiên: ${randomTrack}.mp3`);
+            }).catch(e => {
+                console.log("Chờ tương tác để phát nhạc:", e);
+            });
+
+            // Khi bài hát kết thúc, tự động chọn ngẫu nhiên bài tiếp theo để phát liên tục
+            bgmAudio.onended = () => {
+                playRandomBGM();
+            };
+        }
+
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -162,11 +201,14 @@
                     notice.style.opacity = '0';
                     setTimeout(() => notice.remove(), 500);
                 }
+                // Khởi động nhạc ngẫu nhiên ngay khi chạm màn hình lần đầu
+                playRandomBGM();
             }
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
         }
+
         window.addEventListener('touchstart', initAudio, { once: true });
         window.addEventListener('mousedown', initAudio, { once: true });
         window.addEventListener('keydown', initAudio, { once: true });
@@ -357,58 +399,35 @@
         let bullets = [];
         let ufoBullets = [];
         let particles = [];
-        let joystick = { x: 0, y: 0, active: false };
+        let touchKeys = { left: false, right: false, up: false, down: false };
         let isFiring = false;
         let fireCooldown = 0;
         let ufoFireCooldown = 0;
-        const stickEl = document.getElementById('joystick-stick');
-        const baseEl = document.getElementById('joystick-base');
 
-        function updateJoystickPos(touchX, touchY) {
-            const rect = baseEl.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            let dx = touchX - centerX;
-            let dy = touchY - centerY;
-            const dist = Math.hypot(dx, dy);
-            const maxDist = rect.width / 2;
-            if (dist > maxDist) {
-                dx = (dx / dist) * maxDist;
-                dy = (dy / dist) * maxDist;
-            }
-            joystick.x = -(dx / maxDist);
-            joystick.y = -(dy / maxDist);
-            stickEl.style.transform = `translate(${dx}px, ${dy}px)`;
-        }
-
-        baseEl.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            joystick.active = true;
-            updateJoystickPos(e.touches[0].clientX, e.touches[0].clientY);
-        }, { passive: false });
-
-        window.addEventListener('touchmove', (e) => {
-            if (!joystick.active) return;
-            for (let i = 0; i < e.touches.length; i++) {
-                if (e.touches[i].target === baseEl || baseEl.contains(e.touches[i].target)) {
-                    updateJoystickPos(e.touches[i].clientX, e.touches[i].clientY);
-                    break;
-                }
-            }
-        }, { passive: false });
-
-        const resetJoystick = () => {
-            joystick.active = false;
-            joystick.x = 0;
-            joystick.y = 0;
-            stickEl.style.transform = `translate(0px, 0px)`;
+        // --- BIND TOUCH D-PAD EVENTS ---
+        const bindDPadButton = (id, keyName) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const press = (e) => { e.preventDefault(); el.classList.add('active'); touchKeys[keyName] = true; };
+            const release = (e) => { e.preventDefault(); el.classList.remove('active'); touchKeys[keyName] = false; };
+            
+            el.addEventListener('touchstart', press, { passive: false });
+            el.addEventListener('touchend', release, { passive: false });
+            el.addEventListener('touchcancel', release, { passive: false });
+            el.addEventListener('mousedown', press);
+            el.addEventListener('mouseup', release);
+            el.addEventListener('mouseleave', release);
         };
-        window.addEventListener('touchend', resetJoystick);
-        window.addEventListener('touchcancel', resetJoystick);
+
+        bindDPadButton('btn-up', 'up');
+        bindDPadButton('btn-down', 'down');
+        bindDPadButton('btn-left', 'left');
+        bindDPadButton('btn-right', 'right');
 
         const btnFire = document.getElementById('btn-fire');
         const btnBoost = document.getElementById('btn-boost');
         const bindButtonEvents = (btn, onPress, onRelease) => {
+            if (!btn) return;
             btn.addEventListener('touchstart', (e) => { e.preventDefault(); btn.classList.add('active'); onPress(); }, { passive: false });
             btn.addEventListener('touchend', (e) => { e.preventDefault(); btn.classList.remove('active'); onRelease(); }, { passive: false });
             btn.addEventListener('mousedown', (e) => { e.preventDefault(); btn.classList.add('active'); onPress(); });
@@ -434,7 +453,6 @@
             ufo.z = player.z + 1200 + Math.random() * 500;
             ufo.heading = Math.random() * 360;
             ufo.hits = 0;
-            // Số lần bắn trúng yêu cầu tăng theo cấp số nhân (Level 1: 10, Level 2: 20, Level 3: 30...)
             ufo.maxHits = gameScore.level * 10;
             ufo.alive = true;
         }
@@ -442,20 +460,18 @@
         // --- UPDATE GAME ENGINE ---
         function updateGame(dt) {
             let kX = 0, kY = 0;
-            if (keys['KeyA'] || keys['ArrowLeft']) kX -= 1;
-            if (keys['KeyD'] || keys['ArrowRight']) kX += 1;
-            if (keys['KeyW'] || keys['ArrowUp']) kY -= 1;
-            if (keys['KeyS'] || keys['ArrowDown']) kY += 1;
-            const inputX = joystick.active ? joystick.x : kX;
-            const inputY = joystick.active ? joystick.y : kY;
+            if (keys['KeyA'] || keys['ArrowLeft'] || touchKeys.left) kX -= 1;
+            if (keys['KeyD'] || keys['ArrowRight'] || touchKeys.right) kX += 1;
+            if (keys['KeyW'] || keys['ArrowUp'] || touchKeys.up) kY -= 1;
+            if (keys['KeyS'] || keys['ArrowDown'] || touchKeys.down) kY += 1;
 
-            player.heading += inputX * 50 * dt;
+            player.heading += kX * 50 * dt;
             if (player.heading < 0) player.heading += 360;
             if (player.heading >= 360) player.heading -= 360;
 
-            const targetRoll = -inputX * 0.35;
+            const targetRoll = -kX * 0.35;
             player.roll += (targetRoll - player.roll) * 0.12;
-            player.pitch += inputY * 140 * dt;
+            player.pitch += kY * 140 * dt;
             player.pitch = Math.max(-150, Math.min(150, player.pitch));
             player.speed = player.boosting ? 270 : 150;
 
@@ -465,7 +481,6 @@
 
             if (ufo.alive) {
                 if (gameScore.level >= 2) {
-                    // Level 2 trở lên: UFO đuổi theo bám đuôi máy bay và bắn trả
                     const angleToPlayer = Math.atan2(player.x - ufo.x, player.z - ufo.z) * 180 / Math.PI;
                     let diff = angleToPlayer - ufo.heading;
                     while (diff < -180) diff += 360;
@@ -531,10 +546,7 @@
                             ufo.alive = false;
                             ufo.explodeTimer = 2.5;
                             gameScore.ufoDestroyed++;
-                            
-                            // Cứ mỗi 10 UFO tiêu diệt sẽ tăng lên 1 Level
                             gameScore.level = Math.floor(gameScore.ufoDestroyed / 10) + 1;
-
                             playExplosionSound();
                             createExplosion(ufo.x, ufo.y, ufo.z, 65, '#ff3300');
                         }
