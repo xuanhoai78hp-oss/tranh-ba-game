@@ -1,546 +1,546 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>UFO Shooter | Bắn Đĩa Bay</title>
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
-        html,body{height:100%;overflow:hidden;background:#05050a;color:#fff;font-family:Arial,sans-serif;touch-action:none}
-        #app{display:flex;flex-direction:column;height:100dvh}
-        #top{height:10%;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#0f0f1a;border-bottom:2px solid #333;gap:12px;z-index:10}
-        #title{color:#00ffff;font-weight:bold;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:15px;text-shadow:0 0 8px rgba(0,255,255,0.5)}
-        .tb{background:#1a1a2e;padding:10px 20px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;text-align:center;border:1px solid #00ffff;color:#00ffff;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 0 8px rgba(0,255,255,0.3)}
-        .tb:active{background:#2a2a4e;filter:brightness(1.2)}
-        
-        #stage{flex:1;position:relative;background:radial-gradient(circle at center, #1b1b3a 0%, #080814 100%);overflow:hidden;border-left:2px solid #333;border-right:2px solid #333;min-height:0}
-        .stars-bg{position:absolute;inset:0;background-image:radial-gradient(white 1px, transparent 0);background-size:30px 30px;opacity:0.3;pointer-events:none}
-        #cv{width:100%;height:100%;display:block;position:relative;z-index:2}
-        #hud{position:absolute;top:8px;left:0;right:0;display:flex;justify-content:space-between;padding:0 12px;pointer-events:none;font-weight:bold;z-index:4}
-        #score{color:#00ffff;font-size:24px;text-shadow:0 0 10px #00ffff}
-        #best{color:#888;font-size:13px;align-self:center}
-        
-        #combo{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);font-size:50px;font-weight:bold;color:#ff00ff;text-shadow:0 0 20px #ff00ff,0 0 40px #00ffff;pointer-events:none;opacity:0;transition:opacity .2s;z-index:5;text-align:center}
-        #cd{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.8);z-index:15;font-size:100px;font-weight:bold;color:#00ffff;text-shadow:0 0 30px #00ffff}
-        
-        #sum{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,10,20,0.96);border:2px solid #00ffff;border-radius:12px;padding:20px;z-index:18;display:none;text-align:center;min-width:280px;max-width:92%;box-shadow:0 0 25px rgba(0,255,255,0.4)}
-        #sum h2{color:#00ffff;margin-bottom:12px}
-        #sum .r{display:flex;justify-content:space-between;gap:20px;margin:6px 0;font-size:14px}
-        #sum .r span:last-child{color:#00ffff;font-weight:bold}
-        #sum .btns{display:flex;gap:8px;margin-top:14px}
-        #sum button{flex:1;padding:10px;background:#00ffff;color:#000;border:none;border-radius:6px;font-weight:bold;cursor:pointer}
-        #sum button.sec{background:#333;color:#fff}
-        
-        /* 3 Nút bắn dưới đáy tương ứng 3 làn Súng */
-        #pad{height:25%;display:flex;border-top:2px solid #333;padding:8px;gap:8px;background:#0a0a12;z-index:10}
-        .btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:16px;font-weight:bold;border:2px solid rgba(0,255,255,0.4);border-radius:12px;background:#141426;color:#00ffff;cursor:pointer;transition:transform .05s,background .1s,box-shadow .1s;gap:4px}
-        .btn:active, .btn.on{transform:scale(0.95);background:#00ffff;color:#000;box-shadow:0 0 20px #00ffff}
-        
-        #pop{display:none;position:absolute;top:8%;left:8%;width:84%;max-height:74%;background:rgba(10,10,20,0.97);border:2px solid #00ffff;border-radius:12px;z-index:20;flex-direction:column;padding:16px;box-shadow:0 0 30px rgba(0,255,255,0.3)}
-        #pop h3{color:#00ffff;text-align:center;margin-bottom:12px;font-size:16px}
-        #list{overflow-y:auto;max-height:320px}
-        .item{padding:14px;margin:6px 0;background:#1a1a2e;border:1px solid #444;border-radius:6px;display:flex;justify-content:space-between;cursor:pointer;font-size:14px}
-        .item:active{background:#2a2a4e}
-        .item .bs{color:#00ffff;font-size:12px}
-        #pop #close{margin-top:12px;padding:12px;background:#00ffff;color:#000;font-weight:bold;border:none;border-radius:6px;cursor:pointer;font-size:14px}
-    </style>
+<!DOCTYPE html><html lang="vi"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>UFO Shooter | Bắn Đĩa Bay</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#05050a;color:#fff;font-family:Arial,sans-serif;touch-action:none}
+#app{display:flex;flex-direction:column;height:100dvh}
+#top{height:10%;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#0f0f1a;border-bottom:2px solid #333;gap:12px;z-index:10}
+#title{color:#00ffff;font-weight:bold;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:15px;text-shadow:0 0 8px rgba(0,255,255,0.5)}
+.tb{background:#1a1a2e;padding:10px 20px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;text-align:center;border:1px solid #00ffff;color:#00ffff;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 0 8px rgba(0,255,255,0.3)}
+.tb:active{background:#2a2a4e;filter:brightness(1.2)}
+
+#stage{flex:1;position:relative;background:radial-gradient(circle at center, #1b1b3a 0%, #080814 100%);overflow:hidden;border-left:2px solid #333;border-right:2px solid #333;min-height:0}
+.stars-bg{position:absolute;inset:0;background-image:radial-gradient(white 1px, transparent 0);background-size:30px 30px;opacity:0.3;pointer-events:none}
+#cv{width:100%;height:100%;display:block;position:relative;z-index:2}
+#hud{position:absolute;top:8px;left:0;right:0;display:flex;justify-content:space-between;padding:0 12px;pointer-events:none;font-weight:bold;z-index:4}
+#score{color:#00ffff;font-size:24px;text-shadow:0 0 10px #00ffff}
+#best{color:#888;font-size:13px;align-self:center}
+
+#combo{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);font-size:50px;font-weight:bold;color:#ff00ff;text-shadow:0 0 20px #ff00ff,0 0 40px #00ffff;pointer-events:none;opacity:0;transition:opacity .2s;z-index:5;text-align:center}
+#cd{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.8);z-index:15;font-size:100px;font-weight:bold;color:#00ffff;text-shadow:0 0 30px #00ffff}
+
+#sum{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,10,20,0.96);border:2px solid #00ffff;border-radius:12px;padding:20px;z-index:18;display:none;text-align:center;min-width:280px;max-width:92%;box-shadow:0 0 25px rgba(0,255,255,0.4)}
+#sum h2{color:#00ffff;margin-bottom:12px}
+#sum .r{display:flex;justify-content:space-between;gap:20px;margin:6px 0;font-size:14px}
+#sum .r span:last-child{color:#00ffff;font-weight:bold}
+#sum .btns{display:flex;gap:8px;margin-top:14px}
+#sum button{flex:1;padding:10px;background:#00ffff;color:#000;border:none;border-radius:6px;font-weight:bold;cursor:pointer}
+#sum button.sec{background:#333;color:#fff}
+
+#pad{height:25%;display:flex;border-top:2px solid #333;padding:8px;gap:8px;background:#0a0a12;z-index:10}
+.btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:16px;font-weight:bold;border:2px solid rgba(0,255,255,0.4);border-radius:12px;background:#141426;color:#00ffff;cursor:pointer;transition:transform .05s,background .1s,box-shadow .1s;gap:4px}
+.btn:active, .btn.on{transform:scale(0.95);background:#00ffff;color:#000;box-shadow:0 0 20px #00ffff}
+
+#pop{display:none;position:absolute;top:8%;left:8%;width:84%;max-height:74%;background:rgba(10,10,20,0.97);border:2px solid #00ffff;border-radius:12px;z-index:20;flex-direction:column;padding:16px;box-shadow:0 0 30px rgba(0,255,255,0.3)}
+#pop h3{color:#00ffff;text-align:center;margin-bottom:12px;font-size:16px}
+#list{overflow-y:auto;max-height:320px}
+.item{padding:14px;margin:6px 0;background:#1a1a2e;border:1px solid #444;border-radius:6px;display:flex;justify-content:space-between;cursor:pointer;font-size:14px}
+.item:active{background:#2a2a4e}
+.item .bs{color:#00ffff;font-size:12px}
+#pop #close{margin-top:12px;padding:12px;background:#00ffff;color:#000;font-weight:bold;border:none;border-radius:6px;cursor:pointer;font-size:14px}
+</style>
 </head>
 <body>
-    <div id="app">
-        <div id="top">
-            <div class="tb" id="openLib">📚 Thư viện</div>
-            <div id="title">— Chọn bài hát —</div>
-            <div class="tb" id="explore">🔍 Khám phá</div>
-        </div>
-        <div id="stage">
-            <div class="stars-bg"></div>
-            <canvas id="cv"></canvas>
-            <div id="hud"><div id="score">0</div><div id="best"></div></div>
-            <div id="combo"></div>
-            <div id="cd"></div>
-            <div id="sum">
-                <h2>🎉 HOÀN THÀNH!</h2>
-                <div class="r"><span>Điểm:</span><span id="s-score">0</span></div>
-                <div class="r"><span>Bắn trúng/Trượt:</span><span id="s-hm">0/0</span></div>
-                <div class="r"><span>Combo max:</span><span id="s-combo">0</span></div>
-                <div class="r"><span>Kỷ lục:</span><span id="s-best">0</span></div>
-                <div class="btns">
-                    <button class="sec" id="save">📸 Lưu ảnh</button>
-                    <button id="cls">Đóng</button>
-                </div>
-            </div>
-        </div>
-        <!-- 3 nút súng điều khiển dưới đáy tương ứng 3 làn (Súng - Đĩa - Súng - Đĩa - Súng - Đĩa) -->
-        <div id="pad">
-            <button class="btn" id="b-left">🚀 Súng Trái</button>
-            <button class="btn" id="b-center">🛸 Súng Giữa</button>
-            <button class="btn" id="b-right">🚀 Súng Phải</button>
-        </div>
-    </div>
-    
-    <div id="pop"><h3>📚 THƯ VIỆN BÀI HÁT</h3><div id="list"></div><button id="close">Đóng</button></div>
-    <audio id="music" preload="auto" style="display:none"></audio>
-    
-    <script>
-        const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/xuanhoai78hp-oss/tranh-ba-game/refs/heads/main/";
-        const FALL_SEC = 2.5;
-        const CD_SEC = 3;
-        const KEY = 'ufo_shooter_v5';
-        
-        let scores = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {} } catch { return {} } })();
-        const saveScores = () => { try { localStorage.setItem(KEY, JSON.stringify(scores)) } catch {} };
-        
-        const music = document.getElementById('music');
-        let musicReady = false;
-        let curFile = null;
-        let notes = [];
-        let phase = 'idle';
-        let score = 0, combo = 0, maxCombo = 0, hitCount = 0, missCount = 0;
-        let activeGun = 0;
-        let bullets = []; 
-        let sparkles = []; 
-        
-        const lanePressed = [false, false, false];
-        const lanePressTimer = [null, null, null];
-        
-        document.addEventListener('pointerdown', function unlockAudio() {
-            if (music && music.paused) {
-                music.play().then(() => { music.pause(); music.currentTime = 0; }).catch(() => {});
-            }
-            document.removeEventListener('pointerdown', unlockAudio);
-        }, { once: true });
-        
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        function playLaser() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.15);
-        }
-        
-        function playExplosion() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(200, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.25);
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.25);
-        }
-        
-        function parseSong(text) {
-            const lines = text.split(/\r?\n/);
-            const title = (lines[0] || '').trim();
-            const arr = [];
-            const tempoInterval = 400;
-            for (let i = 1; i < lines.length; i++) {
-                const toks = lines[i].trim().split(/\s+/).filter(Boolean);
-                for (const tok of toks) {
-                    const m = tok.match(/^([tvm])(\d+)(?:;(\d+))?$/i);
-                    if (!m) continue;
-                    let type = m[1].toLowerCase();
-                    let s = parseInt(m[2]);
-                    let e = m[3] ? parseInt(m[3]) : s + 200;
-                    if (e <= s) e = s + 200;
-                    let col = (type === 'm') ? 0 : (type === 'v') ? 1 : 2;
-                    let tTime = s;
-                    while (tTime <= e) {
-                        arr.push({ col: col, hitTime: tTime, state: 'wait' });
-                        tTime += tempoInterval;
-                    }
-                }
-            }
-            arr.sort((a, b) => a.hitTime - b.hitTime);
-            return { title, notes: arr };
-        }
-        
-        async function loadSong(file) {
-            try {
-                const r = await fetch(GITHUB_RAW_BASE + file);
-                if (!r.ok) throw new Error('Không tìm thấy file txt');
-                const text = await r.text();
-                const parsed = parseSong(text);
-                if (parsed.notes.length === 0) throw new Error('File không có nốt nhạc');
-                music.pause();
-                music.currentTime = 0;
-                music.removeAttribute('src');
-                musicReady = false;
-                const base = file.replace(/\.txt$/i, '');
-                const tryLoad = (src) => new Promise(res => {
-                    music.src = src;
-                    music.load();
-                    const onOk = () => { music.removeEventListener('error', onErr); musicReady = true; res(true); };
-                    const onErr = () => { music.removeEventListener('canplaythrough', onOk); res(false); };
-                    music.addEventListener('canplaythrough', onOk, { once: true });
-                    music.addEventListener('error', onErr, { once: true });
-                    setTimeout(() => res(musicReady), 2000);
-                });
-                let okM = await tryLoad(GITHUB_RAW_BASE + base + '.m4a');
-                if (!okM) await tryLoad(GITHUB_RAW_BASE + base + '.mp3');
-                document.getElementById('title').textContent = parsed.title;
-                curFile = file;
-                notes = parsed.notes;
-                sparkles = [];
-                bullets = [];
-                score = 0; combo = 0; maxCombo = 0; hitCount = 0; missCount = 0;
-                uiScore(); uiBest(); countdown();
-                document.getElementById('pop').style.display = 'none';
-            } catch (e) {
-                alert('Lỗi load bài hát: ' + e.message);
-            }
-        }
-        
-        function uiScore() { document.getElementById('score').textContent = score; }
-        function uiBest() { const b = scores[curFile] || 0; document.getElementById('best').textContent = b ? `🏅 ${b}` : ''; }
-        
-        function countdown() {
-            const el = document.getElementById('cd');
-            el.style.display = 'flex';
-            let s = CD_SEC;
-            el.textContent = s;
-            const timer = setInterval(() => {
-                s--;
-                if (s > 0) el.textContent = s;
-                else {
-                    el.textContent = 'GO!';
-                    clearInterval(timer);
-                    setTimeout(() => { el.style.display = 'none'; startGame(); }, 500);
-                }
-            }, 700);
-        }
-        
-        function startGame() {
-            phase = 'play';
-            for (const n of notes) n.state = 'wait';
-            sparkles = [];
-            bullets = [];
-            if (music) {
-                music.currentTime = 0;
-                music.play().catch(err => console.log(err));
-            }
-        }
-        
-        function elapsedMs() {
-            if (musicReady && !music.paused && !music.ended) return music.currentTime * 1000;
-            return 0;
-        }
-        
-        function fireGun(lane) {
-            activeGun = lane;
-            lanePressed[lane] = true;
-            
-            document.querySelectorAll('.btn').forEach((b, idx) => {
-                if (idx === lane) b.classList.add('on');
-                else b.classList.remove('on');
-            });
-            
-            playLaser();
-            const W = cv.logicalW;
-            // Vị trí 3 khẩu súng (Súng 1, Súng 2, Súng 3) nằm ở các mốc xen kẽ theo mẫu: S - Đĩa - S - Đĩa - S - Đĩa
-            const gunXs = [W * 0.20, W * 0.50, W * 0.80];
-            
-            // Đạn bắn chéo nhẹ từ súng bay chếch sang phải để cắt ngang đường bay của đĩa bay
-            bullets.push({ 
-                x: gunXs[lane], 
-                y: cv.logicalH * 0.78, 
-                vx: 5, 
-                vy: -26 
-            });
-            
-            checkHit(lane);
-            
-            if (lanePressTimer[lane]) clearTimeout(lanePressTimer[lane]);
-            lanePressTimer[lane] = setTimeout(() => {
-                lanePressed[lane] = false;
-                document.getElementById(['b-left', 'b-center', 'b-right'][lane]).classList.remove('on');
-            }, 250);
-        }
-        
-        document.getElementById('b-left').onclick = () => fireGun(0);
-        document.getElementById('b-center').onclick = () => fireGun(1);
-        document.getElementById('b-right').onclick = () => fireGun(2);
-        
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft') fireGun(0);
-            if (e.key === 'ArrowDown' || e.key === ' ') fireGun(1);
-            if (e.key === 'ArrowRight') fireGun(2);
-        });
-        
-        function checkHit(lane) {
-            if (phase !== 'play') return;
-            const ms = elapsedMs();
-            for (const n of notes) {
-                if (n.state === 'wait' && n.col === lane && Math.abs(ms - n.hitTime) < 180) {
-                    n.state = 'hit';
-                    score += 10;
-                    combo++;
-                    if (combo > maxCombo) maxCombo = combo;
-                    
-                    if (combo > 0 && combo % 10 === 0) {
-                        score += 200;
-                        showCombo(`🔥 COMBO ${combo}!\n+200 ĐIỂM!`);
-                    } else {
-                        showCombo(`${combo} COMBO`);
-                    }
-                    
-                    hitCount++;
-                    playExplosion();
-                    if (navigator.vibrate) navigator.vibrate(25);
-                    uiScore();
-                    
-                    const W = cv.logicalW;
-                    // Vị trí đĩa bay tương ứng lệch sang phải so với súng (mô phỏng xen kẽ S - Đĩa - S - Đĩa - S - Đĩa)
-                    const ufoXs = [W * 0.35, W * 0.65, W * 0.92];
-                    createSparkles(ufoXs[n.col] - 30, cv.logicalH * 0.42);
-                    break;
-                }
-            }
-        }
-        
-        function createSparkles(x, y) {
-            for (let i = 0; i < 20; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const speed = 2 + Math.random() * 6;
-                sparkles.push({
-                    x: x, y: y,
-                    vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed,
-                    alpha: 1.0,
-                    color: ['#00ffff', '#ff00ff', '#ffffff', '#ffff00'][Math.floor(Math.random() * 4)],
-                    size: 2 + Math.random() * 4
-                });
-            }
-        }
-        
-        function showCombo(text) {
-            const el = document.getElementById('combo');
-            el.textContent = text;
-            el.classList.add('show');
-            clearTimeout(el._t);
-            el._t = setTimeout(() => el.classList.remove('show'), 700);
-        }
-        
-        const cv = document.getElementById('cv');
-        const ctx = cv.getContext('2d');
-        
-        function resize() {
-            cv.width = cv.parentElement.clientWidth * window.devicePixelRatio;
-            cv.height = cv.parentElement.clientHeight * window.devicePixelRatio;
-            cv.logicalW = cv.parentElement.clientWidth;
-            cv.logicalH = cv.parentElement.clientHeight;
-            ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
-        }
-        resize();
-        window.addEventListener('resize', resize);
-        
-        function loop() {
-            const W = cv.logicalW, H = cv.logicalH;
-            ctx.clearRect(0, 0, W, H);
-            
-            // Xếp so le: Súng ở các vị trí, Đĩa bay ở các vị trí xen kẽ bên cạnh (S - Đĩa - S - Đĩa - S - Đĩa)
-            const gunXs = [W * 0.20, W * 0.50, W * 0.80];
-            const ufoXs = [W * 0.35, W * 0.65, W * 0.92];
-            
-            if (phase === 'play') {
-                const ms = elapsedMs();
-                for (const n of notes) {
-                    let spawnTime = n.hitTime - FALL_SEC * 1000;
-                    if (ms >= spawnTime && ms <= n.hitTime + 300) {
-                        let progress = (ms - spawnTime) / (FALL_SEC * 1000);
-                        // Đĩa bay bay từ dưới lên trên và hơi lượn chéo để giao thoa với đường đạn
-                        let x = ufoXs[n.col] - progress * 30; 
-                        let y = (H * 0.85) - progress * (H * 0.6);
-                        let scale = Math.max(0.3, 1.0 - progress * 0.7); // Càng lên cao càng nhỏ dần (hiệu ứng xa dần)
-                        
-                        if (n.state === 'wait' && ms > n.hitTime + 200) {
-                            n.state = 'missed';
-                            missCount++;
-                            score = Math.max(0, score - 5);
-                            combo = 0;
-                            uiScore();
-                        }
-                        
-                        if (n.state === 'wait') {
-                            drawUFO(x, y, scale);
-                        }
-                    }
-                }
-                
-                if (ms > (notes[notes.length - 1]?.hitTime || 0) + 3000) {
-                    endGame();
-                }
-            }
-            
-            // Vẽ đạn bay chéo nhẹ giao cắt với đĩa bay
-            bullets.forEach(b => {
-                ctx.save();
-                ctx.strokeStyle = '#00ffff';
-                ctx.lineWidth = 4;
-                ctx.shadowColor = '#00ffff';
-                ctx.shadowBlur = 10;
-                ctx.beginPath();
-                ctx.moveTo(b.x, b.y);
-                ctx.lineTo(b.x + 4, b.y - 35);
-                ctx.stroke();
-                ctx.restore();
-                b.x += b.vx;
-                b.y += b.vy;
-            });
-            bullets = bullets.filter(b => b.y > 0);
-            
-            // Vẽ hiệu ứng nổ
-            sparkles.forEach(sp => {
-                ctx.save();
-                ctx.globalAlpha = sp.alpha;
-                ctx.fillStyle = sp.color;
-                ctx.shadowColor = sp.color;
-                ctx.shadowBlur = 8;
-                ctx.beginPath();
-                ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-                sp.x += sp.vx;
-                sp.y += sp.vy;
-                sp.alpha -= 0.03;
-            });
-            sparkles = sparkles.filter(sp => sp.alpha > 0);
-            
-            // Vẽ 3 khẩu pháo ở các vị trí súng tương ứng
-            gunXs.forEach((cx, idx) => {
-                drawCannon(cx, H * 0.85, lanePressed[idx]);
-            });
-            
-            requestAnimationFrame(loop);
-        }
-        
-        function drawUFO(x, y, scale) {
-            ctx.save();
-            ctx.translate(x, y);
-            ctx.scale(scale, scale);
-            
-            ctx.fillStyle = '#b2bec3';
-            ctx.beginPath();
-            ctx.ellipse(0, 0, 35, 12, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#00ffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            ctx.fillStyle = 'rgba(0, 255, 255, 0.6)';
-            ctx.beginPath();
-            ctx.arc(0, -5, 14, Math.PI, 0, false);
-            ctx.fill();
-            ctx.stroke();
-            
-            ctx.fillStyle = Math.floor(Date.now() / 150) % 2 === 0 ? '#ff00ff' : '#00ffff';
-            for (let i = -20; i <= 20; i += 20) {
-                ctx.beginPath();
-                ctx.arc(i, 4, 3, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.restore();
-        }
-        
-        function drawCannon(x, y, isFiring) {
-            ctx.save();
-            ctx.translate(x, y);
-            
-            ctx.fillStyle = '#2d3436';
-            ctx.beginPath();
-            ctx.arc(0, 10, 22, Math.PI, 0, true);
-            ctx.fill();
-            ctx.strokeStyle = '#636e72';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-            
-            // Nòng pháo hơi chếch nghiêng hướng về phía đĩa bay để tạo góc giao nhau
-            ctx.save();
-            ctx.rotate(0.18);
-            ctx.fillStyle = '#636e72';
-            ctx.fillRect(-6, -24, 12, 28);
-            ctx.restore();
-            
-            if (isFiring) {
-                ctx.fillStyle = '#00ffff';
-                ctx.shadowColor = '#00ffff';
-                ctx.shadowBlur = 15;
-                ctx.beginPath();
-                ctx.arc(6, -28, 10, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.restore();
-        }
-        
-        function endGame() {
-            if (phase === 'done') return;
-            phase = 'done';
-            if (!music.paused) music.pause();
-            
-            const old = scores[curFile] || 0;
-            if (score > old) { scores[curFile] = score; saveScores(); }
-            document.getElementById('s-score').textContent = score;
-            document.getElementById('s-hm').textContent = `${hitCount}/${missCount}`;
-            document.getElementById('s-combo').textContent = maxCombo;
-            document.getElementById('s-best').textContent = scores[curFile] || 0;
-            document.getElementById('sum').style.display = 'block';
-        }
-        
-        document.getElementById('explore').onclick = () => { location.href = 'tuongzalo.html'; };
-        document.getElementById('openLib').onclick = () => {
-            const p = document.getElementById('pop');
-            p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
-        };
-        document.getElementById('close').onclick = () => document.getElementById('pop').style.display = 'none';
-        document.getElementById('cls').onclick = () => document.getElementById('sum').style.display = 'none';
-        
-        const TOTAL_SONGS = 20;
-        const songList = Array.from({ length: TOTAL_SONGS }, (_, i) => ({ file: `${i+1}.txt`, label: `${i+1}` }));
-        
-        async function preloadLibrary() {
-            for (const s of songList) {
-                try {
-                    const r = await fetch(GITHUB_RAW_BASE + s.file);
-                    if (r.ok) {
-                        const t = await r.text();
-                        const titleLine = t.split(/\r?\n/)[0].trim();
-                        if (titleLine) s.label = titleLine;
-                    }
-                } catch {}
-            }
-            renderSongList();
-        }
-        
-        function renderSongList() {
-            const el = document.getElementById('list');
-            el.innerHTML = '';
-            for (const s of songList) {
-                const d = document.createElement('div');
-                d.className = 'item';
-                const b = scores[s.file] || 0;
-                d.innerHTML = `<span>${s.label}</span><span class="bs">${b ? '🏅 ' + b : ''}</span>`;
-                d.onclick = () => loadSong(s.file);
-                el.appendChild(d);
-            }
-        }
-        
-        renderSongList();
-        preloadLibrary();
-        requestAnimationFrame(loop);
-    </script>
-</body>
-</html>
+<div id="app">
+<div id="top">
+<div class="tb" id="openLib">📚 Thư viện</div>
+<div id="title">— Chọn bài hát —</div>
+<div class="tb" id="explore">🔍 Khám phá</div>
+</div>
+<div id="stage">
+<div class="stars-bg"></div>
+<canvas id="cv" width="820" height="920"></canvas>
+<div id="hud"><div id="score">0</div><div id="best"></div></div>
+<div id="combo"></div>
+<div id="cd"></div>
+<div id="sum">
+<h2>🎉 HOÀN THÀNH!</h2>
+<div class="r"><span>Điểm:</span><span id="s-score">0</span></div>
+<div class="r"><span>Bắn trúng/Trượt:</span><span id="s-hm">0/0</span></div>
+<div class="r"><span>Combo max:</span><span id="s-combo">0</span></div>
+<div class="r"><span>Kỷ lục:</span><span id="s-best">0</span></div>
+<div class="btns">
+<button class="sec" id="save">📸 Lưu ảnh</button>
+<button id="cls">Đóng</button>
+</div>
+</div>
+</div>
+<div id="pad">
+<button class="btn" id="b-left">🚀 Súng Trái</button>
+<button class="btn" id="b-center">🛸 Súng Giữa</button>
+<button class="btn" id="b-right">🚀 Súng Phải</button>
+</div>
+</div>
+
+<div id="pop"><h3>📚 THƯ VIỆN BÀI HÁT</h3><div id="list"></div><button id="close">Đóng</button></div>
+<audio id="music" preload="auto" style="display:none"></audio>
+
+<script>
+const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/xuanhoai78hp-oss/tranh-ba-game/refs/heads/main/";
+const FALL_SEC = 2.5;
+const CD_SEC = 3;
+const KEY = 'ufo_shooter_v5';
+
+let scores = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {} } catch { return {} } })();
+const saveScores = () => { try { localStorage.setItem(KEY, JSON.stringify(scores)) } catch {} };
+
+const music = document.getElementById('music');
+let musicReady = false;
+let curFile = null;
+let notes = [];
+let phase = 'idle';
+let score = 0, combo = 0, maxCombo = 0, hitCount = 0, missCount = 0;
+let activeGun = 0;
+let bullets = [];
+let sparkles = [];
+
+const lanePressed = [false, false, false];
+const lanePressTimer = [null, null, null];
+
+const bgImg = new Image();
+bgImg.src = 'bandiabay.png';
+
+document.addEventListener('pointerdown', function unlockAudio() {
+if (music && music.paused) {
+music.play().then(() => { music.pause(); music.currentTime = 0; }).catch(() => {});
+}
+document.removeEventListener('pointerdown', unlockAudio);
+}, { once: true });
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playLaser() {
+if (audioCtx.state === 'suspended') audioCtx.resume();
+let osc = audioCtx.createOscillator();
+let gain = audioCtx.createGain();
+osc.type = 'sawtooth';
+osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+osc.connect(gain);
+gain.connect(audioCtx.destination);
+osc.start();
+osc.stop(audioCtx.currentTime + 0.15);
+}
+
+function playExplosion() {
+if (audioCtx.state === 'suspended') audioCtx.resume();
+let osc = audioCtx.createOscillator();
+let gain = audioCtx.createGain();
+osc.type = 'triangle';
+osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.25);
+gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+osc.connect(gain);
+gain.connect(audioCtx.destination);
+osc.start();
+osc.stop(audioCtx.currentTime + 0.25);
+}
+
+function parseSong(text) {
+const lines = text.split(/\r?\n/);
+const title = (lines[0] || '').trim();
+const arr = [];
+const tempoInterval = 400;
+for (let i = 1; i < lines.length; i++) {
+const toks = lines[i].trim().split(/\s+/).filter(Boolean);
+for (const tok of toks) {
+const m = tok.match(/^([tvm])(\d+)(?:;(\d+))?$/i);
+if (!m) continue;
+let type = m[1].toLowerCase();
+let s = parseInt(m[2]);
+let e = m[3] ? parseInt(m[3]) : s + 200;
+if (e <= s) e = s + 200;
+let col = (type === 'm') ? 0 : (type === 'v') ? 1 : 2;
+let tTime = s;
+while (tTime <= e) {
+arr.push({ col: col, hitTime: tTime, state: 'wait' });
+tTime += tempoInterval;
+}
+}
+}
+arr.sort((a, b) => a.hitTime - b.hitTime);
+return { title, notes: arr };
+}
+
+async function loadSong(file) {
+try {
+const r = await fetch(GITHUB_RAW_BASE + file);
+if (!r.ok) throw new Error('Không tìm thấy file txt');
+const text = await r.text();
+const parsed = parseSong(text);
+if (parsed.notes.length === 0) throw new Error('File không có nốt nhạc');
+music.pause();
+music.currentTime = 0;
+music.removeAttribute('src');
+musicReady = false;
+const base = file.replace(/\.txt$/i, '');
+const tryLoad = (src) => new Promise(res => {
+music.src = src;
+music.load();
+const onOk = () => { music.removeEventListener('error', onErr); musicReady = true; res(true); };
+const onErr = () => { music.removeEventListener('canplaythrough', onOk); res(false); };
+music.addEventListener('canplaythrough', onOk, { once: true });
+music.addEventListener('error', onErr, { once: true });
+setTimeout(() => res(musicReady), 2000);
+});
+let okM = await tryLoad(GITHUB_RAW_BASE + base + '.m4a');
+if (!okM) await tryLoad(GITHUB_RAW_BASE + base + '.mp3');
+document.getElementById('title').textContent = parsed.title;
+curFile = file;
+notes = parsed.notes;
+sparkles = [];
+bullets = [];
+score = 0; combo = 0; maxCombo = 0; hitCount = 0; missCount = 0;
+uiScore(); uiBest(); countdown();
+document.getElementById('pop').style.display = 'none';
+} catch (e) {
+alert('Lỗi load bài hát: ' + e.message);
+}
+}
+
+function uiScore() { document.getElementById('score').textContent = score; }
+function uiBest() { const b = scores[curFile] || 0; document.getElementById('best').textContent = b ? `🏅 ${b}` : ''; }
+
+function countdown() {
+const el = document.getElementById('cd');
+el.style.display = 'flex';
+let s = CD_SEC;
+el.textContent = s;
+const timer = setInterval(() => {
+s--;
+if (s > 0) el.textContent = s;
+else {
+el.textContent = 'GO!';
+clearInterval(timer);
+setTimeout(() => { el.style.display = 'none'; startGame(); }, 500);
+}
+}, 700);
+}
+
+function startGame() {
+phase = 'play';
+for (const n of notes) n.state = 'wait';
+sparkles = [];
+bullets = [];
+if (music) {
+music.currentTime = 0;
+music.play().catch(err => console.log(err));
+}
+}
+
+function elapsedMs() {
+if (musicReady && !music.paused && !music.ended) return music.currentTime * 1000;
+return 0;
+}
+
+function fireGun(lane) {
+activeGun = lane;
+lanePressed[lane] = true;
+
+document.querySelectorAll('.btn').forEach((b, idx) => {
+if (idx === lane) b.classList.add('on');
+else b.classList.remove('on');
+});
+
+playLaser();
+const W = cv.logicalW;
+const gunXs = [W * 0.20, W * 0.50, W * 0.80];
+
+bullets.push({
+x: gunXs[lane],
+y: cv.logicalH * 0.78,
+vx: 5,
+vy: -26
+});
+
+checkHit(lane);
+
+if (lanePressTimer[lane]) clearTimeout(lanePressTimer[lane]);
+lanePressTimer[lane] = setTimeout(() => {
+lanePressed[lane] = false;
+document.getElementById(['b-left', 'b-center', 'b-right'][lane]).classList.remove('on');
+}, 250);
+}
+
+document.getElementById('b-left').onclick = () => fireGun(0);
+document.getElementById('b-center').onclick = () => fireGun(1);
+document.getElementById('b-right').onclick = () => fireGun(2);
+
+document.addEventListener('keydown', (e) => {
+if (e.key === 'ArrowLeft') fireGun(0);
+if (e.key === 'ArrowDown' || e.key === ' ') fireGun(1);
+if (e.key === 'ArrowRight') fireGun(2);
+});
+
+function checkHit(lane) {
+if (phase !== 'play') return;
+const ms = elapsedMs();
+for (const n of notes) {
+if (n.state === 'wait' && n.col === lane && Math.abs(ms - n.hitTime) < 180) {
+n.state = 'hit';
+score += 10;
+combo++;
+if (combo > maxCombo) maxCombo = combo;
+
+if (combo > 0 && combo % 10 === 0) {
+score += 200;
+showCombo(`🔥 COMBO ${combo}!\n+200 ĐIỂM!`);
+} else {
+showCombo(`${combo} COMBO`);
+}
+
+hitCount++;
+playExplosion();
+if (navigator.vibrate) navigator.vibrate(25);
+uiScore();
+
+const W = cv.logicalW, H = cv.logicalH;
+const ufoXs = [W * 0.35, W * 0.65, W * 0.92];
+
+// Tính toán chính xác toạ độ của đĩa bay tại thời điểm bị bắn trúng
+let spawnTime = n.hitTime - FALL_SEC * 1000;
+let progress = (ms - spawnTime) / (FALL_SEC * 1000);
+let targetX = ufoXs[n.col] - progress * 30;
+let targetY = (H * 0.85) - progress * (H * 0.6);
+
+createSparkles(targetX, targetY);
+break;
+}
+}
+}
+
+function createSparkles(x, y) {
+for (let i = 0; i < 20; i++) {
+const angle = Math.random() * Math.PI * 2;
+const speed = 2 + Math.random() * 6;
+sparkles.push({
+x: x, y: y,
+vx: Math.cos(angle) * speed,
+vy: Math.sin(angle) * speed,
+alpha: 1.0,
+color: ['#00ffff', '#ff00ff', '#ffffff', '#ffff00'][Math.floor(Math.random() * 4)],
+size: 2 + Math.random() * 4
+});
+}
+}
+
+function showCombo(text) {
+const el = document.getElementById('combo');
+el.textContent = text;
+el.classList.add('show');
+clearTimeout(el._t);
+el._t = setTimeout(() => el.classList.remove('show'), 700);
+}
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+function resize() {
+cv.width = cv.parentElement.clientWidth * window.devicePixelRatio;
+cv.height = cv.parentElement.clientHeight * window.devicePixelRatio;
+cv.logicalW = cv.parentElement.clientWidth;
+cv.logicalH = cv.parentElement.clientHeight;
+ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+}
+resize();
+window.addEventListener('resize', resize);
+
+function loop() {
+const W = cv.logicalW, H = cv.logicalH;
+ctx.clearRect(0, 0, W, H);
+
+if (bgImg.complete) {
+ctx.drawImage(bgImg, 0, 0, W, H);
+}
+
+const gunXs = [W * 0.20, W * 0.50, W * 0.80];
+const ufoXs = [W * 0.35, W * 0.65, W * 0.92];
+
+if (phase === 'play') {
+const ms = elapsedMs();
+for (const n of notes) {
+let spawnTime = n.hitTime - FALL_SEC * 1000;
+if (ms >= spawnTime && ms <= n.hitTime + 300) {
+let progress = (ms - spawnTime) / (FALL_SEC * 1000);
+let x = ufoXs[n.col] - progress * 30;
+let y = (H * 0.85) - progress * (H * 0.6);
+let scale = Math.max(0.3, 1.0 - progress * 0.7);
+
+if (n.state === 'wait' && ms > n.hitTime + 200) {
+n.state = 'missed';
+missCount++;
+score = Math.max(0, score - 5);
+combo = 0;
+uiScore();
+}
+
+if (n.state === 'wait') {
+drawUFO(x, y, scale);
+}
+}
+}
+
+if (ms > (notes[notes.length - 1]?.hitTime || 0) + 3000) {
+endGame();
+}
+}
+
+bullets.forEach(b => {
+ctx.save();
+ctx.strokeStyle = '#00ffff';
+ctx.lineWidth = 4;
+ctx.shadowColor = '#00ffff';
+ctx.shadowBlur = 10;
+ctx.beginPath();
+ctx.moveTo(b.x, b.y);
+ctx.lineTo(b.x + 4, b.y - 35);
+ctx.stroke();
+ctx.restore();
+b.x += b.vx;
+b.y += b.vy;
+});
+bullets = bullets.filter(b => b.y > 0);
+
+sparkles.forEach(sp => {
+ctx.save();
+ctx.globalAlpha = sp.alpha;
+ctx.fillStyle = sp.color;
+ctx.shadowColor = sp.color;
+ctx.shadowBlur = 8;
+ctx.beginPath();
+ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+ctx.fill();
+ctx.restore();
+sp.x += sp.vx;
+sp.y += sp.vy;
+sp.alpha -= 0.03;
+});
+sparkles = sparkles.filter(sp => sp.alpha > 0);
+
+gunXs.forEach((cx, idx) => {
+drawCannon(cx, H * 0.85, lanePressed[idx]);
+});
+
+requestAnimationFrame(loop);
+}
+
+function drawUFO(x, y, scale) {
+ctx.save();
+ctx.translate(x, y);
+ctx.scale(scale, scale);
+
+ctx.fillStyle = '#b2bec3';
+ctx.beginPath();
+ctx.ellipse(0, 0, 35, 12, 0, 0, Math.PI * 2);
+ctx.fill();
+ctx.strokeStyle = '#00ffff';
+ctx.lineWidth = 2;
+ctx.stroke();
+
+ctx.fillStyle = 'rgba(0, 255, 255, 0.6)';
+ctx.beginPath();
+ctx.arc(0, -5, 14, Math.PI, 0, false);
+ctx.fill();
+ctx.stroke();
+
+ctx.fillStyle = Math.floor(Date.now() / 150) % 2 === 0 ? '#ff00ff' : '#00ffff';
+for (let i = -20; i <= 20; i += 20) {
+ctx.beginPath();
+ctx.arc(i, 4, 3, 0, Math.PI * 2);
+ctx.fill();
+}
+ctx.restore();
+}
+
+function drawCannon(x, y, isFiring) {
+ctx.save();
+ctx.translate(x, y);
+
+ctx.fillStyle = '#2d3436';
+ctx.beginPath();
+ctx.arc(0, 10, 22, Math.PI, 0, true);
+ctx.fill();
+ctx.strokeStyle = '#636e72';
+ctx.lineWidth = 3;
+ctx.stroke();
+
+ctx.save();
+ctx.rotate(0.18);
+ctx.fillStyle = '#636e72';
+ctx.fillRect(-6, -24, 12, 28);
+ctx.restore();
+
+if (isFiring) {
+ctx.fillStyle = '#00ffff';
+ctx.shadowColor = '#00ffff';
+ctx.shadowBlur = 15;
+ctx.beginPath();
+ctx.arc(6, -28, 10, 0, Math.PI * 2);
+ctx.fill();
+}
+ctx.restore();
+}
+
+function endGame() {
+if (phase === 'done') return;
+phase = 'done';
+if (!music.paused) music.pause();
+
+const old = scores[curFile] || 0;
+if (score > old) { scores[curFile] = score; saveScores(); }
+document.getElementById('s-score').textContent = score;
+document.getElementById('s-hm').textContent = `${hitCount}/${missCount}`;
+document.getElementById('s-combo').textContent = maxCombo;
+document.getElementById('s-best').textContent = scores[curFile] || 0;
+document.getElementById('sum').style.display = 'block';
+}
+
+document.getElementById('explore').onclick = () => { location.href = 'tuongzalo.html'; };
+document.getElementById('openLib').onclick = () => {
+const p = document.getElementById('pop');
+p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
+};
+document.getElementById('close').onclick = () => document.getElementById('pop').style.display = 'none';
+document.getElementById('cls').onclick = () => document.getElementById('sum').style.display = 'none';
+
+const TOTAL_SONGS = 20;
+const songList = Array.from({ length: TOTAL_SONGS }, (_, i) => ({ file: `${i+1}.txt`, label: `${i+1}` }));
+
+async function preloadLibrary() {
+for (const s of songList) {
+try {
+const r = await fetch(GITHUB_RAW_BASE + s.file);
+if (r.ok) {
+const t = await r.text();
+const titleLine = t.split(/\r?\n/)[0].trim();
+if (titleLine) s.label = titleLine;
+}
+} catch {}
+}
+renderSongList();
+}
+
+function renderSongList() {
+const el = document.getElementById('list');
+el.innerHTML = '';
+for (const s of songList) {
+const d = document.createElement('div');
+d.className = 'item';
+const b = scores[s.file] || 0;
+d.innerHTML = `<span>${s.label}</span><span class="bs">${b ? '🏅 ' + b : ''}</span>`;
+d.onclick = () => loadSong(s.file);
+el.appendChild(d);
+}
+}
+
+renderSongList();
+preloadLibrary();
+requestAnimationFrame(loop);
+</script>
+</body></html>
