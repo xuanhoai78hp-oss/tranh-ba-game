@@ -234,17 +234,46 @@
             });
         });
 
-        // Hỗ trợ phím bàn phím (Mũi tên Trái, Xuống/Cách, Mũi tên Phải)
+        // Hỗ trợ phím bàn phím: A (Trái), S (Giữa), D (Phải) và các phím mũi tên cũ
+        const heldKeys = {};
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'TEXTAREA') return;
-            if (e.key === 'ArrowLeft') { document.getElementById('b-left').classList.add('on'); handlePressStart(0, 'key_left'); }
-            if (e.key === 'ArrowDown' || e.key === ' ') { document.getElementById('b-center').classList.add('on'); handlePressStart(1, 'key_center'); }
-            if (e.key === 'ArrowRight') { document.getElementById('b-right').classList.add('on'); handlePressStart(2, 'key_right'); }
+            const k = e.key.toLowerCase();
+            if (heldKeys[k]) return; // Chống lặp phím khi giữ
+
+            if (k === 'a' || e.key === 'ArrowLeft') {
+                heldKeys[k] = true;
+                document.getElementById('b-left').classList.add('on');
+                handlePressStart(0, 'key_left');
+            }
+            if (k === 's' || e.key === 'ArrowDown' || e.key === ' ') {
+                heldKeys[k] = true;
+                document.getElementById('b-center').classList.add('on');
+                handlePressStart(1, 'key_center');
+            }
+            if (k === 'd' || e.key === 'ArrowRight') {
+                heldKeys[k] = true;
+                document.getElementById('b-right').classList.add('on');
+                handlePressStart(2, 'key_right');
+            }
         });
+
         document.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowLeft') { document.getElementById('b-left').classList.remove('on'); handlePressEnd('key_left'); }
-            if (e.key === 'ArrowDown' || e.key === ' ') { document.getElementById('b-center').classList.remove('on'); handlePressEnd('key_center'); }
-            if (e.key === 'ArrowRight') { document.getElementById('b-right').classList.remove('on'); handlePressEnd('key_right'); }
+            const k = e.key.toLowerCase();
+            heldKeys[k] = false;
+
+            if (k === 'a' || e.key === 'ArrowLeft') {
+                document.getElementById('b-left').classList.remove('on');
+                handlePressEnd('key_left');
+            }
+            if (k === 's' || e.key === 'ArrowDown' || e.key === ' ') {
+                document.getElementById('b-center').classList.remove('on');
+                handlePressEnd('key_center');
+            }
+            if (k === 'd' || e.key === 'ArrowRight') {
+                document.getElementById('b-right').classList.remove('on');
+                handlePressEnd('key_right');
+            }
         });
 
         const cv = document.getElementById('cv');
@@ -399,7 +428,7 @@
             for (const s of songList) {
                 const d = document.createElement('div');
                 d.className = 'item';
-                d.innerHTML = `<span>🎵 ${s.label}</span>`;
+                d.innerHTML = `🎵 Bài số ${s.file.replace('.mp3', '')}`;
                 d.onclick = () => loadSong(s.file);
                 el.appendChild(d);
             }
