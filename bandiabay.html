@@ -303,7 +303,6 @@ uiScore();
 const W = cv.logicalW, H = cv.logicalH;
 const ufoXs = [W * 0.35, W * 0.65, W * 0.92];
 
-// Tính toán chính xác toạ độ của đĩa bay tại thời điểm bị bắn trúng
 let spawnTime = n.hitTime - FALL_SEC * 1000;
 let progress = (ms - spawnTime) / (FALL_SEC * 1000);
 let targetX = ufoXs[n.col] - progress * 30;
@@ -359,7 +358,6 @@ if (bgImg.complete) {
 ctx.drawImage(bgImg, 0, 0, W, H);
 }
 
-const gunXs = [W * 0.20, W * 0.50, W * 0.80];
 const ufoXs = [W * 0.35, W * 0.65, W * 0.92];
 
 if (phase === 'play') {
@@ -423,10 +421,6 @@ sp.alpha -= 0.03;
 });
 sparkles = sparkles.filter(sp => sp.alpha > 0);
 
-gunXs.forEach((cx, idx) => {
-drawCannon(cx, H * 0.85, lanePressed[idx]);
-});
-
 requestAnimationFrame(loop);
 }
 
@@ -453,35 +447,6 @@ ctx.fillStyle = Math.floor(Date.now() / 150) % 2 === 0 ? '#ff00ff' : '#00ffff';
 for (let i = -20; i <= 20; i += 20) {
 ctx.beginPath();
 ctx.arc(i, 4, 3, 0, Math.PI * 2);
-ctx.fill();
-}
-ctx.restore();
-}
-
-function drawCannon(x, y, isFiring) {
-ctx.save();
-ctx.translate(x, y);
-
-ctx.fillStyle = '#2d3436';
-ctx.beginPath();
-ctx.arc(0, 10, 22, Math.PI, 0, true);
-ctx.fill();
-ctx.strokeStyle = '#636e72';
-ctx.lineWidth = 3;
-ctx.stroke();
-
-ctx.save();
-ctx.rotate(0.18);
-ctx.fillStyle = '#636e72';
-ctx.fillRect(-6, -24, 12, 28);
-ctx.restore();
-
-if (isFiring) {
-ctx.fillStyle = '#00ffff';
-ctx.shadowColor = '#00ffff';
-ctx.shadowBlur = 15;
-ctx.beginPath();
-ctx.arc(6, -28, 10, 0, Math.PI * 2);
 ctx.fill();
 }
 ctx.restore();
