@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>UFO Shooter | Bắn Đĩa Bay</title>
     <style>
-        * { box-sizing: border-box; user-select: none; touch-action: manipulation; }
+        * { box-sizing: border-box; user-select: none; touch-action: manipulation; -webkit-touch-callout: none; }
         body {
             margin: 0;
             background: #000;
@@ -23,8 +23,6 @@
             position: relative;
             width: 100vw;
             height: 100vh;
-            max-width: 100vw;
-            max-height: 100vh;
             background: #050505;
             overflow: hidden;
             display: flex;
@@ -41,7 +39,6 @@
             display: block;
         }
 
-        /* Giao diện HUD */
         .hud-top {
             position: absolute;
             top: max(15px, env(safe-area-inset-top));
@@ -63,18 +60,16 @@
             cursor: pointer;
             font-weight: bold;
         }
-        .btn-ui:hover { background: rgba(0, 255, 255, 0.2); }
 
         .status-board {
             display: flex;
             gap: 20px;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: bold;
             color: #00ffcc;
             text-shadow: 0 0 10px rgba(0, 255, 204, 0.8);
         }
 
-        /* Đẩy cụm điều khiển lên cao an toàn không bị che */
         .hud-controls {
             position: absolute;
             bottom: calc(110px + env(safe-area-inset-bottom)); 
@@ -152,7 +147,7 @@
         </div>
     </div>
 
-    <audio id="bgMusic"></audio>
+    <audio id="bgMusic" preload="auto"></audio>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -170,7 +165,7 @@
 
         let score = 0;
         let level = 1;
-        let ufoSpeedMultiplier = 0.5; // Tốc độ level 1 chậm 50%
+        let ufoSpeedMultiplier = 0.5;
 
         let ufos = [];
         let bullets = [];
@@ -179,7 +174,6 @@
         let keys = {};
         let muzzleFlashTimer = 0;
 
-        // --- LIÊN KẾT NÚT ---
         document.getElementById('btnLib').addEventListener('click', () => {
             window.location.href = 'tuongzalo.html';
         });
@@ -188,36 +182,43 @@
             window.location.href = 'tuongzalo.html';
         });
 
-        // --- TẢI ẢNH BACKGROUND & BACKGROUND2 ---
         const bgImage = new Image();
         bgImage.src = 'background.png';
 
         const fgImage = new Image();
         fgImage.src = 'background2.png';
 
-        // --- ÂM THANH ---
+        // Xử lý âm thanh an toàn cho iOS
         const bgMusic = document.getElementById('bgMusic');
         let currentTrack = 1;
+        
         function playMusic(trackNum) {
             currentTrack = trackNum;
             bgMusic.src = `${currentTrack}.mp3`;
             bgMusic.volume = 0.6;
             bgMusic.play().catch(() => {
-                window.addEventListener('click', () => bgMusic.play(), { once: true });
+                // Đợi tương tác đầu tiên của người dùng trên iPhone để phát nhạc
+                const unlockAudio = () => {
+                    bgMusic.play();
+                    window.removeEventListener('touchstart', unlockAudio);
+                    window.removeEventListener('click', unlockAudio);
+                };
+                window.addEventListener('touchstart', unlockAudio, { once: true });
+                window.addEventListener('click', unlockAudio, { once: true });
             });
         }
+        
         bgMusic.addEventListener('ended', () => {
             let next = currentTrack >= 9 ? 1 : currentTrack + 1;
             playMusic(next);
         });
-        playMusic(Math.floor(Math.random() * 9) + 1);
+        playMusic(1);
 
         document.getElementById('btnMusicTrack').addEventListener('click', () => {
             let next = currentTrack >= 9 ? 1 : currentTrack + 1;
             playMusic(next);
         });
 
-        // --- 3 ĐƯỜNG BAY: TỪ PHẢI QUA TRÁI ---
         const flightPaths = [
             [{x: 1330, y: 320}, {x: 980, y: 220}, {x: 580, y: 270}, {x: 230, y: 170}, {x: -50, y: 100}],
             [{x: 1330, y: 220}, {x: 930, y: 320}, {x: 530, y: 250}, {x: 180, y: 330}, {x: -50, y: 260}],
@@ -236,19 +237,22 @@
 
         for(let i = 0; i < 4; i++) spawnUFO();
 
-        // --- ĐIỀU KHIỂN ---
         window.addEventListener('keydown', e => keys[e.code] = true);
         window.addEventListener('keyup', e => keys[e.code] = false);
 
         document.querySelectorAll('.dpad button').forEach(btn => {
             const code = btn.getAttribute('data-key');
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[code] = true; }, {passive: false});
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[code] = false; }, {passive: false});
             btn.addEventListener('mousedown', () => keys[code] = true);
             btn.addEventListener('mouseup', () => keys[code] = false);
-            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[code] = true; });
-            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[code] = false; });
         });
 
         document.getElementById('btnShoot').addEventListener('click', fireBullet);
+        document.getElementById('btnShoot').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            fireBullet();
+        }, {passive: false});
 
         function fireBullet() {
             muzzleFlashTimer = 6;
@@ -278,7 +282,6 @@
             };
         }
 
-        // --- UPDATE ---
         function update() {
             let speed = 9;
             if (keys['KeyA']) focusPoint.x -= speed;
@@ -291,7 +294,6 @@
 
             if (muzzleFlashTimer > 0) muzzleFlashTimer--;
 
-            // Duyệt ngược mảng UFO an toàn tuyệt đối
             for (let i = ufos.length - 1; i >= 0; i--) {
                 ufos[i].progress += ufos[i].speed;
                 if (ufos[i].progress >= 1.0) {
@@ -300,7 +302,6 @@
                 }
             }
 
-            // Duyệt ngược mảng Đạn an toàn tuyệt đối
             for (let i = bullets.length - 1; i >= 0; i--) {
                 let b = bullets[i];
                 let dx = b.targetX - b.x;
@@ -320,7 +321,7 @@
                                 score = 0;
                                 ufoSpeedMultiplier += 0.10;
                                 document.getElementById('levelDisplay').innerText = level;
-                                document.getElementById('scoreDisplay').innerText = score; // Cập nhật lại số điểm về 0 ngay lập tức
+                                document.getElementById('scoreDisplay').innerText = score;
                             }
 
                             ufos.splice(j, 1);
@@ -336,7 +337,6 @@
             }
         }
 
-        // --- DRAW ---
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -351,12 +351,10 @@
             ctx.translate(offsetX, offsetY);
             ctx.scale(scale, scale);
 
-            // 1. Background phía sau
             if (bgImage.complete && bgImage.naturalWidth !== 0) {
                 ctx.drawImage(bgImage, 0, 0, MAP_WIDTH, MAP_HEIGHT);
             }
 
-            // 2. UFO bay ở giữa
             ufos.forEach(ufo => {
                 let pos = getPointOnPath(ufo.path, ufo.progress);
                 let r = ufo.radius * pos.z;
@@ -377,12 +375,10 @@
                 ctx.restore();
             });
 
-            // 2.5 Vẽ foreground (background2.png đè lên trên UFO)
             if (fgImage.complete && fgImage.naturalWidth !== 0) {
                 ctx.drawImage(fgImage, 0, 0, MAP_WIDTH, MAP_HEIGHT);
             }
 
-            // 3. Vẽ đạn
             bullets.forEach(b => {
                 ctx.fillStyle = '#ff3366';
                 ctx.shadowColor = '#ff3366';
@@ -393,7 +389,6 @@
                 ctx.shadowBlur = 0;
             });
 
-            // 4. Vẽ Súng & Tâm ngắm
             let gunX = MAP_WIDTH / 2;
             let gunY = MAP_HEIGHT - 30;
             
@@ -404,7 +399,8 @@
             ctx.strokeStyle = '#00ffff';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.roundRect(-45, 0, 90, 30, [6, 6, 0, 0]);
+            // Thay thế roundRect bằng lệnh rect thông thường tương thích mọi iOS Safari/Koder
+            ctx.rect(-45, 0, 90, 30);
             ctx.fill();
             ctx.stroke();
 
@@ -437,7 +433,6 @@
 
             ctx.restore();
 
-            // Laser ngắm
             ctx.strokeStyle = 'rgba(255, 51, 102, 0.6)';
             ctx.lineWidth = 2;
             ctx.setLineDash([6, 6]);
@@ -447,7 +442,6 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Tâm ngắm tiêu cự
             ctx.strokeStyle = '#00ffcc';
             ctx.lineWidth = 3;
             ctx.beginPath();
