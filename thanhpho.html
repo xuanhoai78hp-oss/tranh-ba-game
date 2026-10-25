@@ -44,7 +44,7 @@
         /* Giao diện HUD */
         .hud-top {
             position: absolute;
-            top: 15px;
+            top: max(15px, env(safe-area-inset-top));
             left: 20px;
             right: 20px;
             z-index: 10;
@@ -74,10 +74,10 @@
             text-shadow: 0 0 10px rgba(0, 255, 204, 0.8);
         }
 
-        /* Nâng cụm điều khiển lên tránh thanh địa chỉ mobile */
+        /* Đẩy cụm điều khiển lên cao hơn hẳn (110px) và cộng thêm safe-area để không bao giờ bị che */
         .hud-controls {
             position: absolute;
-            bottom: 70px; 
+            bottom: calc(110px + env(safe-area-inset-bottom)); 
             left: 25px;
             right: 25px;
             z-index: 10;
@@ -170,8 +170,7 @@
 
         let score = 0;
         let level = 1;
-        // Giảm tốc độ cơ bản xuống thêm 50% so với trước
-        let ufoSpeedMultiplier = 0.5;
+        let ufoSpeedMultiplier = 0.5; // Tốc độ level 1 chậm 50%
 
         let ufos = [];
         let bullets = [];
@@ -331,7 +330,7 @@
             });
         }
 
-        // --- DRAW (Dùng object-fit cover chuẩn xác cho Canvas) ---
+        // --- DRAW ---
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -388,7 +387,7 @@
                 ctx.shadowBlur = 0;
             });
 
-            // 4. Vẽ Súng hiện đại sắc sảo & Tâm ngắm
+            // 4. Vẽ Súng & Tâm ngắm
             let gunX = MAP_WIDTH / 2;
             let gunY = MAP_HEIGHT - 30;
             
