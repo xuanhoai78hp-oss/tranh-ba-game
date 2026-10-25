@@ -74,7 +74,7 @@
             text-shadow: 0 0 10px rgba(0, 255, 204, 0.8);
         }
 
-        /* Đẩy cụm điều khiển lên cao hơn hẳn (110px) và cộng thêm safe-area để không bao giờ bị che */
+        /* Đẩy cụm điều khiển lên cao an toàn không bị che */
         .hud-controls {
             position: absolute;
             bottom: calc(110px + env(safe-area-inset-bottom)); 
@@ -291,20 +291,24 @@
 
             if (muzzleFlashTimer > 0) muzzleFlashTimer--;
 
-            ufos.forEach((ufo, index) => {
-                ufo.progress += ufo.speed;
-                if (ufo.progress >= 1.0) {
-                    ufos.splice(index, 1);
+            // Duyệt ngược mảng UFO an toàn tuyệt đối
+            for (let i = ufos.length - 1; i >= 0; i--) {
+                ufos[i].progress += ufos[i].speed;
+                if (ufos[i].progress >= 1.0) {
+                    ufos.splice(i, 1);
                     spawnUFO();
                 }
-            });
+            }
 
-            bullets.forEach((b, index) => {
+            // Duyệt ngược mảng Đạn an toàn tuyệt đối
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i];
                 let dx = b.targetX - b.x;
                 let dy = b.targetY - b.y;
                 let dist = Math.hypot(dx, dy);
                 if (dist < b.speed) {
-                    ufos.forEach((ufo, uIndex) => {
+                    for (let j = ufos.length - 1; j >= 0; j--) {
+                        let ufo = ufos[j];
                         let pos = getPointOnPath(ufo.path, ufo.progress);
                         let renderSize = ufo.radius * pos.z;
                         if (Math.hypot(b.targetX - pos.x, b.targetY - pos.y) < renderSize + 25) {
@@ -316,18 +320,20 @@
                                 score = 0;
                                 ufoSpeedMultiplier += 0.10;
                                 document.getElementById('levelDisplay').innerText = level;
+                                document.getElementById('scoreDisplay').innerText = score; // Cập nhật lại số điểm về 0 ngay lập tức
                             }
 
-                            ufos.splice(uIndex, 1);
+                            ufos.splice(j, 1);
                             spawnUFO();
+                            break;
                         }
-                    });
-                    bullets.splice(index, 1);
+                    }
+                    bullets.splice(i, 1);
                 } else {
                     b.x += (dx / dist) * b.speed;
                     b.y += (dy / dist) * b.speed;
                 }
-            });
+            }
         }
 
         // --- DRAW ---
