@@ -79,7 +79,7 @@
 
         .hud-controls {
             position: absolute;
-            bottom: calc(30px + env(safe-area-inset-bottom)); 
+            bottom: calc(100px + env(safe-area-inset-bottom)); /* Đã sửa lên 100px */
             left: 25px;
             right: 25px;
             z-index: 10;
@@ -337,7 +337,6 @@
 
         function update() {
             let speed = 9;
-            // Hỗ trợ cả phím WASD (PC) và Joystick (Mobile)
             let moveX = 0;
             let moveY = 0;
 
