@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>UFO Shooter | Bắn Đĩa Bay</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; touch-action: manipulation; }
+        body {
+            margin: 0;
+            background: #000;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            max-height: 100vh;
+            background: #050505;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Giao diện HUD */
+        .hud-top {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            right: 20px;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        .btn-ui {
+            background: rgba(0, 20, 40, 0.85);
+            border: 1px solid #00ffff;
+            color: #00ffff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-ui:hover { background: rgba(0, 255, 255, 0.2); }
+
+        .status-board {
+            display: flex;
+            gap: 20px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.8);
+        }
+
+        /* Nâng cụm điều khiển lên tránh thanh địa chỉ mobile */
+        .hud-controls {
+            position: absolute;
+            bottom: 70px; 
+            left: 25px;
+            right: 25px;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: auto;
+        }
+
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(2, 50px);
+            gap: 5px;
+        }
+        .dpad button {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 255, 255, 0.5);
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .dpad button:active { background: rgba(0, 255, 255, 0.5); }
+        .btn-w { grid-column: 2; grid-row: 1; }
+        .btn-a { grid-column: 1; grid-row: 2; }
+        .btn-s { grid-column: 2; grid-row: 2; }
+        .btn-d { grid-column: 3; grid-row: 2; }
+
+        .btn-shoot {
+            background: #ff3366;
+            border: none;
+            color: white;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 0 20px rgba(255, 51, 102, 0.8);
+            cursor: pointer;
+        }
+        .btn-shoot:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="hud-top">
+            <button class="btn-ui" id="btnLib">📚 Thư viện</button>
+            <div class="status-board">
+                <div>Level: <span id="levelDisplay">1</span></div>
+                <div>Đã hạ: <span id="scoreDisplay">0</span>/10</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-ui" id="btnMusicTrack">🎵 Đổi bài</button>
+                <button class="btn-ui" id="btnExplore">🔍 Khám phá</button>
+            </div>
+        </div>
+
+        <div class="hud-controls">
+            <div class="dpad">
+                <button class="btn-w" data-key="KeyW">W</button>
+                <button class="btn-a" data-key="KeyA">A</button>
+                <button class="btn-s" data-key="KeyS">S</button>
+                <button class="btn-d" data-key="KeyD">D</button>
+            </div>
+            
+            <button class="btn-shoot" id="btnShoot">BẮN</button>
+        </div>
+    </div>
+
+    <audio id="bgMusic"></audio>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const MAP_WIDTH = 1280;
+        const MAP_HEIGHT = 720;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let score = 0;
+        let level = 1;
+        // Giảm tốc độ cơ bản xuống thêm 50% so với trước
+        let ufoSpeedMultiplier = 0.5;
+
+        let ufos = [];
+        let bullets = [];
+        
+        let focusPoint = { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 };
+        let keys = {};
+        let muzzleFlashTimer = 0;
+
+        // --- LIÊN KẾT NÚT ---
+        document.getElementById('btnLib').addEventListener('click', () => {
+            window.location.href = 'tuongzalo.html';
+        });
+
+        document.getElementById('btnExplore').addEventListener('click', () => {
+            window.location.href = 'tuongzalo.html';
+        });
+
+        // --- TẢI ẢNH BACKGROUND & BACKGROUND2 ---
+        const bgImage = new Image();
+        bgImage.src = 'background.png';
+
+        const fgImage = new Image();
+        fgImage.src = 'background2.png';
+
+        // --- ÂM THANH ---
+        const bgMusic = document.getElementById('bgMusic');
+        let currentTrack = 1;
+        function playMusic(trackNum) {
+            currentTrack = trackNum;
+            bgMusic.src = `${currentTrack}.mp3`;
+            bgMusic.volume = 0.6;
+            bgMusic.play().catch(() => {
+                window.addEventListener('click', () => bgMusic.play(), { once: true });
+            });
+        }
+        bgMusic.addEventListener('ended', () => {
+            let next = currentTrack >= 9 ? 1 : currentTrack + 1;
+            playMusic(next);
+        });
+        playMusic(Math.floor(Math.random() * 9) + 1);
+
+        document.getElementById('btnMusicTrack').addEventListener('click', () => {
+            let next = currentTrack >= 9 ? 1 : currentTrack + 1;
+            playMusic(next);
+        });
+
+        // --- 3 ĐƯỜNG BAY: TỪ PHẢI QUA TRÁI ---
+        const flightPaths = [
+            [{x: 1330, y: 320}, {x: 980, y: 220}, {x: 580, y: 270}, {x: 230, y: 170}, {x: -50, y: 100}],
+            [{x: 1330, y: 220}, {x: 930, y: 320}, {x: 530, y: 250}, {x: 180, y: 330}, {x: -50, y: 260}],
+            [{x: 1330, y: 560}, {x: 980, y: 490}, {x: 580, y: 530}, {x: 230, y: 460}, {x: -50, y: 410}]
+        ];
+
+        function spawnUFO() {
+            let pathIndex = Math.floor(Math.random() * flightPaths.length);
+            ufos.push({
+                path: flightPaths[pathIndex],
+                progress: 0,
+                speed: (0.0012 + Math.random() * 0.0015) * ufoSpeedMultiplier,
+                radius: 40
+            });
+        }
+
+        for(let i = 0; i < 4; i++) spawnUFO();
+
+        // --- ĐIỀU KHIỂN ---
+        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        document.querySelectorAll('.dpad button').forEach(btn => {
+            const code = btn.getAttribute('data-key');
+            btn.addEventListener('mousedown', () => keys[code] = true);
+            btn.addEventListener('mouseup', () => keys[code] = false);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[code] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[code] = false; });
+        });
+
+        document.getElementById('btnShoot').addEventListener('click', fireBullet);
+
+        function fireBullet() {
+            muzzleFlashTimer = 6;
+            bullets.push({
+                x: MAP_WIDTH / 2,
+                y: MAP_HEIGHT - 40,
+                targetX: focusPoint.x,
+                targetY: focusPoint.y,
+                speed: 35
+            });
+        }
+
+        function getPointOnPath(path, t) {
+            let len = path.length - 1;
+            let exact = t * len;
+            let index = Math.floor(exact);
+            if (index >= len) return { ...path[len], z: 1.1 };
+            let nextIndex = index + 1;
+            let localT = exact - index;
+            
+            let p1 = path[index];
+            let p2 = path[nextIndex];
+            return {
+                x: p1.x + (p2.x - p1.x) * localT,
+                y: p1.y + (p2.y - p1.y) * localT,
+                z: 0.35 + t * 0.75
+            };
+        }
+
+        // --- UPDATE ---
+        function update() {
+            let speed = 9;
+            if (keys['KeyA']) focusPoint.x -= speed;
+            if (keys['KeyD']) focusPoint.x += speed;
+            if (keys['KeyW']) focusPoint.y -= speed;
+            if (keys['KeyS']) focusPoint.y += speed;
+
+            focusPoint.x = Math.max(50, Math.min(MAP_WIDTH - 50, focusPoint.x));
+            focusPoint.y = Math.max(50, Math.min(MAP_HEIGHT - 50, focusPoint.y));
+
+            if (muzzleFlashTimer > 0) muzzleFlashTimer--;
+
+            ufos.forEach((ufo, index) => {
+                ufo.progress += ufo.speed;
+                if (ufo.progress >= 1.0) {
+                    ufos.splice(index, 1);
+                    spawnUFO();
+                }
+            });
+
+            bullets.forEach((b, index) => {
+                let dx = b.targetX - b.x;
+                let dy = b.targetY - b.y;
+                let dist = Math.hypot(dx, dy);
+                if (dist < b.speed) {
+                    ufos.forEach((ufo, uIndex) => {
+                        let pos = getPointOnPath(ufo.path, ufo.progress);
+                        let renderSize = ufo.radius * pos.z;
+                        if (Math.hypot(b.targetX - pos.x, b.targetY - pos.y) < renderSize + 25) {
+                            score++;
+                            document.getElementById('scoreDisplay').innerText = score;
+
+                            if (score >= 10) {
+                                level++;
+                                score = 0;
+                                ufoSpeedMultiplier += 0.10;
+                                document.getElementById('levelDisplay').innerText = level;
+                            }
+
+                            ufos.splice(uIndex, 1);
+                            spawnUFO();
+                        }
+                    });
+                    bullets.splice(index, 1);
+                } else {
+                    b.x += (dx / dist) * b.speed;
+                    b.y += (dy / dist) * b.speed;
+                }
+            });
+        }
+
+        // --- DRAW (Dùng object-fit cover chuẩn xác cho Canvas) ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            let scaleX = canvas.width / MAP_WIDTH;
+            let scaleY = canvas.height / MAP_HEIGHT;
+            let scale = Math.max(scaleX, scaleY);
+            
+            let offsetX = (canvas.width - MAP_WIDTH * scale) / 2;
+            let offsetY = (canvas.height - MAP_HEIGHT * scale) / 2;
+
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+
+            // 1. Background phía sau
+            if (bgImage.complete && bgImage.naturalWidth !== 0) {
+                ctx.drawImage(bgImage, 0, 0, MAP_WIDTH, MAP_HEIGHT);
+            }
+
+            // 2. UFO bay ở giữa
+            ufos.forEach(ufo => {
+                let pos = getPointOnPath(ufo.path, ufo.progress);
+                let r = ufo.radius * pos.z;
+                
+                ctx.save();
+                ctx.translate(pos.x, pos.y);
+
+                ctx.fillStyle = `rgba(0, 255, 255, ${Math.min(1, pos.z * 1.2)})`;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, r, r * 0.35, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = `rgba(255, 51, 153, ${Math.min(1, pos.z * 1.2)})`;
+                ctx.beginPath();
+                ctx.arc(0, -r * 0.15, r * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            });
+
+            // 2.5 Vẽ foreground (background2.png đè lên trên UFO)
+            if (fgImage.complete && fgImage.naturalWidth !== 0) {
+                ctx.drawImage(fgImage, 0, 0, MAP_WIDTH, MAP_HEIGHT);
+            }
+
+            // 3. Vẽ đạn
+            bullets.forEach(b => {
+                ctx.fillStyle = '#ff3366';
+                ctx.shadowColor = '#ff3366';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // 4. Vẽ Súng hiện đại sắc sảo & Tâm ngắm
+            let gunX = MAP_WIDTH / 2;
+            let gunY = MAP_HEIGHT - 30;
+            
+            ctx.save();
+            ctx.translate(gunX, gunY);
+
+            ctx.fillStyle = '#0a192f';
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(-45, 0, 90, 30, [6, 6, 0, 0]);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#00ffcc';
+            ctx.fillRect(-30, 8, 60, 4);
+
+            let angle = Math.atan2(focusPoint.y - gunY, focusPoint.x - gunX);
+            ctx.rotate(angle);
+
+            ctx.fillStyle = '#172a45';
+            ctx.fillRect(0, -14, 70, 28);
+            ctx.strokeStyle = '#64ffda';
+            ctx.strokeRect(0, -14, 70, 28);
+
+            ctx.fillStyle = '#00ffff';
+            ctx.fillRect(20, -10, 8, 20);
+            ctx.fillRect(38, -10, 8, 20);
+            ctx.fillRect(56, -10, 8, 20);
+
+            if (muzzleFlashTimer > 0) {
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.moveTo(70, 0);
+                ctx.lineTo(95, -15);
+                ctx.lineTo(85, 0);
+                ctx.lineTo(95, 15);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.restore();
+
+            // Laser ngắm
+            ctx.strokeStyle = 'rgba(255, 51, 102, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 6]);
+            ctx.beginPath();
+            ctx.moveTo(gunX, gunY - 10);
+            ctx.lineTo(focusPoint.x, focusPoint.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Tâm ngắm tiêu cự
+            ctx.strokeStyle = '#00ffcc';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(focusPoint.x, focusPoint.y, 20, 0, Math.PI * 2);
+            ctx.moveTo(focusPoint.x - 28, focusPoint.y); ctx.lineTo(focusPoint.x + 28, focusPoint.y);
+            ctx.moveTo(focusPoint.x, focusPoint.y - 28); ctx.lineTo(focusPoint.x, focusPoint.y + 28);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+    </script>
+</body>
+</html>
