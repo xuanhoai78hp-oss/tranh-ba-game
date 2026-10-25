@@ -5,7 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>UFO Shooter | Bắn Đĩa Bay</title>
     <style>
-        * { box-sizing: border-box; user-select: none; touch-action: manipulation; -webkit-touch-callout: none; }
+        /* Chặn triệt để bôi đen, chọn text và các hành vi kéo thả trên toàn bộ trang */
+        * { 
+            box-sizing: border-box; 
+            user-select: none; 
+            -webkit-user-select: none; 
+            -webkit-touch-callout: none; 
+            touch-action: manipulation; 
+        }
         body {
             margin: 0;
             background: #000;
@@ -72,38 +79,45 @@
 
         .hud-controls {
             position: absolute;
-            bottom: calc(110px + env(safe-area-inset-bottom)); 
+            bottom: calc(30px + env(safe-area-inset-bottom)); 
             left: 25px;
             right: 25px;
             z-index: 10;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            pointer-events: auto;
+            pointer-events: none; /* Cho phép xuyên qua vùng trống */
         }
 
-        .dpad {
-            display: grid;
-            grid-template-columns: repeat(3, 50px);
-            grid-template-rows: repeat(2, 50px);
-            gap: 5px;
+        /* --- JOYSTICK ẢO THAY THẾ CHO CỤM WASD TRÊN MOBILE --- */
+        #joystick-base {
+            pointer-events: auto;
+            width: 120px;
+            height: 120px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid rgba(0, 255, 255, 0.4);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
         }
-        .dpad button {
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid rgba(0, 255, 255, 0.5);
-            color: #fff;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
+
+        #joystick-stick {
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, #00ffff 0%, #008888 100%);
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            transform: translate(0px, 0px);
+            pointer-events: none;
         }
-        .dpad button:active { background: rgba(0, 255, 255, 0.5); }
-        .btn-w { grid-column: 2; grid-row: 1; }
-        .btn-a { grid-column: 1; grid-row: 2; }
-        .btn-s { grid-column: 2; grid-row: 2; }
-        .btn-d { grid-column: 3; grid-row: 2; }
 
         .btn-shoot {
+            pointer-events: auto;
             background: #ff3366;
             border: none;
             color: white;
@@ -118,7 +132,7 @@
         .btn-shoot:active { transform: scale(0.95); }
     </style>
 </head>
-<body>
+<body onselectstart="return false;" oncontextmenu="return false;">
 
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
@@ -136,11 +150,9 @@
         </div>
 
         <div class="hud-controls">
-            <div class="dpad">
-                <button class="btn-w" data-key="KeyW">W</button>
-                <button class="btn-a" data-key="KeyA">A</button>
-                <button class="btn-s" data-key="KeyS">S</button>
-                <button class="btn-d" data-key="KeyD">D</button>
+            <!-- Joystick thay thế cụm WASD trên mobile -->
+            <div id="joystick-base">
+                <div id="joystick-stick"></div>
             </div>
             
             <button class="btn-shoot" id="btnShoot">BẮN</button>
@@ -174,6 +186,55 @@
         let keys = {};
         let muzzleFlashTimer = 0;
 
+        // Xử lý Joystick di động
+        let joystick = { active: false, x: 0, y: 0 };
+        const baseEl = document.getElementById('joystick-base');
+        const stickEl = document.getElementById('joystick-stick');
+
+        function updateJoystick(clientX, clientY) {
+            const rect = baseEl.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            let dx = clientX - centerX;
+            let dy = clientY - centerY;
+            const dist = Math.hypot(dx, dy);
+            const maxDist = rect.width / 2 - 10;
+
+            if (dist > maxDist) {
+                dx = (dx / dist) * maxDist;
+                dy = (dy / dist) * maxDist;
+            }
+
+            stickEl.style.transform = `translate(${dx}px, ${dy}px)`;
+            joystick.x = dx / maxDist;
+            joystick.y = dy / maxDist;
+        }
+
+        baseEl.addEventListener('touchstart', e => {
+            e.preventDefault();
+            joystick.active = true;
+            updateJoystick(e.touches[0].clientX, e.touches[0].clientY);
+        }, {passive: false});
+
+        window.addEventListener('touchmove', e => {
+            if (!joystick.active) return;
+            e.preventDefault();
+            for (let i = 0; i < e.touches.length; i++) {
+                updateJoystick(e.touches[i].clientX, e.touches[i].clientY);
+            }
+        }, {passive: false});
+
+        const resetJoystick = () => {
+            if (!joystick.active) return;
+            joystick.active = false;
+            joystick.x = 0;
+            joystick.y = 0;
+            stickEl.style.transform = `translate(0px, 0px)`;
+        };
+
+        window.addEventListener('touchend', resetJoystick);
+        window.addEventListener('touchcancel', resetJoystick);
+
         document.getElementById('btnLib').addEventListener('click', () => {
             window.location.href = 'tuongzalo.html';
         });
@@ -197,7 +258,6 @@
             bgMusic.src = `${currentTrack}.mp3`;
             bgMusic.volume = 0.6;
             bgMusic.play().catch(() => {
-                // Đợi tương tác đầu tiên của người dùng trên iPhone để phát nhạc
                 const unlockAudio = () => {
                     bgMusic.play();
                     window.removeEventListener('touchstart', unlockAudio);
@@ -237,16 +297,9 @@
 
         for(let i = 0; i < 4; i++) spawnUFO();
 
+        // Bàn phím máy tính (WASD)
         window.addEventListener('keydown', e => keys[e.code] = true);
         window.addEventListener('keyup', e => keys[e.code] = false);
-
-        document.querySelectorAll('.dpad button').forEach(btn => {
-            const code = btn.getAttribute('data-key');
-            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[code] = true; }, {passive: false});
-            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[code] = false; }, {passive: false});
-            btn.addEventListener('mousedown', () => keys[code] = true);
-            btn.addEventListener('mouseup', () => keys[code] = false);
-        });
 
         document.getElementById('btnShoot').addEventListener('click', fireBullet);
         document.getElementById('btnShoot').addEventListener('touchstart', (e) => {
@@ -284,10 +337,22 @@
 
         function update() {
             let speed = 9;
-            if (keys['KeyA']) focusPoint.x -= speed;
-            if (keys['KeyD']) focusPoint.x += speed;
-            if (keys['KeyW']) focusPoint.y -= speed;
-            if (keys['KeyS']) focusPoint.y += speed;
+            // Hỗ trợ cả phím WASD (PC) và Joystick (Mobile)
+            let moveX = 0;
+            let moveY = 0;
+
+            if (keys['KeyA']) moveX -= 1;
+            if (keys['KeyD']) moveX += 1;
+            if (keys['KeyW']) moveY -= 1;
+            if (keys['KeyS']) moveY += 1;
+
+            if (joystick.active) {
+                moveX = joystick.x;
+                moveY = joystick.y;
+            }
+
+            focusPoint.x += moveX * speed;
+            focusPoint.y += moveY * speed;
 
             focusPoint.x = Math.max(50, Math.min(MAP_WIDTH - 50, focusPoint.x));
             focusPoint.y = Math.max(50, Math.min(MAP_HEIGHT - 50, focusPoint.y));
@@ -399,7 +464,6 @@
             ctx.strokeStyle = '#00ffff';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            // Thay thế roundRect bằng lệnh rect thông thường tương thích mọi iOS Safari/Koder
             ctx.rect(-45, 0, 90, 30);
             ctx.fill();
             ctx.stroke();
