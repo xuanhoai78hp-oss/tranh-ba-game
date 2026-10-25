@@ -79,17 +79,16 @@
 
         .hud-controls {
             position: absolute;
-            bottom: calc(100px + env(safe-area-inset-bottom)); /* Đã sửa lên 100px */
+            bottom: calc(100px + env(safe-area-inset-bottom)); /* Nâng lên 100px */
             left: 25px;
             right: 25px;
             z-index: 10;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            pointer-events: none; /* Cho phép xuyên qua vùng trống */
+            pointer-events: none;
         }
 
-        /* --- JOYSTICK ẢO THAY THẾ CHO CỤM WASD TRÊN MOBILE --- */
         #joystick-base {
             pointer-events: auto;
             width: 120px;
@@ -150,11 +149,9 @@
         </div>
 
         <div class="hud-controls">
-            <!-- Joystick thay thế cụm WASD trên mobile -->
             <div id="joystick-base">
                 <div id="joystick-stick"></div>
             </div>
-            
             <button class="btn-shoot" id="btnShoot">BẮN</button>
         </div>
     </div>
@@ -175,12 +172,114 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
+        // --- WEB AUDIO API CHO HIỆU ỨNG ÂM THANH NGẦU LÒI ---
+        let audioCtx = null;
+        let servoNode = null;
+        let servoGain = null;
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                initServoSound();
+            } else if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Tạo tiếng xè xè (servo/phaser) khi nòng pháo thay đổi hướng
+        function initServoSound() {
+            try {
+                // Tạo bộ tạo tiếng ồn (White Noise)
+                const bufferSize = audioCtx.sampleRate * 2;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                servoNode = audioCtx.createBufferSource();
+                servoNode.buffer = buffer;
+                servoNode.loop = true;
+
+                // Lọc tần số để tạo âm thanh xè xè cơ khí mượt mà
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = 800;
+                filter.Q.value = 3;
+
+                servoGain = audioCtx.createGain();
+                servoGain.gain.value = 0; // Mặc định tắt, chỉ bật khi đang di chuyển
+
+                servoNode.connect(filter);
+                filter.connect(servoGain);
+                servoGain.connect(audioCtx.destination);
+                servoNode.start();
+            } catch(e) { console.log(e); }
+        }
+
+        function setServoSoundActive(active) {
+            if (!servoGain || !audioCtx) return;
+            // Điều chỉnh âm lượng xè xè dựa vào việc pháo có đang di chuyển không
+            servoGain.gain.setTargetAtTime(active ? 0.04 : 0, audioCtx.currentTime, 0.05);
+        }
+
+        // Tiếng súng laser bắn
+        function playLaserSound() {
+            if (!audioCtx) return;
+            try {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.15);
+
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } catch(e) {}
+        }
+
+        // Tiếng nổ UFO
+        function playExplosionSound() {
+            if (!audioCtx) return;
+            try {
+                const bufferSize = audioCtx.sampleRate * 0.6;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.15));
+                }
+
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(300, audioCtx.currentTime);
+                filter.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.6);
+
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                noise.start();
+            } catch(e) {}
+        }
+
         let score = 0;
         let level = 1;
         let ufoSpeedMultiplier = 0.5;
 
         let ufos = [];
         let bullets = [];
+        let fireworks = [];
         
         let focusPoint = { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 };
         let keys = {};
@@ -192,6 +291,7 @@
         const stickEl = document.getElementById('joystick-stick');
 
         function updateJoystick(clientX, clientY) {
+            initAudioContext();
             const rect = baseEl.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
@@ -249,7 +349,7 @@
         const fgImage = new Image();
         fgImage.src = 'background2.png';
 
-        // Xử lý âm thanh an toàn cho iOS
+        // Xử lý âm thanh nhạc nền
         const bgMusic = document.getElementById('bgMusic');
         let currentTrack = 1;
         
@@ -259,6 +359,7 @@
             bgMusic.volume = 0.6;
             bgMusic.play().catch(() => {
                 const unlockAudio = () => {
+                    initAudioContext();
                     bgMusic.play();
                     window.removeEventListener('touchstart', unlockAudio);
                     window.removeEventListener('click', unlockAudio);
@@ -297,17 +398,45 @@
 
         for(let i = 0; i < 4; i++) spawnUFO();
 
+        // Xử lý Pháo hoa tung tóe dưới background2
+        function spawnFireworks(x, y) {
+            let colors = ['#00ffff', '#ff3366', '#ffff00', '#00ffcc', '#ff99ff'];
+            let count = 30 + Math.floor(Math.random() * 20);
+            for(let i = 0; i < count; i++) {
+                let angle = Math.random() * Math.PI * 2;
+                let speed = 2 + Math.random() * 6;
+                fireworks.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    alpha: 1.0,
+                    decay: 0.015 + Math.random() * 0.02,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    radius: 2 + Math.random() * 3
+                });
+            }
+        }
+
         // Bàn phím máy tính (WASD)
-        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keydown', e => {
+            initAudioContext();
+            keys[e.code] = true;
+        });
         window.addEventListener('keyup', e => keys[e.code] = false);
 
-        document.getElementById('btnShoot').addEventListener('click', fireBullet);
+        document.getElementById('btnShoot').addEventListener('click', () => {
+            initAudioContext();
+            fireBullet();
+        });
         document.getElementById('btnShoot').addEventListener('touchstart', (e) => {
             e.preventDefault();
+            initAudioContext();
             fireBullet();
         }, {passive: false});
 
         function fireBullet() {
+            playLaserSound();
             muzzleFlashTimer = 6;
             bullets.push({
                 x: MAP_WIDTH / 2,
@@ -350,6 +479,13 @@
                 moveY = joystick.y;
             }
 
+            // Kích hoạt tiếng xè xè (servo) khi đang điều khiển hướng ngắm
+            if (moveX !== 0 || moveY !== 0) {
+                setServoSoundActive(true);
+            } else {
+                setServoSoundActive(false);
+            }
+
             focusPoint.x += moveX * speed;
             focusPoint.y += moveY * speed;
 
@@ -366,6 +502,18 @@
                 }
             }
 
+            // Cập nhật pháo hoa
+            for (let i = fireworks.length - 1; i >= 0; i--) {
+                let fw = fireworks[i];
+                fw.x += fw.vx;
+                fw.y += fw.vy;
+                fw.vy += 0.1; // Trọng lực nhẹ
+                fw.alpha -= fw.decay;
+                if (fw.alpha <= 0) {
+                    fireworks.splice(i, 1);
+                }
+            }
+
             for (let i = bullets.length - 1; i >= 0; i--) {
                 let b = bullets[i];
                 let dx = b.targetX - b.x;
@@ -378,6 +526,8 @@
                         let renderSize = ufo.radius * pos.z;
                         if (Math.hypot(b.targetX - pos.x, b.targetY - pos.y) < renderSize + 25) {
                             score++;
+                            playExplosionSound();
+                            spawnFireworks(pos.x, pos.y); // Bắn pháo hoa bên dưới background2
                             document.getElementById('scoreDisplay').innerText = score;
 
                             if (score >= 10) {
@@ -415,10 +565,12 @@
             ctx.translate(offsetX, offsetY);
             ctx.scale(scale, scale);
 
+            // 1. Vẽ Background chính
             if (bgImage.complete && bgImage.naturalWidth !== 0) {
                 ctx.drawImage(bgImage, 0, 0, MAP_WIDTH, MAP_HEIGHT);
             }
 
+            // 2. Vẽ UFO bay
             ufos.forEach(ufo => {
                 let pos = getPointOnPath(ufo.path, ufo.progress);
                 let r = ufo.radius * pos.z;
@@ -439,10 +591,25 @@
                 ctx.restore();
             });
 
+            // 3. Vẽ HIỆU ỨNG PHÁO HOA NẰM DƯỚI BACKGROUND 2 (Background2.png)
+            fireworks.forEach(fw => {
+                ctx.save();
+                ctx.globalAlpha = fw.alpha;
+                ctx.fillStyle = fw.color;
+                ctx.shadowColor = fw.color;
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(fw.x, fw.y, fw.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // 4. Vẽ lớp foreground (background2.png) đè lên trên pháo hoa và UFO ở xa
             if (fgImage.complete && fgImage.naturalWidth !== 0) {
                 ctx.drawImage(fgImage, 0, 0, MAP_WIDTH, MAP_HEIGHT);
             }
 
+            // 5. Vẽ đạn bay
             bullets.forEach(b => {
                 ctx.fillStyle = '#ff3366';
                 ctx.shadowColor = '#ff3366';
