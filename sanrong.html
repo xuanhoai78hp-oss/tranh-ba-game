@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Săn Rồng Phi Kiếm - Flying Sword Adventure</title>
+    <!-- Sửa lại link CDN Three.js chuẩn không khoảng trắng -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: none; }
+        body { margin: 0; overflow: hidden; background: #0b1329; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        
+        .hud-overlay { position: relative; z-index: 10; pointer-events: none; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; }
+        .interactive { pointer-events: auto; }
+        
+        .info-panel { background: rgba(10, 15, 30, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(0, 255, 204, 0.4); border-radius: 16px; padding: 12px 20px; color: #fff; max-width: 320px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); }
+        .info-panel h1 { margin: 0; font-size: 16px; color: #00ffcc; text-shadow: 0 0 10px rgba(0, 255, 204, 0.5); }
+        .info-panel p { margin: 4px 0 0 0; font-size: 11px; color: #cbd5e1; }
+        
+        .status-badge { background: rgba(0, 0, 0, 0.7); border: 1px solid #ff007f; color: #ff66c4; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; text-shadow: 0 0 8px rgba(255, 0, 127, 0.6); }
+        
+        .progress-container { width: 200px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+        .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #ff007f, #00ffcc); transition: width 0.2s; }
+
+        #flash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vw; background: rgba(255, 0, 0, 0); z-index: 99; pointer-events: none; transition: background 0.1s; }
+
+        .controls-area { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: env(safe-area-inset-bottom, 20px); }
+        .joystick-base { width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(0, 255, 204, 0.4); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .joystick-stick { width: 50px; height: 50px; background: rgba(0, 255, 204, 0.8); border-radius: 50%; position: absolute; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+    </style>
+</head>
+<body>
+    <div id="flash-screen"></div>
+    <div id="canvas-container"></div>
+    <div class="hud-overlay">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="info-panel">
+                <h1>🗡️ Săn Rồng Phi Kiếm</h1>
+                <p>WASD / Joystick: Điều khiển | Mục tiêu: Đuổi kịp Rồng nhỏ!</p>
+                <div class="progress-container"><div id="distance-bar" class="progress-bar"></div></div>
+            </div>
+            <div class="status-badge">
+                <span id="status-text">Khoảng cách Rồng: 150m</span>
+            </div>
+        </div>
+        <div class="controls-area">
+            <div class="joystick-base interactive" id="joystick">
+                <div class="joystick-stick" id="stick"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            
+            if (type === 'hit') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            } else if (type === 'catch') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            }
+        }
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x060b19);
+        scene.fog = new THREE.FogExp2(0x060b19, 0.0025);
+
+        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1500);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xdff0ff, 0.6);
+        scene.add(ambientLight);
+        const sunLight = new THREE.DirectionalLight(0xff7733, 1.8);
+        sunLight.position.set(150, 200, 100);
+        scene.add(sunLight);
+
+        const playerGroup = new THREE.Group();
+        scene.add(playerGroup);
+        playerGroup.position.set(0, 25, 0);
+
+        const swordGroup = new THREE.Group();
+        const swordMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x009999, metalness: 0.9, roughness: 0.1 });
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.05, 4), swordMat);
+        blade.position.z = -1.5;
+        swordGroup.add(blade);
+        playerGroup.add(swordGroup);
+
+        const womanGroup = new THREE.Group();
+        womanGroup.position.y = 0.5;
+        const dress = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 16), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
+        dress.position.y = 0.6;
+        womanGroup.add(dress);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
+        head.position.y = 1.35;
+        womanGroup.add(head);
+
+        const hatMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 });
+        const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.04, 24), hatMat);
+        hatBrim.position.y = 1.55;
+        womanGroup.add(hatBrim);
+        const hatTop = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.3, 16), hatMat);
+        hatTop.position.y = 1.7;
+        womanGroup.add(hatTop);
+        playerGroup.add(womanGroup);
+
+        const particlesGeo = new THREE.BufferGeometry();
+        const particleCount = 150;
+        const posArray = new Float32Array(particleCount * 3);
+        for(let i=0; i<particleCount*3; i+=3) {
+            posArray[i] = (Math.random() - 0.5) * 0.4;
+            posArray[i+1] = (Math.random() - 0.5) * 0.4;
+            posArray[i+2] = Math.random() * 6;
+        }
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const trailParticles = new THREE.Points(particlesGeo, new THREE.PointsMaterial({ size: 0.1, color: 0x00ffff, transparent: true, opacity: 0.7 }));
+        playerGroup.add(trailParticles);
+
+        const dragonGroup = new THREE.Group();
+        const dragonMat = new THREE.MeshStandardMaterial({ color: 0xff3366, emissive: 0x990033, roughness: 0.3 });
+        const dragonBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 1.5, 8, 16), dragonMat);
+        dragonBody.rotation.x = Math.PI / 2;
+        dragonGroup.add(dragonBody);
+        scene.add(dragonGroup);
+        dragonGroup.position.set(0, 30, -150);
+
+        const obstacles = [];
+        const mountainMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+        
+        function createEnvironment() {
+            const ocean = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshStandardMaterial({ color: 0x091428, roughness: 0.2 }));
+            ocean.rotation.x = -Math.PI / 2;
+            scene.add(ocean);
+
+            for(let i = 0; i < 30; i++) {
+                const height = 60 + Math.random() * 90;
+                const radius = 30 + Math.random() * 45;
+                const mountain = new THREE.Mesh(new THREE.ConeGeometry(radius, height, 6), mountainMat);
+                let angle = (i / 30) * Math.PI * 2;
+                let dist = 150 + Math.random() * 300;
+                mountain.position.set(Math.cos(angle) * dist, height / 2, Math.sin(angle) * dist - 300);
+                scene.add(mountain);
+                obstacles.push({ type: 'mountain', mesh: mountain, radius: radius * 0.8, pos: mountain.position });
+            }
+
+            for(let z = -100; z > -1500; z -= 200) {
+                const archGroup = new THREE.Group();
+                const pillarGeo = new THREE.CylinderGeometry(8, 12, 80, 8);
+                const p1 = new THREE.Mesh(pillarGeo, mountainMat); p1.position.set(-35, 40, 0);
+                const p2 = new THREE.Mesh(pillarGeo, mountainMat); p2.position.set(35, 40, 0);
+                const cross = new THREE.Mesh(new THREE.BoxGeometry(90, 14, 16), mountainMat); cross.position.set(0, 75, 0);
+                archGroup.add(p1); archGroup.add(p2); archGroup.add(cross);
+                archGroup.position.set((Math.random() - 0.5) * 80, 0, z);
+                scene.add(archGroup);
+                obstacles.push({ type: 'arch', pos: archGroup.position, size: 40 });
+            }
+        }
+        createEnvironment();
+
+        const keys = {};
+        window.addEventListener('keydown', e => { initAudio(); keys[e.code] = true; });
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        let joystickMove = { x: 0, y: 0 };
+        const joystick = document.getElementById('joystick');
+        const stick = document.getElementById('stick');
+        let isDragging = false, centerPos = { x: 0, y: 0 };
+
+        joystick.addEventListener('touchstart', e => {
+            initAudio(); isDragging = true;
+            const rect = joystick.getBoundingClientRect();
+            centerPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        });
+        window.addEventListener('touchmove', e => {
+            if (!isDragging) return;
+            const touch = e.touches[0];
+            let dx = touch.clientX - centerPos.x, dy = touch.clientY - centerPos.y;
+            const dist = Math.hypot(dx, dy), maxDist = 40;
+            if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
+            stick.style.transform = `translate(${dx}px, ${dy}px)`;
+            joystickMove.x = dx / maxDist; joystickMove.y = -dy / maxDist;
+        });
+        window.addEventListener('touchend', () => {
+            isDragging = false; stick.style.transform = `translate(0px, 0px)`; joystickMove = { x: 0, y: 0 };
+        });
+
+        let playerSpeed = 1.2, dragonSpeed = 0.95, gameTime = 0, dragonZ = -100, rollAngle = 0, hitCooldown = 0;
+
+        function triggerHitEffect() {
+            playSound('hit');
+            const flash = document.getElementById('flash-screen');
+            flash.style.background = 'rgba(255, 0, 0, 0.4)';
+            setTimeout(() => flash.style.background = 'rgba(255,0,0,0)', 150);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            gameTime += 0.016;
+
+            playerGroup.position.z -= playerSpeed;
+            dragonZ -= dragonSpeed;
+
+            dragonGroup.position.z = dragonZ;
+            dragonGroup.position.x = Math.sin(gameTime * 0.8) * 45;
+            dragonGroup.position.y = 25 + Math.cos(gameTime * 1.2) * 12;
+
+            let moveX = 0, moveY = 0;
+            if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
+            if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
+            if (keys['KeyW'] || keys['ArrowUp']) moveY += 1;
+            if (keys['KeyS'] || keys['ArrowDown']) moveY -= 1;
+            moveX += joystickMove.x; moveY += joystickMove.y;
+
+            playerGroup.position.x += moveX * 0.8;
+            playerGroup.position.y = Math.max(3, playerGroup.position.y + moveY * 0.8);
+            rollAngle = moveX * -0.35;
+            playerGroup.rotation.z = THREE.MathUtils.lerp(playerGroup.rotation.z, rollAngle, 0.1);
+
+            if (hitCooldown > 0) hitCooldown--;
+            if (hitCooldown === 0) {
+                for (let obs of obstacles) {
+                    if (playerGroup.position.distanceTo(obs.pos) < (obs.size || obs.radius || 35)) {
+                        triggerHitEffect();
+                        playerGroup.position.z += 15;
+                        hitCooldown = 60;
+                        break;
+                    }
+                }
+            }
+
+            let distanceToDragon = Math.abs(playerGroup.position.z - dragonGroup.position.z);
+            let progressPercent = Math.max(0, Math.min(100, (1 - distanceToDragon / 300) * 100));
+            document.getElementById('distance-bar').style.width = progressPercent + '%';
+            document.getElementById('status-text').innerText = `Khoảng cách Rồng: ${Math.round(distanceToDragon)}m`;
+
+            if (distanceToDragon < 10) {
+                playSound('catch');
+                alert("🎉 Chúc mừng! Bạn đã bắt kịp rồng nhỏ thành công!");
+                dragonZ = -100; playerGroup.position.set(0, 25, 0);
+            }
+            if (distanceToDragon > 400) dragonZ = playerGroup.position.z - 150;
+
+            const targetCamPos = new THREE.Vector3(playerGroup.position.x * 0.5, playerGroup.position.y + 4, playerGroup.position.z + 12);
+            camera.position.lerp(targetCamPos, 0.1);
+            camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z - 10);
+
+            const positions = trailParticles.geometry.attributes.position.array;
+            for (let i = 2; i < particleCount * 3; i += 3) {
+                positions[i] += 0.4;
+                if (positions[i] > 6) positions[i] = 0;
+            }
+            trailParticles.geometry.attributes.position.needsUpdate = true;
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
