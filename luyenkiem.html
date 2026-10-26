@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Luyện Kiếm - Vạn Kiếm Quy Tông</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0b0f19;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: #fff;
+            background: rgba(15, 23, 42, 0.85);
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        #hud h1 {
+            font-size: 16px;
+            margin: 0 0 5px 0;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #hud p {
+            margin: 3px 0;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        /* Virtual Joystick - Nâng lên 100px tránh thanh địa chỉ mobile */
+        #joystick-base {
+            position: absolute;
+            bottom: 100px;
+            left: 40px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            touch-action: none;
+        }
+        #joystick-stick {
+            position: absolute;
+            top: 35px;
+            left: 35px;
+            width: 50px;
+            height: 50px;
+            background: #38bdf8;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+            pointer-events: none;
+        }
+        #msg-popup {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #facc15;
+            font-size: 26px;
+            font-weight: bold;
+            text-shadow: 0 0 15px rgba(250, 204, 21, 0.8);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            text-align: center;
+        }
+        #end-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 15, 25, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+        }
+        .modal-content {
+            background: linear-gradient(135deg, #1e1b4b, #0f172a);
+            border: 2px solid #38bdf8;
+            padding: 35px;
+            border-radius: 20px;
+            text-align: center;
+            color: #fff;
+            max-width: 400px;
+            width: 85%;
+            box-shadow: 0 0 40px rgba(56, 189, 248, 0.5);
+        }
+        .modal-content h2 {
+            color: #38bdf8;
+            margin-top: 0;
+            font-size: 24px;
+        }
+        .modal-content p {
+            color: #cbd5e1;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        .btn-restart {
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="hud">
+        <h1>🗡️ Luyện Kiếm - Vạn Kiếm</h1>
+        <p id="sword-count-text">Số lượng kiếm: 1</p>
+        <p id="status-text" style="color: #f43f5e; font-weight: bold;">Mục tiêu: Đạt 10,000 Kiếm (Vạn Kiếm)</p>
+    </div>
+
+    <div id="msg-popup">X2 KIẾM!</div>
+
+    <div id="joystick-base">
+        <div id="joystick-stick"></div>
+    </div>
+
+    <div id="end-modal">
+        <div class="modal-content">
+            <h2>🎉 VẠN KIẾM QUY TÔNG!</h2>
+            <p>Đạo hạnh viên mãn! Bạn đã luyện thành công đại trận Vạn Kiếm, uy lực vô địch thiên hạ!</p>
+            <button class="btn-restart" onclick="location.reload()">Luyện Lại Từ Đầu</button>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Khởi tạo Web Audio API cho hiệu ứng âm thanh
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+        window.addEventListener('pointerdown', initAudio, { once: true });
+
+        function playMultiplySound() {
+            if (!audioCtx) return;
+            try {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } catch(e) {}
+        }
+
+        function playHitSound() {
+            if (!audioCtx) return;
+            try {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } catch(e) {}
+        }
+
+        function playWinSound() {
+            if (!audioCtx) return;
+            try {
+                let notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    let osc = audioCtx.createOscillator();
+                    let gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime + idx * 0.15);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + idx * 0.15 + 0.4);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(audioCtx.currentTime + idx * 0.15);
+                    osc.stop(audioCtx.currentTime + idx * 0.15 + 0.4);
+                });
+            } catch(e) {}
+        }
+
+        // Trạng thái nhân vật
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2 + 100,
+            speed: 5,
+            swordCount: 1,
+            levelColors: ['#38bdf8', '#34d399', '#facc15', '#f43f5e', '#a855f7', '#ec4899', '#ffffff']
+        };
+
+        const dragon = {
+            x: canvas.width / 2,
+            y: 150,
+            baseX: canvas.width / 2,
+            baseY: 150,
+            angle: 0,
+            radius: 32,
+            fireballs: []
+        };
+
+        // Các lớp núi non hùng vĩ phía sau (Parallax mountains)
+        let mountains = [
+            { speed: 0.5, height: 180, color: '#1e293b', points: [] },
+            { speed: 1.2, height: 120, color: '#334155', points: [] },
+            { speed: 2.2, height: 70, color: '#475569', points: [] }
+        ];
+
+        function initMountains() {
+            mountains.forEach(m => {
+                m.points = [];
+                for (let x = 0; x <= canvas.width + 200; x += 100) {
+                    m.points.push({ x: x, y: canvas.height - (Math.random() * m.height + 50) });
+                }
+            });
+        }
+        initMountains();
+
+        let isGameOver = false;
+        let rotationAngle = 0;
+
+        function spawnFireball() {
+            if (isGameOver) return;
+            const dx = player.x - dragon.x;
+            const dy = player.y - dragon.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist > 0) {
+                dragon.fireballs.push({
+                    x: dragon.x,
+                    y: dragon.y,
+                    vx: (dx / dist) * 4,
+                    vy: (dy / dist) * 4,
+                    radius: 9
+                });
+            }
+        }
+        setInterval(spawnFireball, 1800);
+
+        // Joystick xử lý cảm ứng / chuột
+        const joystickBase = document.getElementById('joystick-base');
+        const joystickStick = document.getElementById('joystick-stick');
+        let joystickActive = false;
+        let joystickData = { x: 0, y: 0 };
+        let basePos = { x: 0, y: 0 };
+
+        function updateJoystickPos() {
+            const rect = joystickBase.getBoundingClientRect();
+            basePos.x = rect.left + rect.width / 2;
+            basePos.y = rect.top + rect.height / 2;
+        }
+        updateJoystickPos();
+        window.addEventListener('resize', updateJoystickPos);
+
+        window.addEventListener('pointerdown', e => {
+            joystickActive = true;
+            handleJoystick(e);
+        });
+        window.addEventListener('pointermove', e => {
+            if (joystickActive) handleJoystick(e);
+        });
+        window.addEventListener('pointerup', () => {
+            joystickActive = false;
+            joystickStick.style.transform = `translate(0px, 0px)`;
+            joystickData.x = 0;
+            joystickData.y = 0;
+        });
+
+        function handleJoystick(e) {
+            const dx = e.clientX - basePos.x;
+            const dy = e.clientY - basePos.y;
+            const dist = Math.hypot(dx, dy);
+            const maxDist = 45;
+            const angle = Math.atan2(dy, dx);
+            const clampedDist = Math.min(dist, maxDist);
+
+            const stickX = Math.cos(angle) * clampedDist;
+            const stickY = Math.sin(angle) * clampedDist;
+            joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
+
+            joystickData.x = stickX / maxDist;
+            joystickData.y = stickY / maxDist;
+        }
+
+        const keys = {};
+        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        function showPopup(text) {
+            const popup = document.getElementById('msg-popup');
+            popup.innerText = text;
+            popup.style.opacity = '1';
+            setTimeout(() => {
+                popup.style.opacity = '0';
+            }, 1200);
+        }
+
+        function update() {
+            if (isGameOver) return;
+
+            let moveX = joystickData.x;
+            let moveY = joystickData.y;
+
+            if (keys['KeyW'] || keys['ArrowUp']) moveY = -1;
+            if (keys['KeyS'] || keys['ArrowDown']) moveY = 1;
+            if (keys['KeyA'] || keys['ArrowLeft']) moveX = -1;
+            if (keys['KeyD'] || keys['ArrowRight']) moveX = 1;
+
+            if (moveX !== 0 || moveY !== 0) {
+                const len = Math.hypot(moveX, moveY);
+                player.x += (moveX / len) * player.speed;
+                player.y += (moveY / len) * player.speed;
+            }
+
+            player.x = Math.max(40, Math.min(canvas.width - 40, player.x));
+            player.y = Math.max(40, Math.min(canvas.height - 40, player.y));
+
+            // Cập nhật ngọn núi trôi theo chiều ngang tạo cảm giác bay lướt
+            mountains.forEach(m => {
+                m.points.forEach(p => { p.x -= m.speed; });
+                if (m.points[0].x < -150) {
+                    m.points.shift();
+                    let lastX = m.points[m.points.length - 1].x;
+                    m.points.push({ x: lastX + 100, y: canvas.height - (Math.random() * m.height + 50) });
+                }
+            });
+
+            dragon.angle += 0.03;
+            dragon.x = dragon.baseX + Math.sin(dragon.angle) * 150;
+            dragon.y = dragon.baseY + Math.cos(dragon.angle * 0.7) * 50;
+
+            rotationAngle += 0.04;
+
+            // Trúng đạn cầu lửa -> Giảm một nửa số kiếm
+            for (let i = dragon.fireballs.length - 1; i >= 0; i--) {
+                let fb = dragon.fireballs[i];
+                fb.x += fb.vx;
+                fb.y += fb.vy;
+
+                if (Math.hypot(player.x - fb.x, player.y - fb.y) < 30) {
+                    if (player.swordCount > 1) {
+                        player.swordCount = Math.max(1, Math.floor(player.swordCount / 2));
+                        playHitSound();
+                        showPopup("💥 TRÚNG ĐẠN! Kiếm giảm một nửa!");
+                        if (navigator.vibrate) navigator.vibrate(150);
+                    }
+                    dragon.fireballs.splice(i, 1);
+                    continue;
+                }
+
+                if (fb.x < 0 || fb.x > canvas.width || fb.y < 0 || fb.y > canvas.height) {
+                    dragon.fireballs.splice(i, 1);
+                }
+            }
+
+            // Chém rồng -> Nhân đôi số kiếm (x2, x4, x8...)
+            const distToDragon = Math.hypot(player.x - dragon.x, player.y - dragon.y);
+            if (distToDragon < 55) {
+                player.swordCount *= 2;
+                playMultiplySound();
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+
+                if (player.swordCount >= 10000) {
+                    player.swordCount = 10000;
+                    isGameOver = true;
+                    playWinSound();
+                    document.getElementById('end-modal').style.display = 'flex';
+                } else {
+                    showPopup(`✨ CHÉM THÀNH CÔNG! Nhân 2 số kiếm: ${player.swordCount}`);
+                }
+
+                dragon.baseX = Math.random() * (canvas.width - 250) + 120;
+                dragon.baseY = Math.random() * (canvas.height / 2.5) + 80;
+            }
+
+            document.getElementById('sword-count-text').innerText = `🗡️ Số lượng kiếm: ${player.swordCount.toLocaleString()}`;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Nền trời hoàng hôn / mây trời huyền ảo
+            let bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            bgGrad.addColorStop(0, '#0f172a');
+            bgGrad.addColorStop(0.5, '#1e1b4b');
+            bgGrad.addColorStop(1, '#31103f');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Vì sao lấp lánh
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            for (let i = 0; i < 50; i++) {
+                let sx = (i * 137.5) % canvas.width;
+                let sy = (i * 93.3 + Date.now() * 0.015) % (canvas.height * 0.6);
+                ctx.fillRect(sx, sy, 2, 2);
+            }
+
+            // 2. Vẽ các dãy núi hùng vĩ xếp tầng (Parallax Mountains)
+            mountains.forEach(m => {
+                ctx.fillStyle = m.color;
+                ctx.beginPath();
+                ctx.moveTo(m.points[0].x, canvas.height);
+                ctx.lineTo(m.points[0].x, m.points[0].y);
+
+                for (let i = 1; i < m.points.length; i++) {
+                    let p = m.points[i];
+                    let prev = m.points[i - 1];
+                    let cpX = (p.x + prev.x) / 2;
+                    let cpY = (p.y + prev.y) / 2;
+                    ctx.quadraticCurveTo(prev.x, prev.y, cpX, cpY);
+                }
+                ctx.lineTo(m.points[m.points.length - 1].x, canvas.height);
+                ctx.closePath();
+                ctx.fill();
+            });
+
+            // 3. Vẽ mây trôi lãng đãng qua màn hình
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+            for (let i = 0; i < 5; i++) {
+                let cloudX = (Date.now() * 0.05 + i * 300) % (canvas.width + 300) - 150;
+                let cloudY = 100 + i * 90;
+                ctx.beginPath();
+                ctx.arc(cloudX, cloudY, 40, 0, Math.PI * 2);
+                ctx.arc(cloudX + 30, cloudY - 15, 30, 0, Math.PI * 2);
+                ctx.arc(cloudX + 60, cloudY, 35, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 4. Cốt Linh Rồng
+            ctx.beginPath();
+            ctx.arc(dragon.x, dragon.y, dragon.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#f43f5e';
+            ctx.shadowColor = '#f43f5e';
+            ctx.shadowBlur = 25;
+            ctx.fill();
+            ctx.closePath();
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(dragon.x - 10, dragon.y - 6, 5, 0, Math.PI * 2);
+            ctx.arc(dragon.x + 10, dragon.y - 6, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cầu lửa
+            ctx.fillStyle = '#fb923c';
+            ctx.shadowColor = '#f97316';
+            ctx.shadowBlur = 12;
+            for (let fb of dragon.fireballs) {
+                ctx.beginPath();
+                ctx.arc(fb.x, fb.y, fb.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.shadowBlur = 0;
+
+            // 5. Ổ đạn côn xoay quanh nhân vật (Vạn Kiếm Quy Tông)
+            const colorIndex = Math.min(Math.floor(Math.log2(player.swordCount)), player.levelColors.length - 1);
+            const swordColor = player.levelColors[colorIndex];
+            const maxDisplaySwords = Math.min(player.swordCount, 60);
+            const radiusSpread = Math.min(30 + Math.log2(player.swordCount) * 12, 120);
+
+            for (let i = 0; i < maxDisplaySwords; i++) {
+                const angle = rotationAngle + (i * Math.PI * 2) / maxDisplaySwords;
+                const sx = player.x + Math.cos(angle) * radiusSpread;
+                const sy = player.y + Math.sin(angle) * radiusSpread;
+
+                ctx.save();
+                ctx.translate(sx, sy);
+                ctx.rotate(angle + Math.PI / 2);
+
+                ctx.fillStyle = swordColor;
+                ctx.shadowColor = swordColor;
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.moveTo(0, -22);
+                ctx.lineTo(-3, 15);
+                ctx.lineTo(3, 15);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            // Thanh Cự Kiếm chính trung tâm
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = swordColor;
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.moveTo(0, -35);
+            ctx.lineTo(-7, 22);
+            ctx.lineTo(7, 22);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+</body>
+</html>
