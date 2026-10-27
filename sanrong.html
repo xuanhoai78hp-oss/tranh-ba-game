@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Săn Rồng Phi Kiếm - Flying Sword Adventure</title>
+<title>Săn Rồng Phi Kiếm - Hấp Tinh Đại Pháp</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&display=swap');
+
 * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: none; }
 body { margin: 0; overflow: hidden; background: #0b1329; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
 #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
@@ -13,90 +15,100 @@ body { margin: 0; overflow: hidden; background: #0b1329; font-family: -apple-sys
 .hud-overlay { position: relative; z-index: 10; pointer-events: none; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; }
 .interactive { pointer-events: auto; }
 
-.info-panel { background: rgba(10, 15, 30, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(0, 255, 204, 0.4); border-radius: 16px; padding: 12px 20px; color: #fff; max-width: 320px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); }
-.info-panel h1 { margin: 0; font-size: 16px; color: #00ffcc; text-shadow: 0 0 10px rgba(0, 255, 204, 0.5); }
+.info-panel { background: rgba(10, 15, 30, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(212, 175, 55, 0.5); border-radius: 16px; padding: 12px 20px; color: #fff; max-width: 320px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); }
+.info-panel h1 { margin: 0; font-size: 16px; color: #d4af37; font-family: 'ZCOOL KuaiLe', cursive; text-shadow: 0 0 10px rgba(212, 175, 55, 0.6); }
 .info-panel p { margin: 4px 0 0 0; font-size: 11px; color: #cbd5e1; }
 
-.status-badge { background: rgba(0, 0, 0, 0.7); border: 1px solid #ff007f; color: #ff66c4; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; text-shadow: 0 0 8px rgba(255, 0, 127, 0.6); }
+.status-badge { background: rgba(0, 0, 0, 0.75); border: 1px solid #d4af37; color: #facc15; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; font-family: 'ZCOOL KuaiLe', cursive; text-shadow: 0 0 8px rgba(250, 204, 21, 0.6); }
 
 .progress-container { width: 200px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 6px; }
-.progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #ff007f, #00ffcc); transition: width 0.2s; }
+.progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #d4af37, #f43f5e); transition: width 0.2s; }
 
 #flash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 0, 0, 0); z-index: 99; pointer-events: none; transition: background 0.1s; }
 
-/* Đã đẩy khu vực điều khiển lên cao 90px để tránh thanh điều hướng mobile */
-.controls-area { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; position: absolute; bottom: 90px; left: 0; padding: 0 20px; }
-.joystick-base { width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(0, 255, 204, 0.4); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-.joystick-stick { width: 50px; height: 50px; background: rgba(0, 255, 204, 0.8); border-radius: 50%; position: absolute; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+.controls-area { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: env(safe-area-inset-bottom, 20px); }
+.joystick-base { width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(212, 175, 55, 0.5); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.joystick-stick { width: 50px; height: 50px; background: rgba(212, 175, 55, 0.8); border-radius: 50%; position: absolute; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
 
-/* Modal Popup tu tiên khi bắt được rồng */
+/* Modal Cổ Phong Kiếm Hiệp */
 #dragon-modal {
 position: fixed;
 top: 0;
 left: 0;
 width: 100%;
 height: 100%;
-background: rgba(11, 15, 25, 0.85);
+background: rgba(5, 8, 15, 0.9);
 display: none;
 justify-content: center;
 align-items: center;
 z-index: 1000;
-backdrop-filter: blur(6px);
+backdrop-filter: blur(8px);
 }
 .modal-content {
-background: linear-gradient(135deg, #1e1b4b, #0f172a);
-border: 2px solid #f43f5e;
-padding: 30px;
-border-radius: 20px;
+background: linear-gradient(135deg, #18120b, #2b1d0c);
+border: 3px solid #d4af37;
+padding: 35px;
+border-radius: 24px;
 text-align: center;
-color: #fff;
-max-width: 380px;
-width: 85%;
-box-shadow: 0 0 35px rgba(244, 63, 94, 0.5);
+color: #fef08a;
+max-width: 420px;
+width: 90%;
+box-shadow: 0 0 50px rgba(212, 175, 55, 0.4);
 animation: modalPop 0.4s ease-out;
 }
 .modal-content h2 {
-color: #f43f5e;
+color: #facc15;
 margin-top: 0;
-font-size: 22px;
+font-size: 26px;
+font-family: 'Ma Shan Zheng', cursive;
+letter-spacing: 2px;
+text-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
 }
 .modal-content p {
-color: #cbd5e1;
-font-size: 14px;
-line-height: 1.5;
-margin-bottom: 25px;
+color: #f1f5f9;
+font-size: 16px;
+line-height: 1.6;
+margin-bottom: 30px;
+font-family: 'ZCOOL KuaiLe', cursive;
+}
+.modal-content p span {
+color: #f43f5e;
+font-size: 19px;
+text-shadow: 0 0 10px rgba(244, 63, 94, 0.8);
 }
 .btn-luyen {
-background: linear-gradient(135deg, #f43f5e, #be123c);
-color: white;
-border: none;
-padding: 12px 24px;
-font-size: 15px;
+background: linear-gradient(135deg, #b91c1c, #7f1d1d);
+color: #fef08a;
+border: 2px solid #d4af37;
+padding: 14px 28px;
+font-size: 18px;
+font-family: 'Ma Shan Zheng', cursive;
 font-weight: bold;
-border-radius: 10px;
+letter-spacing: 2px;
+border-radius: 12px;
 cursor: pointer;
-box-shadow: 0 4px 15px rgba(244, 63, 94, 0.4);
+box-shadow: 0 4px 20px rgba(185, 28, 28, 0.6);
 transition: transform 0.2s, background 0.2s;
 width: 100%;
 }
 .btn-luyen:hover {
-transform: scale(1.03);
-background: linear-gradient(135deg, #fb7185, #f43f5e);
+transform: scale(1.04);
+background: linear-gradient(135deg, #dc2626, #b91c1c);
 }
 @keyframes modalPop {
-0% { transform: scale(0.8); opacity: 0; }
+0% { transform: scale(0.7); opacity: 0; }
 100% { transform: scale(1); opacity: 1; }
 }
 </style>
 </head>
 <body>
 
-<!-- Bảng thông báo bắt được rồng để chuyển trang -->
+<!-- Bảng thông báo cổ phong kiếm hiệp -->
 <div id="dragon-modal">
 <div class="modal-content">
-<h2>🐉 Thu Phục Thành Công!</h2>
-<p>Đạo hạnh cao thâm, bạn đã áp sát và thu phục được Hỏa Long, nhận vật phẩm <strong>[Cốt Linh Rồng]</strong> quý hiếm!</p>
-<button class="btn-luyen" onclick="goToLuyenKiem()">✨ Dùng cốt linh để luyện kiếm</button>
+<h2>📜 Thiên Cơ Tàng Thư</h2>
+<p>Chúc mừng đạo hữu tìm được bí kíp<br><span>[Hấp Tinh Đại Pháp]</span></p>
+<button class="btn-luyen interactive" onclick="openBiKip()">📖 Mở bí kíp</button>
 </div>
 </div>
 
@@ -106,7 +118,7 @@ background: linear-gradient(135deg, #fb7185, #f43f5e);
 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
 <div class="info-panel">
 <h1>🗡️ Săn Rồng Phi Kiếm</h1>
-<p>WASD / Joystick: Điều khiển | Bắt rồng AI sinh động!</p>
+<p>Điều khiển phi kiếm áp sát thu phục yêu thú!</p>
 <div class="progress-container"><div id="distance-bar" class="progress-bar"></div></div>
 </div>
 <div class="status-badge">
@@ -123,14 +135,30 @@ background: linear-gradient(135deg, #fb7185, #f43f5e);
 <script>
 let isGamePaused = false;
 
-function goToLuyenKiem() {
-window.location.href = 'luyenkiem.html';
+function openBiKip() {
+window.location.href = 'sanrong2.html';
 }
 
 let audioCtx = null;
 function initAudio() {
 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 }
+
+// Âm thanh phong phú: Tiếng gió bay, va chạm núi, bắt rồng
+let windOsc = null, windGain = null;
+function startWindSound() {
+if (!audioCtx) return;
+if (windOsc) return;
+windOsc = audioCtx.createOscillator();
+windGain = audioCtx.createGain();
+windOsc.type = 'sine';
+windOsc.frequency.setValueAtTime(80, audioCtx.currentTime);
+windGain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+windOsc.connect(windGain);
+windGain.connect(audioCtx.destination);
+windOsc.start();
+}
+
 function playSound(type) {
 if (!audioCtx) return;
 const osc = audioCtx.createOscillator();
@@ -139,15 +167,15 @@ osc.connect(gain); gain.connect(audioCtx.destination);
 
 if (type === 'hit') {
 osc.type = 'sawtooth';
-osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.2);
-gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(25, audioCtx.currentTime + 0.3);
+gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+osc.start(); osc.stop(audioCtx.currentTime + 0.3);
 } else if (type === 'catch') {
 osc.type = 'sine';
-osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.5);
+osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.5);
 gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
 gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
 osc.start(); osc.stop(audioCtx.currentTime + 0.5);
@@ -214,14 +242,13 @@ particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
 const trailParticles = new THREE.Points(particlesGeo, new THREE.PointsMaterial({ size: 0.1, color: 0x00ffff, transparent: true, opacity: 0.7 }));
 playerGroup.add(trailParticles);
 
-// Tạo Rồng AI sinh động (Thân + Cánh + Đuôi uốn lượn)
+// Tạo Rồng AI sinh động
 const dragonGroup = new THREE.Group();
 const dragonMat = new THREE.MeshStandardMaterial({ color: 0xff3366, emissive: 0x990033, roughness: 0.3 });
 const dragonBody = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 3.2, 16), dragonMat);
 dragonBody.rotation.x = Math.PI / 2;
 dragonGroup.add(dragonBody);
 
-// Thêm cánh cho rồng
 const wingGeo = new THREE.BoxGeometry(1.5, 0.05, 0.8);
 const leftWing = new THREE.Mesh(wingGeo, dragonMat); leftWing.position.set(0.8, 0, 0);
 const rightWing = new THREE.Mesh(wingGeo, dragonMat); rightWing.position.set(-0.8, 0, 0);
@@ -229,7 +256,6 @@ dragonGroup.add(leftWing); dragonGroup.add(rightWing);
 scene.add(dragonGroup);
 dragonGroup.position.set(0, 30, -120);
 
-// Khai báo mục tiêu ngẫu nhiên cho Rồng AI
 let dragonTarget = new THREE.Vector3(0, 30, -150);
 function newDragonTarget() {
 dragonTarget.set(
@@ -276,7 +302,7 @@ createEnvironment();
 const keys = {};
 window.addEventListener('keydown', e => {
 if (isGamePaused) return;
-initAudio();
+initAudio(); startWindSound();
 keys[e.code] = true;
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
@@ -288,7 +314,7 @@ let isDragging = false, centerPos = { x: 0, y: 0 };
 
 joystick.addEventListener('touchstart', e => {
 if (isGamePaused) return;
-initAudio(); isDragging = true;
+initAudio(); startWindSound(); isDragging = true;
 const rect = joystick.getBoundingClientRect();
 centerPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 });
@@ -324,32 +350,24 @@ if (isGamePaused) return;
 
 gameTime += 0.016;
 
-// Di chuyển hiệp nữ tiến về trước
 playerGroup.position.z -= playerSpeed;
 
-// --- AI RỒNG NGẪU NHIÊN NHƯ CÁ VÀNG ---
 const oldDragonPos = dragonGroup.position.clone();
-
-// Lerp tới điểm mục tiêu ngẫu nhiên
 dragonGroup.position.lerp(dragonTarget, 0.015);
 
-// Nếu tới gần mục tiêu -> Đổi hướng mục tiêu mới
 if (dragonGroup.position.distanceTo(dragonTarget) < 12) {
 newDragonTarget();
 }
 
-// Cho rồng nhìn đúng hướng đang bay
 const moveDir = dragonGroup.position.clone().sub(oldDragonPos);
 if (moveDir.length() > 0.001) {
 dragonGroup.lookAt(dragonGroup.position.clone().add(moveDir));
 }
 
-// Hiệu ứng ngoe nguẩy đuôi & vẫy cánh sinh động
 dragonGroup.rotation.y += Math.sin(gameTime * 3) * 0.02;
 leftWing.rotation.z = Math.sin(gameTime * 12) * 0.6;
 rightWing.rotation.z = -Math.sin(gameTime * 12) * 0.6;
 
-// Điều khiển Hiệp Nữ
 let moveX = 0, moveY = 0;
 if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
 if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
@@ -368,34 +386,33 @@ if (hitCooldown === 0) {
 for (let obs of obstacles) {
 if (playerGroup.position.distanceTo(obs.pos) < (obs.size || obs.radius || 35)) {
 triggerHitEffect();
-playerGroup.position.z += 12; // Văng lùi khi va chạm
+playerGroup.position.z += 12;
 hitCooldown = 60;
 break;
 }
 }
 }
 
-// Tính khoảng cách 3D tới rồng
+// Khoảng cách 3D chuẩn xác bắt rồng
 let distanceToDragon3D = playerGroup.position.distanceTo(dragonGroup.position);
 let distanceToDragonZ = Math.abs(playerGroup.position.z - dragonGroup.position.z);
 let progressPercent = Math.max(0, Math.min(100, (1 - distanceToDragonZ / 200) * 100));
 document.getElementById('distance-bar').style.width = progressPercent + '%';
 document.getElementById('status-text').innerText = `Khoảng cách Rồng: ${Math.round(distanceToDragonZ)}m`;
 
-// Kiểm tra điều kiện Endgame: Áp sát bắt rồng thành công (< 45px / 3D units)
-if (distanceToDragon3D < 45 || (distanceToDragonZ < 15 && Math.abs(playerGroup.position.y - dragonGroup.position.y) < 15)) {
+// Điều kiện bắt rồng chuẩn xác tọa độ X, Y, Z
+if (distanceToDragon3D < 40) {
 playSound('catch');
 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 isGamePaused = true;
+if (windGain) windGain.gain.setValueAtTime(0, audioCtx.currentTime);
 document.getElementById('dragon-modal').style.display = 'flex';
 }
 
-// Camera đuổi theo sau lưng
 const targetCamPos = new THREE.Vector3(playerGroup.position.x * 0.5, playerGroup.position.y + 4, playerGroup.position.z + 12);
 camera.position.lerp(targetCamPos, 0.1);
 camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z - 10);
 
-// Hạt mây vệt sáng sau kiếm
 const positions = trailParticles.geometry.attributes.position.array;
 for (let i = 2; i < particleCount * 3; i += 3) {
 positions[i] += 0.25;
