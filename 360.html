@@ -1,144 +1,202 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Săn Côn Trùng Phòng Khách 360 - WASD & Gyro</title>
-    <style>
-        * { box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        body { background: #050505; color: #00ff88; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
-        
-        #gameContainer { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        canvas#gameCanvas { position: absolute; top: 0; left: 0; background: #000; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Săn Côn Trùng Phòng Khách - Hoàn Hảo Edition</title>
+<style>
+* { box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #050505; color: #00ff88; font-family: 'Segoe UI', Roboto, sans-serif; }
 
-        /* HUD Giao diện trên */
-        .ui-top { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 20; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
-        .info-box { background: rgba(0,20,10,0.85); border: 1px solid #00ff88; padding: 8px 12px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,255,136,0.3); font-size: 13px; font-weight: bold; pointer-events: auto; color: #00ff88; }
-        
-        /* Tâm ngắm (Crosshair) chính giữa màn hình */
-        .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 24px; height: 24px; pointer-events: none; z-index: 15; }
-        .crosshair::before, .crosshair::after { content: ''; position: absolute; background: rgba(0, 255, 136, 0.9); }
-        .crosshair::before { top: 11px; left: 2px; width: 20px; height: 2px; }
-        .crosshair::after { top: 2px; left: 11px; width: 2px; height: 20px; }
+#gameContainer { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+canvas#gameCanvas { position: absolute; top: 0; left: 0; background: #000; width: 100%; height: 100%; }
 
-        /* Nút Bắn cách cạnh phải 100px theo yêu cầu */
-        #btnFire { position: absolute; bottom: 35px; right: 100px; width: 90px; height: 90px; background: radial-gradient(circle, #ff0055, #880022); border-radius: 50%; border: 3px solid #fff; color: #fff; font-weight: bold; font-size: 16px; box-shadow: 0 0 20px #ff0055; z-index: 25; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        #btnFire:active { transform: scale(0.92); }
+/* Màn hình giới thiệu hướng dẫn & Tùy chọn lia máy */
+#introOverlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 5, 3, 0.96); z-index: 200; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 25px; }
+#introOverlay h1 { font-size: 28px; color: #00ff88; margin-bottom: 12px; text-shadow: 0 0 20px #00ff88; text-transform: uppercase; }
+#introOverlay p { font-size: 14px; color: #ccc; max-width: 550px; line-height: 1.5; margin-bottom: 20px; }
 
-        /* Nút bật Gyroscope (Cảm biến điện thoại) */
-        #btnGyro { position: absolute; bottom: 35px; left: 20px; padding: 10px 16px; background: rgba(0,20,10,0.9); border: 1px solid #00ff88; border-radius: 20px; color: #00ff88; font-weight: bold; font-size: 12px; z-index: 25; cursor: pointer; box-shadow: 0 0 10px rgba(0,255,136,0.3); }
+.guide-box { background: rgba(0,255,136,0.1); border: 1px solid #00ff88; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; text-align: left; font-size: 13px; color: #aaffcc; max-width: 500px; }
+.guide-box li { margin-bottom: 6px; }
 
-        /* Modal thông báo */
-        .modal { display: none; position: absolute; z-index: 100; background: rgba(0,0,0,0.92); width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
-        .modal h1 { font-size: 26px; margin-bottom: 10px; color: #00ff88; text-shadow: 0 0 15px #00ff88; }
-        .modal p { font-size: 14px; color: #ccc; margin-bottom: 20px; max-width: 80%; }
-        .modal-buttons { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
-        .modal button { padding: 12px 24px; font-size: 15px; background: linear-gradient(135deg, #00ff88, #00aa55); border: none; border-radius: 25px; cursor: pointer; font-weight: bold; color: #000; box-shadow: 0 0 15px #00ff88; text-transform: uppercase; }
-        .modal button.secondary { background: linear-gradient(135deg, #00f2ff, #0066aa); color: #fff; }
-        .modal button:active { transform: scale(0.95); }
-    </style>
+/* Tùy chọn bật cảm biến lia máy ngay tại màn hình đầu */
+.option-group { margin-bottom: 25px; display: flex; align-items: center; gap: 10px; font-size: 14px; color: #fff; cursor: pointer; }
+.option-group input[type="checkbox"] { width: 20px; height: 20px; accent-color: #00ff88; cursor: pointer; }
+
+#btnStartGame { padding: 15px 40px; font-size: 17px; background: linear-gradient(135deg, #00ff88, #00aa55); border: none; border-radius: 30px; cursor: pointer; font-weight: bold; color: #000; box-shadow: 0 0 25px #00ff88; text-transform: uppercase; letter-spacing: 1px; }
+#btnStartGame:active { transform: scale(0.95); }
+
+/* HUD Giao diện trên */
+.ui-top { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 20; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+.info-box { background: rgba(0,20,10,0.85); border: 1px solid #00ff88; padding: 8px 12px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,255,136,0.3); font-size: 13px; font-weight: bold; pointer-events: auto; color: #00ff88; }
+
+/* Tâm ngắm chính giữa màn hình */
+.crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 24px; height: 24px; pointer-events: none; z-index: 15; }
+.crosshair::before, .crosshair::after { content: ''; position: absolute; background: rgba(0, 255, 136, 0.9); }
+.crosshair::before { top: 11px; left: 2px; width: 20px; height: 2px; }
+.crosshair::after { top: 2px; left: 11px; width: 2px; height: 20px; }
+
+/* Nút Bắn cách cạnh phải 100px */
+#btnFire { position: absolute; bottom: 35px; right: 100px; width: 90px; height: 90px; background: radial-gradient(circle, #ff0055, #880022); border-radius: 50%; border: 3px solid #fff; color: #fff; font-weight: bold; font-size: 16px; box-shadow: 0 0 20px #ff0055; z-index: 25; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+#btnFire:active { transform: scale(0.92); }
+
+/* Modal thông báo */
+.modal { display: none; position: absolute; z-index: 100; background: rgba(0,0,0,0.92); width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+.modal h1 { font-size: 26px; margin-bottom: 10px; color: #00ff88; text-shadow: 0 0 15px #00ff88; }
+.modal p { font-size: 14px; color: #ccc; margin-bottom: 20px; max-width: 80%; }
+.modal-buttons { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+.modal button { padding: 12px 24px; font-size: 15px; background: linear-gradient(135deg, #00ff88, #00aa55); border: none; border-radius: 25px; cursor: pointer; font-weight: bold; color: #000; box-shadow: 0 0 15px #00ff88; text-transform: uppercase; }
+.modal button.secondary { background: linear-gradient(135deg, #00f2ff, #0066aa); color: #fff; }
+.modal button:active { transform: scale(0.95); }
+</style>
 </head>
 <body>
 
+<!-- MÀN HÌNH GIỚI THIỆU & TÙY CHỌN LIA MÁY BAN ĐẦU -->
+<div id="introOverlay">
+<h1>⚔️ TU TIÊN PHÒNG KHÁCH - 360° FPS ⚔️</h1>
+<p>Chào mừng đạo hữu! Hãy quét sạch yêu thú trên tường phòng khách và bảo vệ màn hình TV YouTube.</p>
+<div class="guide-box">
+<ul>
+<li>🎯 <b>Điều khiển:</b> Xoay ngang điện thoại hoặc dùng cảm ứng vuốt màn hình (hoặc phím <b>WASD</b> trên PC).</li>
+<li>📺 <b>TV YouTube:</b> Bắn vào màn hình TV sẽ khiến TV bị loạn màu glitch cực hài hước!</li>
+<li>🪙 <b>Chiến lợi phẩm:</b> Bắn trúng quái sẽ tóe đồng xu vàng và tích lũy điểm qua 3 tầng không gian.</li>
+</ul>
+</div>
+
+<label class="option-group">
+<input type="checkbox" id="chkGyro" checked> Bật cảm biến xoay điện thoại (Gyroscope)
+</label>
+
+<button id="btnStartGame" onclick="startGame()">VÀO TRẬN NGAY 🚀</button>
+</div>
+
 <div id="gameContainer">
-    <canvas id="gameCanvas"></canvas>
-    
-    <div class="crosshair"></div>
-    <div id="btnFire">BẮN</div>
-    <button id="btnGyro" onclick="requestGyro()">BẬT XOAY 360° (GYRO)</button>
+<canvas id="gameCanvas"></canvas>
 
-    <div class="ui-top">
-        <div class="info-box">
-            <div>CẢNH GIỚI: <span id="txtMapLevel" style="color:#00f2ff">Phòng Khách (Tầng 1)</span></div>
-            <div>ĐÃ DIỆT: <b id="txtKills" style="color:#ff0055">0</b> / 12</div>
-        </div>
-        <div class="info-box">
-            <div>PC: WASD LIA MÁY | SPACE BẮN</div>
-        </div>
-    </div>
+<div class="crosshair"></div>
+<div id="btnFire">BẮN</div>
 
-    <!-- Modal Cột Mốc 6 Con -->
-    <div id="modalMilestone" class="modal">
-        <h1>✨ ĐẠT MỐC 6 YÊU THÚ!</h1>
-        <p>Ngài đã quét sạch đợt đầu tiên trong không gian phòng khách. Ngài muốn lĩnh ngộ ngay hay tiếp tục chiến đấu đến 12 con?</p>
-        <div class="modal-buttons">
-            <button onclick="continueGame()">CHIẾN TIẾP (ĐẾN 12 CON) 🚀</button>
-            <button class="secondary" onclick="window.location.href='sanrong.html'">NHẬN BÍ KÍP (SANRONG.HTML)</button>
-        </div>
-    </div>
+<div class="ui-top">
+<div class="info-box">
+<div>CẢNH GIỚI: <span id="txtMapLevel" style="color:#00f2ff">Phòng Khách (Tầng 1)</span></div>
+<div>ĐÃ DIỆT: <b id="txtKills" style="color:#ff0055">0</b> / 12</div>
+</div>
+<div class="info-box">
+<div>XOAY NGANG ĐỂ TRẢI NGHIỆM TỐT NHẤT</div>
+</div>
+</div>
 
-    <!-- Modal Chiến Thắng Cuối Cùng (12 con) -->
-    <div id="modalWin" class="modal">
-        <h1>🎉 HOÀN TẤT ĐẠI THÀNH!</h1>
-        <p>Đã tiêu diệt trọn vẹn 12 yêu thú! Ngài chính thức lĩnh ngộ toàn diện bí kíp <b>[Ngự Kiếm Phi Hành]</b>.</p>
-        <button onclick="window.location.href='sanrong.html'">BAY ĐẾN SANRONG.HTML 🚀</button>
-    </div>
+<!-- Modal Cột Mốc 6 Con -->
+<div id="modalMilestone" class="modal">
+<h1>✨ ĐẠT MỐC 6 YÊU THÚ!</h1>
+<p>Ngài đã quét sạch đợt đầu tiên. Ngài muốn lĩnh ngộ ngay hay tiếp tục chiến đấu đến 12 con?</p>
+<div class="modal-buttons">
+<button onclick="continueGame()">CHIẾN TIẾP (ĐẾN 12 CON) 🚀</button>
+<button class="secondary" onclick="window.location.href='sanrong.html'">NHẬN BÍ KÍP (SANRONG.HTML)</button>
+</div>
+</div>
+
+<!-- Modal Chiến Thắng Cuối Cùng -->
+<div id="modalWin" class="modal">
+<h1>🎉 HOÀN TẤT ĐẠI THÀNH!</h1>
+<p>Đã tiêu diệt trọn vẹn 12 yêu thú! Ngài chính thức lĩnh ngộ toàn diện bí kíp <b>[Ngự Kiếm Phi Hành]</b>.</p>
+<button onclick="window.location.href='sanrong.html'">BAY ĐẾN SANRONG.HTML 🚀</button>
+</div>
 </div>
 
 <script>
+let gameStarted = false;
+let useGyro = false;
+
 // --- 1. NHẠC NỀN & ÂM THANH ---
 let bgMusic = null;
 let audioCtx = null;
 
 function initAudioAndMusic() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+if (audioCtx.state === 'suspended') audioCtx.resume();
 
-    if (!bgMusic) {
-        const randomTrack = Math.floor(Math.random() * 9) + 1;
-        bgMusic = new Audio(`${randomTrack}.mp3`);
-        bgMusic.loop = true;
-        bgMusic.volume = 0.5;
-        bgMusic.play().catch(() => {});
-    }
+if (!bgMusic) {
+const randomTrack = Math.floor(Math.random() * 9) + 1; // 1.mp3 -> 9.mp3
+bgMusic = new Audio(`${randomTrack}.mp3`);
+bgMusic.loop = true;
+bgMusic.volume = 0.5;
+bgMusic.play().catch(() => {});
+}
+}
+
+function startGame() {
+initAudioAndMusic();
+useGyro = document.getElementById('chkGyro').checked;
+
+if (useGyro && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+DeviceOrientationEvent.requestPermission().then(response => {
+if (response === 'granted') {
+window.addEventListener('deviceorientation', handleOrientation, true);
+}
+}).catch(console.error);
+} else if (useGyro) {
+window.addEventListener('deviceorientation', handleOrientation, true);
+}
+
+gameStarted = true;
+document.getElementById('introOverlay').style.display = 'none';
 }
 
 function playSound(type) {
-    if (!audioCtx) return;
-    const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain); gain.connect(audioCtx.destination);
+if (!audioCtx) return;
+const now = audioCtx.currentTime;
+const osc = audioCtx.createOscillator();
+const gain = audioCtx.createGain();
+osc.connect(gain); gain.connect(audioCtx.destination);
 
-    if (type === 'fire') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(350, now);
-        osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
-        osc.start(now); osc.stop(now + 0.15);
-    } else if (type === 'hit') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(300, now);
-        osc.frequency.exponentialRampToValueAtTime(80, now + 0.12);
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
-        osc.start(now); osc.stop(now + 0.12);
-    } else if (type === 'coin') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(900, now);
-        osc.frequency.exponentialRampToValueAtTime(1400, now + 0.1);
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
-        osc.start(now); osc.stop(now + 0.1);
-    } else if (type === 'kill') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(300, now);
-        osc.frequency.linearRampToValueAtTime(700, now + 0.25);
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
-        osc.start(now); osc.stop(now + 0.25);
-    }
+if (type === 'fire') {
+osc.type = 'square';
+osc.frequency.setValueAtTime(350, now);
+osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+gain.gain.setValueAtTime(0.4, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+osc.start(now); osc.stop(now + 0.15);
+} else if (type === 'hit') {
+osc.type = 'triangle';
+osc.frequency.setValueAtTime(300, now);
+osc.frequency.exponentialRampToValueAtTime(80, now + 0.12);
+gain.gain.setValueAtTime(0.4, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+osc.start(now); osc.stop(now + 0.12);
+} else if (type === 'coin') {
+osc.type = 'sine';
+osc.frequency.setValueAtTime(900, now);
+osc.frequency.exponentialRampToValueAtTime(1400, now + 0.1);
+gain.gain.setValueAtTime(0.3, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+osc.start(now); osc.stop(now + 0.1);
+} else if (type === 'kill') {
+osc.type = 'sawtooth';
+osc.frequency.setValueAtTime(300, now);
+osc.frequency.linearRampToValueAtTime(700, now + 0.25);
+gain.gain.setValueAtTime(0.4, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+osc.start(now); osc.stop(now + 0.25);
+} else if (type === 'tv_glitch') {
+osc.type = 'sawtooth';
+osc.frequency.setValueAtTime(150, now);
+osc.frequency.linearRampToValueAtTime(600, now + 0.2);
+gain.gain.setValueAtTime(0.5, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+osc.start(now); osc.stop(now + 0.2);
+}
 }
 
 // --- 2. VÙNG BIÊN PHÒNG KHÁCH ---
 const roomBounds = [
-    { minX: 218, maxX: 570, minY: 50, maxY: 302 },
-    { minX: 220, maxX: 450, minY: 60, maxY: 250 },
-    { minX: 230, maxX: 550, minY: 40, maxY: 280 }
+{ minX: 218, maxX: 570, minY: 50, maxY: 302 },
+{ minX: 220, maxX: 450, minY: 60, maxY: 250 },
+{ minX: 230, maxX: 550, minY: 40, maxY: 280 }
 ];
 
-// --- 3. CANVAS & ĐIỀU KHIỂN CAMERA ---
+// --- 3. CANVAS & CAMERA ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 let W, H;
@@ -146,12 +204,12 @@ let mapWidth = 0, mapHeight = 0;
 let cameraX = 0, cameraY = 0;
 
 function resize() {
-    W = window.innerWidth;
-    H = window.innerHeight;
-    canvas.width = W;
-    canvas.height = H;
-    mapWidth = W * 2.0;  // Mở rộng không gian rộng hơn để tạo cảm giác 360 độ thực sự
-    mapHeight = H * 1.8;
+W = window.innerWidth;
+H = window.innerHeight;
+canvas.width = W;
+canvas.height = H;
+mapWidth = W * 2.2;
+mapHeight = H * 2.0;
 }
 window.addEventListener('resize', resize);
 resize();
@@ -162,336 +220,420 @@ mapImg.src = 'map360.png';
 const spriteImg = new Image();
 spriteImg.src = 'anh.png';
 
-// --- 4. HỆ THỐNG ĐỒNG XU & VẾT ĐẠN ---
+// --- 4. TẠO HÌNH CHỮ NHẬT TV (TĂNG 5%, NGHIÊNG 3 ĐỘ) ---
+const rawTvPoints = [{"x":457,"y":154},{"x":454,"y":154},{"x":452,"y":154},{"x":449,"y":154},{"x":446,"y":154},{"x":444,"y":154},{"x":443,"y":154},{"x":442,"y":154},{"x":440,"y":154},{"x":439,"y":154},{"x":438,"y":154},{"x":437,"y":154},{"x":436,"y":154},{"x":435,"y":154},{"x":434,"y":154},{"x":433,"y":154},{"x":432,"y":154},{"x":431,"y":154},{"x":430,"y":154},{"x":428,"y":154},{"x":426,"y":154},{"x":424,"y":154},{"x":423,"y":154},{"x":422,"y":154},{"x":421,"y":154},{"x":420,"y":154},{"x":418,"y":154},{"x":417,"y":154},{"x":415,"y":154},{"x":414,"y":154},{"x":413,"y":154},{"x":412,"y":154},{"x":411,"y":154},{"x":410,"y":154},{"x":409,"y":154},{"x":406,"y":154},{"x":404,"y":154},{"x":403,"y":154},{"x":401,"y":154},{"x":400,"y":154},{"x":399,"y":154},{"x":397,"y":154},{"x":396,"y":154},{"x":395,"y":154},{"x":394,"y":154},{"x":393,"y":154},{"x":392,"y":154},{"x":392,"y":153},{"x":391,"y":153},{"x":390,"y":153},{"x":389,"y":153},{"x":388,"y":153},{"x":388,"y":152},{"x":387,"y":152},{"x":387,"y":151},{"x":387,"y":150},{"x":387,"y":149},{"x":387,"y":148},{"x":387,"y":147},{"x":386,"y":146},{"x":386,"y":145},{"x":386,"y":144},{"x":386,"y":143},{"x":386,"y":142},{"x":386,"y":141},{"x":386,"y":140},{"x":386,"y":139},{"x":386,"y":138},{"x":386,"y":137},{"x":386,"y":136},{"x":386,"y":135},{"x":386,"y":134},{"x":386,"y":133},{"x":386,"y":132},{"x":386,"y":131},{"x":386,"y":130},{"x":386,"y":129},{"x":386,"y":128},{"x":386,"y":127},{"x":386,"y":125},{"x":386,"y":124},{"x":386,"y":122},{"x":386,"y":121},{"x":386,"y":120},{"x":386,"y":119},{"x":386,"y":118},{"x":386,"y":117},{"x":386,"y":116},{"x":386,"y":115},{"x":386,"y":114},{"x":385,"y":113},{"x":385,"y":112},{"x":385,"y":111},{"x":385,"y":110},{"x":385,"y":109},{"x":385,"y":108},{"x":385,"y":107},{"x":385,"y":106},{"x":385,"y":105},{"x":385,"y":104},{"x":385,"y":103},{"x":385,"y":102},{"x":385,"y":101},{"x":385,"y":100},{"x":385,"y":99},{"x":385,"y":98},{"x":385,"y":97},{"x":385,"y":96},{"x":385,"y":95},{"x":385,"y":94},{"x":385,"y":93},{"x":385,"y":92},{"x":385,"y":91},{"x":385,"y":90},{"x":385,"y":89},{"x":385,"y":88},{"x":385,"y":87},{"x":385,"y":86},{"x":385,"y":85},{"x":386,"y":85},{"x":387,"y":85},{"x":388,"y":85},{"x":388,"y":86},{"x":389,"y":86},{"x":390,"y":86},{"x":391,"y":87},{"x":392,"y":87},{"x":393,"y":87},{"x":393,"y":88},{"x":394,"y":88},{"x":395,"y":88},{"x":396,"y":88},{"x":397,"y":88},{"x":399,"y":88},{"x":400,"y":88},{"x":401,"y":88},{"x":402,"y":88},{"x":403,"y":88},{"x":404,"y":88},{"x":405,"y":88},{"x":406,"y":88},{"x":407,"y":88},{"x":408,"y":88},{"x":409,"y":88},{"x":410,"y":88},{"x":411,"y":88},{"x":412,"y":88},{"x":413,"y":88},{"x":414,"y":88},{"x":415,"y":88},{"x":416,"y":88},{"x":417,"y":88},{"x":418,"y":88},{"x":419,"y":88},{"x":420,"y":88},{"x":421,"y":88},{"x":422,"y":88},{"x":423,"y":88},{"x":424,"y":88},{"x":425,"y":88},{"x":426,"y":88},{"x":427,"y":88},{"x":428,"y":88},{"x":429,"y":88},{"x":430,"y":88},{"x":431,"y":88},{"x":432,"y":88},{"x":434,"y":88},{"x":435,"y":88},{"x":437,"y":88},{"x":438,"y":88},{"x":439,"y":88},{"x":440,"y":88},{"x":441,"y":88},{"x":442,"y":88},{"x":442,"y":87},{"x":443,"y":87},{"x":444,"y":87},{"x":445,"y":87},{"x":446,"y":87},{"x":447,"y":86},{"x":448,"y":86},{"x":449,"y":86},{"x":450,"y":86},{"x":451,"y":86},{"x":452,"y":86},{"x":453,"y":86},{"x":454,"y":86},{"x":455,"y":86},{"x":456,"y":86},{"x":457,"y":86},{"x":458,"y":86},{"x":458,"y":87},{"x":458,"y":88},{"x":458,"y":89},{"x":458,"y":90},{"x":458,"y":91},{"x":458,"y":92},{"x":458,"y":93},{"x":458,"y":94},{"x":458,"y":95},{"x":458,"y":96},{"x":458,"y":97},{"x":458,"y":98},{"x":458,"y":99},{"x":458,"y":100},{"x":458,"y":101},{"x":458,"y":102},{"x":458,"y":103},{"x":458,"y":104},{"x":458,"y":105},{"x":459,"y":105},{"x":459,"y":106},{"x":459,"y":107},{"x":459,"y":108},{"x":459,"y":109},{"x":459,"y":110},{"x":459,"y":111},{"x":459,"y":112},{"x":459,"y":113},{"x":459,"y":114},{"x":459,"y":115},{"x":459,"y":116},{"x":459,"y":117},{"x":459,"y":118},{"x":459,"y":119},{"x":459,"y":120},{"x":459,"y":121},{"x":459,"y":122},{"x":459,"y":123},{"x":459,"y":124},{"x":459,"y":125},{"x":459,"y":126},{"x":459,"y":127},{"x":459,"y":128},{"x":459,"y":129},{"x":459,"y":130},{"x":459,"y":131},{"x":459,"y":132},{"x":459,"y":133},{"x":459,"y":134},{"x":459,"y":135},{"x":459,"y":136},{"x":459,"y":137},{"x":459,"y":138},{"x":459,"y":139},{"x":459,"y":140},{"x":459,"y":141},{"x":459,"y":142},{"x":459,"y":143},{"x":459,"y":144},{"x":459,"y":145},{"x":459,"y":146},{"x":459,"y":147},{"x":459,"y":148},{"x":459,"y":149},{"x":459,"y":150},{"x":459,"y":151},{"x":459,"y":152},{"x":459,"y":153},{"x":459,"y":154}];
+
+let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+rawTvPoints.forEach(p => {
+if (p.x < minX) minX = p.x;
+if (p.x > maxX) maxX = p.x;
+if (p.y < minY) minY = p.y;
+if (p.y > maxY) maxY = p.y;
+});
+
+let tvCenterX = (minX + maxX) / 2;
+let tvCenterY = (minY + maxY) / 2 + 35;
+let tvWidth = (maxX - minX) * 1.05; // Tăng kích thước 5%
+let tvHeight = (maxY - minY) * 1.05; // Tăng kích thước 5%
+let tvAngle = 3 * Math.PI / 180; // Nghiêng 3 độ sang phải
+
+let tvGlitchTimer = 0;
+
+// --- 5. HIỆU ỨNG ĐỒNG XU & VẾT ĐẠN ---
 let coins = [];
-let bulletHoles = []; 
+let bulletHoles = [];
 
 function spawnCoins(x, y) {
-    playSound('coin');
-    for (let i = 0; i < 8; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 2 + Math.random() * 4;
-        coins.push({
-            x: x, y: y,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed - 2,
-            life: 1.0
-        });
-    }
+playSound('coin');
+for (let i = 0; i < 8; i++) {
+const angle = Math.random() * Math.PI * 2;
+const speed = 2 + Math.random() * 4;
+coins.push({
+x: x, y: y,
+vx: Math.cos(angle) * speed,
+vy: Math.sin(angle) * speed - 2,
+life: 1.0
+});
+}
 }
 
-// --- 5. TIẾN TRÌNH & CÔN TRÙNG ---
+// --- 6. TIẾN TRÌNH & CÔN TRÙNG ---
 let totalKills = 0;
-let currentMapIndex = 0; 
+let currentMapIndex = 0;
 let insects = [];
 let milestoneReached = false;
 
 function spawnInsectsForCurrentMap() {
-    insects = [];
-    const bounds = roomBounds[currentMapIndex];
-    let speedFactor = currentMapIndex === 0 ? 1.0 : (currentMapIndex === 1 ? 0.75 : 0.5);
+insects = [];
+const bounds = roomBounds[currentMapIndex];
+let speedFactor = currentMapIndex === 0 ? 1.0 : (currentMapIndex === 1 ? 0.75 : 0.5);
 
-    for (let i = 0; i < 2; i++) {
-        let posX = bounds.minX + Math.random() * (bounds.maxX - bounds.minX);
-        let posY = bounds.minY + Math.random() * (bounds.maxY - bounds.minY);
-        
-        insects.push({
-            x: posX,
-            y: posY,
-            vx: (Math.random() > 0.5 ? 1 : -1) * (1.2 + Math.random() * 1.0) * speedFactor,
-            vy: (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.8) * speedFactor,
-            type: Math.random() < 0.5 ? 1 : 2, 
-            hp: 3,
-            maxHp: 3,
-            hits: 0,
-            frame: 0,
-            frameTimer: 0
-        });
-    }
+for (let i = 0; i < 2; i++) {
+let posX = bounds.minX + Math.random() * (bounds.maxX - bounds.minX);
+let posY = bounds.minY + Math.random() * (bounds.maxY - bounds.minY);
+
+insects.push({
+x: posX,
+y: posY,
+vx: (Math.random() > 0.5 ? 1 : -1) * (1.2 + Math.random() * 1.0) * speedFactor,
+vy: (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.8) * speedFactor,
+type: Math.random() < 0.5 ? 1 : 2,
+hp: 3,
+maxHp: 3,
+hits: 0,
+frame: 0,
+frameTimer: 0
+});
+}
 }
 
 mapImg.onload = () => {
-    resize();
-    cameraX = (mapWidth - W) / 2; 
-    cameraY = (mapHeight - H) / 2;
-    spawnInsectsForCurrentMap();
-    requestAnimationFrame(gameLoop);
+resize();
+cameraX = (mapWidth - W) / 2;
+cameraY = (mapHeight - H) / 2;
+spawnInsectsForCurrentMap();
+requestAnimationFrame(gameLoop);
 };
 
-// --- 6. ĐIỀU KHIỂN: CẢM ỨNG VUỐT, BÀN PHÍM WASD & GYRO ---
+// --- 7. ĐIỀU KHIỂN XOAY NGANG & CẢM ỨNG ---
 let isDragging = false;
 let startX = 0, startY = 0;
 
-// Hỗ trợ cảm ứng vuốt màn hình
+window.addEventListener('touchstart', e => {
+if (!gameStarted) return;
+if (e.target.id === 'btnFire') return;
+isDragging = true;
+startX = e.touches[0].clientX;
+startY = e.touches[0].clientY;
+}, { passive: false });
+
+window.addEventListener('touchmove', e => {
+if (!isDragging || !gameStarted) return;
+e.preventDefault();
+const dx = e.touches[0].clientX - startX;
+const dy = e.touches[0].clientY - startY;
+startX = e.touches[0].clientX;
+startY = e.touches[0].clientY;
+
+// Đảo trục cho chế độ xoay ngang đúng chuẩn FPS thực tế
+cameraX += dy * 1.8;
+cameraY -= dx * 1.8;
+clampCamera();
+}, { passive: false });
+
+window.addEventListener('touchend', () => { isDragging = false; });
+
 window.addEventListener('pointerdown', e => {
-    initAudioAndMusic();
-    if (e.target.id === 'btnFire' || e.target.id === 'btnGyro') return;
-    isDragging = true;
-    startX = e.clientX;
-    startY = e.clientY;
+if (!gameStarted) return;
+if (e.target.id === 'btnFire') return;
+isDragging = true;
+startX = e.clientX;
+startY = e.clientY;
 });
 
 window.addEventListener('pointermove', e => {
-    if (!isDragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    startX = e.clientX;
-    startY = e.clientY;
-    
-    cameraX -= dx * 1.5;
-    cameraY -= dy * 1.5;
-    clampCamera();
+if (!isDragging || !gameStarted) return;
+const dx = e.clientX - startX;
+const dy = e.clientY - startY;
+startX = e.clientX;
+startY = e.clientY;
+
+cameraX += dy * 1.8;
+cameraY -= dx * 1.8;
+clampCamera();
 });
 
 window.addEventListener('pointerup', () => { isDragging = false; });
 
-// Hỗ trợ Bàn phím WASD / Mũi tên trên Máy tính
 const keys = {};
 window.addEventListener('keydown', e => {
-    initAudioAndMusic();
-    keys[e.key.toLowerCase()] = true;
-    if (e.key === ' ') {
-        doFire();
-    }
+if (!gameStarted) return;
+keys[e.key.toLowerCase()] = true;
+if (e.key === ' ') doFire();
 });
 window.addEventListener('keyup', e => {
-    keys[e.key.toLowerCase()] = false;
+keys[e.key.toLowerCase()] = false;
 });
 
 function handleKeyboardInput() {
-    const moveSpeed = 12;
-    if (keys['w'] || keys['arrowup']) cameraY -= moveSpeed;
-    if (keys['s'] || keys['arrowdown']) cameraY += moveSpeed;
-    if (keys['a'] || keys['arrowleft']) cameraX -= moveSpeed;
-    if (keys['d'] || keys['arrowright']) cameraX += moveSpeed;
-    clampCamera();
+const moveSpeed = 14;
+if (keys['w'] || keys['arrowup']) cameraY -= moveSpeed;
+if (keys['s'] || keys['arrowdown']) cameraY += moveSpeed;
+if (keys['a'] || keys['arrowleft']) cameraX -= moveSpeed;
+if (keys['d'] || keys['arrowright']) cameraX += moveSpeed;
+clampCamera();
 }
 
 function clampCamera() {
-    const maxScrollX = Math.max(0, mapWidth - W);
-    const maxScrollY = Math.max(0, mapHeight - H);
-    cameraX = Math.max(0, Math.min(maxScrollX, cameraX));
-    cameraY = Math.max(0, Math.min(maxScrollY, cameraY));
+const maxScrollX = Math.max(0, mapWidth - W);
+const maxScrollY = Math.max(0, mapHeight - H);
+cameraX = Math.max(0, Math.min(maxScrollX, cameraX));
+cameraY = Math.max(0, Math.min(maxScrollY, cameraY));
 }
 
-// Kích hoạt Gyroscope (Cảm biến con quay hồi chuyển trên điện thoại)
-function requestGyro() {
-    initAudioAndMusic();
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission().then(response => {
-            if (response === 'granted') {
-                window.addEventListener('deviceorientation', handleOrientation);
-                document.getElementById('btnGyrostyle').display = 'none';
-            }
-        }).catch(console.error);
-    } else {
-        window.addEventListener('deviceorientation', handleOrientation);
-        document.getElementById('btnGyro').style.display = 'none';
-    }
-}
-
-let initialGamma = null;
-let initialBeta = null;
+let lastGamma = null, lastBeta = null;
 function handleOrientation(e) {
-    if (initialGamma === null) { initialGamma = e.gamma; initialBeta = e.beta; }
-    const deltaX = (e.gamma - initialGamma) * 15;
-    const deltaY = (e.beta - initialBeta) * 15;
-    cameraX += deltaX * 0.1;
-    cameraY += deltaY * 0.1;
-    clampCamera();
+if (!gameStarted || !useGyro) return;
+if (lastGamma === null) { lastGamma = e.gamma; lastBeta = e.beta; return; }
+const dg = e.gamma - lastGamma;
+const db = e.beta - lastBeta;
+lastGamma = e.gamma; lastBeta = e.beta;
+
+cameraX += db * 2.5;
+cameraY -= dg * 2.5;
+clampCamera();
 }
 
-// --- 7. NÚT BẮN ---
+// --- 8. NÚT BẮN ---
 document.getElementById('btnFire').addEventListener('click', e => {
-    e.stopPropagation();
-    doFire();
+e.stopPropagation();
+doFire();
 });
 
 function doFire() {
-    initAudioAndMusic();
-    playSound('fire');
-    if (navigator.vibrate) navigator.vibrate(50);
+if (!gameStarted) return;
+playSound('fire');
+if (navigator.vibrate) navigator.vibrate(50);
 
-    const crosshairX = W / 2;
-    const crosshairY = H / 2;
-    let hitAny = false;
+const crosshairX = W / 2;
+const crosshairY = H / 2;
 
-    insects.forEach((ins, idx) => {
-        const renderX = (ins.x / 800) * mapWidth - cameraX;
-        const renderY = (ins.y / 400) * mapHeight - cameraY;
-        const hitRadius = 60;
+let hitTV = false;
+const tvScreenX = (tvCenterX / 800) * mapWidth - cameraX;
+const tvScreenY = (tvCenterY / 400) * mapHeight - cameraY;
+const scaledTvW = (tvWidth / 800) * mapWidth;
+const scaledTvH = (tvHeight / 400) * mapHeight;
 
-        const dist = Math.hypot(crosshairX - renderX, crosshairY - renderY);
-        if (dist <= hitRadius) {
-            hitAny = true;
-            ins.hits++;
-            ins.hp--;
-            playSound('hit');
-            spawnCoins(renderX, renderY);
+const dx = crosshairX - tvScreenX;
+const dy = crosshairY - tvScreenY;
+const cos = Math.cos(-tvAngle);
+const sin = Math.sin(-tvAngle);
+const localX = dx * cos - dy * sin;
+const localY = dx * sin + dy * cos;
 
-            if (ins.hp <= 0) {
-                playSound('kill');
-                insects.splice(idx, 1);
-                totalKills++;
-                document.getElementById('txtKills').innerText = totalKills;
+if (Math.abs(localX) <= scaledTvW / 2 && Math.abs(localY) <= scaledTvH / 2) {
+hitTV = true;
+tvGlitchTimer = 0.6;
+playSound('tv_glitch');
+}
 
-                if (totalKills === 2 || totalKills === 4) {
-                    currentMapIndex = (currentMapIndex + 1) % 3;
-                    spawnInsectsForCurrentMap();
-                } else if (totalKills === 6 && !milestoneReached) {
-                    milestoneReached = true;
-                    document.getElementById('modalMilestone').style.display = 'flex';
-                } else if (totalKills === 8 || totalKills === 10) {
-                    currentMapIndex = (currentMapIndex + 1) % 3;
-                    spawnInsectsForCurrentMap();
-                } else if (totalKills >= 12) {
-                    document.getElementById('modalWin').style.display = 'flex';
-                }
-            }
-        }
-    });
+let hitAny = false;
+insects.forEach((ins, idx) => {
+const renderX = (ins.x / 800) * mapWidth - cameraX;
+const renderY = (ins.y / 400) * mapHeight - cameraY;
+const hitRadius = 65;
 
-    if (!hitAny) {
-        const worldBulletX = ((crosshairX + cameraX) / mapWidth) * 800;
-        const worldBulletY = ((crosshairY + cameraY) / mapHeight) * 400;
-        bulletHoles.push({ x: worldBulletX, y: worldBulletY });
-        if (bulletHoles.length > 25) bulletHoles.shift();
-    }
+const dist = Math.hypot(crosshairX - renderX, crosshairY - renderY);
+if (dist <= hitRadius) {
+hitAny = true;
+ins.hits++;
+ins.hp--;
+playSound('hit');
+spawnCoins(renderX, renderY);
+
+if (ins.hp <= 0) {
+playSound('kill');
+insects.splice(idx, 1);
+totalKills++;
+document.getElementById('txtKills').innerText = totalKills;
+
+if (totalKills === 2 || totalKills === 4) {
+currentMapIndex = (currentMapIndex + 1) % 3;
+spawnInsectsForCurrentMap();
+} else if (totalKills === 6 && !milestoneReached) {
+milestoneReached = true;
+document.getElementById('modalMilestone').style.display = 'flex';
+} else if (totalKills === 8 || totalKills === 10) {
+currentMapIndex = (currentMapIndex + 1) % 3;
+spawnInsectsForCurrentMap();
+} else if (totalKills >= 12) {
+document.getElementById('modalWin').style.display = 'flex';
+}
+}
+}
+});
+
+if (!hitAny && !hitTV) {
+const worldBulletX = ((crosshairX + cameraX) / mapWidth) * 800;
+const worldBulletY = ((crosshairY + cameraY) / mapHeight) * 400;
+bulletHoles.push({ x: worldBulletX, y: worldBulletY });
+if (bulletHoles.length > 25) bulletHoles.shift();
+}
 }
 
 function continueGame() {
-    document.getElementById('modalMilestone').style.display = 'none';
-    currentMapIndex = 0;
-    spawnInsectsForCurrentMap();
-    document.getElementById('txtMapLevel').innerText = "Phòng Khách (Tầng 2 - Tiếp)";
+document.getElementById('modalMilestone').style.display = 'none';
+currentMapIndex = 0;
+spawnInsectsForCurrentMap();
+document.getElementById('txtMapLevel').innerText = "Phòng Khách (Tầng 2 - Tiếp)";
 }
 
-// --- 8. VÒNG LẶP RENDER ---
+// --- 9. VÒNG LẶP RENDER ---
 let lastTime = performance.now();
 
 function gameLoop(now) {
-    const dt = (now - lastTime) / 1000;
-    lastTime = now;
+const dt = (now - lastTime) / 1000;
+lastTime = now;
 
-    handleKeyboardInput(); // Xử lý phím WASD trên PC
+if (gameStarted) {
+handleKeyboardInput();
+}
+ctx.clearRect(0, 0, W, H);
 
-    ctx.clearRect(0, 0, W, H);
+// Trần nhà
+const ceilingHeight = mapHeight * 0.18 - cameraY;
+if (ceilingHeight > 0) {
+ctx.fillStyle = '#f0f5f1';
+ctx.fillRect(0, 0, W, ceilingHeight);
+ctx.strokeStyle = '#d0d8d3';
+ctx.lineWidth = 3;
+ctx.beginPath();
+ctx.moveTo(0, ceilingHeight);
+ctx.lineTo(W, ceilingHeight);
+ctx.stroke();
+}
 
-    // Trần nhà vôi trắng
-    const ceilingHeight = mapHeight * 0.2 - cameraY;
-    if (ceilingHeight > 0) {
-        ctx.fillStyle = '#f0f5f1';
-        ctx.fillRect(0, 0, W, ceilingHeight);
-        ctx.strokeStyle = '#d0d8d3';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(0, ceilingHeight);
-        ctx.lineTo(W, ceilingHeight);
-        ctx.stroke();
-    }
+// Tường phòng khách
+if (mapImg.complete && mapImg.naturalWidth) {
+ctx.drawImage(mapImg, -cameraX, -cameraY, mapWidth, mapHeight);
+} else {
+ctx.fillStyle = '#051508';
+ctx.fillRect(0, 0, W, H);
+}
 
-    // Tường phòng khách 360 độ
-    if (mapImg.complete && mapImg.naturalWidth) {
-        ctx.drawImage(mapImg, -cameraX, -cameraY, mapWidth, mapHeight);
-    } else {
-        ctx.fillStyle = '#051508';
-        ctx.fillRect(0, 0, W, H);
-    }
+// --- VẼ TV (Nghiêng 3 độ, tăng 5%) ---
+const tvScreenX = (tvCenterX / 800) * mapWidth - cameraX;
+const tvScreenY = (tvCenterY / 400) * mapHeight - cameraY;
+const scaledTvW = (tvWidth / 800) * mapWidth;
+const scaledTvH = (tvHeight / 400) * mapHeight;
 
-    // Vết đạn trên tường
-    bulletHoles.forEach(hole => {
-        const renderX = (hole.x / 800) * mapWidth - cameraX;
-        const renderY = (hole.y / 400) * mapHeight - cameraY;
+ctx.save();
+ctx.translate(tvScreenX, tvScreenY);
+ctx.rotate(tvAngle);
 
-        ctx.fillStyle = '#111';
-        ctx.strokeStyle = '#444';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(renderX, renderY, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-    });
+ctx.save();
+ctx.beginPath();
+ctx.rect(-scaledTvW/2, -scaledTvH/2, scaledTvW, scaledTvH);
+ctx.clip();
 
-    // Côn trùng
-    insects.forEach(ins => {
-        const bounds = roomBounds[currentMapIndex];
+if (tvGlitchTimer > 0) {
+tvGlitchTimer -= dt;
+ctx.fillStyle = `hsl(${Math.random() * 360}, 100%, 50%)`;
+ctx.fillRect(-scaledTvW/2, -scaledTvH/2, scaledTvW, scaledTvH);
+ctx.fillStyle = '#fff';
+for (let i = 0; i < 6; i++) {
+ctx.fillRect(-scaledTvW/2, (-scaledTvH/2) + Math.random() * scaledTvH, scaledTvW, Math.random() * 10);
+}
+} else {
+const time = now * 0.005;
+const r = Math.floor(Math.sin(time) * 127 + 128);
+const g = Math.floor(Math.cos(time * 1.5) * 127 + 128);
+const b = Math.floor(Math.sin(time * 2) * 127 + 128);
+ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+ctx.fillRect(-scaledTvW/2, -scaledTvH/2, scaledTvW, scaledTvH);
 
-        ins.x += ins.vx;
-        ins.y += ins.vy;
+ctx.fillStyle = 'rgba(255,255,255,0.85)';
+ctx.beginPath();
+ctx.moveTo(-6, -8);
+ctx.lineTo(10, 0);
+ctx.lineTo(-6, 8);
+ctx.fill();
+}
+ctx.restore();
 
-        if (ins.x < bounds.minX || ins.x > bounds.maxX) ins.vx *= -1;
-        if (ins.y < bounds.minY || ins.y > bounds.maxY) ins.vy *= -1;
+ctx.strokeStyle = '#222';
+ctx.lineWidth = 6;
+ctx.strokeRect(-scaledTvW/2, -scaledTvH/2, scaledTvW, scaledTvH);
+ctx.restore();
 
-        const renderX = (ins.x / 800) * mapWidth - cameraX;
-        const renderY = (ins.y / 400) * mapHeight - cameraY;
+// Vết đạn trên tường
+bulletHoles.forEach(hole => {
+const renderX = (hole.x / 800) * mapWidth - cameraX;
+const renderY = (hole.y / 400) * mapHeight - cameraY;
+ctx.fillStyle = '#111';
+ctx.strokeStyle = '#444';
+ctx.lineWidth = 1.5;
+ctx.beginPath();
+ctx.arc(renderX, renderY, 5, 0, Math.PI * 2);
+ctx.fill();
+ctx.stroke();
+});
 
-        ins.frameTimer += dt;
-        if (ins.frameTimer > 0.12) {
-            ins.frame = (ins.frame + 1) % 4;
-            ins.frameTimer = 0;
-        }
+// Côn trùng
+insects.forEach(ins => {
+const bounds = roomBounds[currentMapIndex];
+ins.x += ins.vx;
+ins.y += ins.vy;
+if (ins.x < bounds.minX || ins.x > bounds.maxX) ins.vx *= -1;
+if (ins.y < bounds.minY || ins.y > bounds.maxY) ins.vy *= -1;
 
-        const colIndex = (ins.hits >= 1 ? 4 : 0) + ins.frame;
-        const rowIndex = ins.type; 
+const renderX = (ins.x / 800) * mapWidth - cameraX;
+const renderY = (ins.y / 400) * mapHeight - cameraY;
 
-        let scale = currentMapIndex === 0 ? 1.0 : (currentMapIndex === 1 ? 0.85 : 0.70);
-        const flipX = ins.vx < 0 ? -scale : scale;
+ins.frameTimer += dt;
+if (ins.frameTimer > 0.12) {
+ins.frame = (ins.frame + 1) % 4;
+ins.frameTimer = 0;
+}
 
-        const s = 40;
-        ctx.save();
-        ctx.translate(renderX, renderY);
-        ctx.scale(flipX, scale);
-        if (spriteImg.complete && spriteImg.naturalWidth) {
-            ctx.drawImage(spriteImg, colIndex * s, rowIndex * s, s, s, -s/2, -s/2, s, s);
-        } else {
-            ctx.fillStyle = ins.type === 1 ? '#00ff88' : '#ff0055';
-            ctx.fillRect(-15, -15, 30, 30);
-        }
-        ctx.restore();
+const colIndex = (ins.hits >= 1 ? 4 : 0) + ins.frame;
+const rowIndex = ins.type;
+let scale = currentMapIndex === 0 ? 1.0 : (currentMapIndex === 1 ? 0.85 : 0.70);
+const flipX = ins.vx < 0 ? -scale : scale;
+const s = 40;
 
-        // Thanh máu
-        const barWidth = 36 * scale;
-        const barHeight = 5;
-        const barX = renderX - barWidth / 2;
-        const barY = renderY - (s * scale / 2) - 10;
+ctx.save();
+ctx.translate(renderX, renderY);
+ctx.scale(flipX, scale);
+if (spriteImg.complete && spriteImg.naturalWidth) {
+ctx.drawImage(spriteImg, colIndex * s, rowIndex * s, s, s, -s/2, -s/2, s, s);
+} else {
+ctx.fillStyle = ins.type === 1 ? '#00ff88' : '#ff0055';
+ctx.fillRect(-15, -15, 30, 30);
+}
+ctx.restore();
 
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.fillRect(barX, barY, barWidth, barHeight);
+// Thanh máu
+const barWidth = 36 * scale;
+const barHeight = 5;
+const barX = renderX - barWidth / 2;
+const barY = renderY - (s * scale / 2) - 10;
 
-        const healthPercent = Math.max(0, ins.hp / ins.maxHp);
-        ctx.fillStyle = '#ff0055';
-        ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+ctx.fillStyle = 'rgba(0,0,0,0.6)';
+ctx.fillRect(barX, barY, barWidth, barHeight);
+const healthPercent = Math.max(0, ins.hp / ins.maxHp);
+ctx.fillStyle = '#ff0055';
+ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+ctx.strokeStyle = '#fff';
+ctx.lineWidth = 1;
+ctx.strokeRect(barX, barY, barWidth, barHeight);
+});
 
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(barX, barY, barWidth, barHeight);
-    });
+// Đồng xu vàng văng
+coins.forEach((coin, idx) => {
+coin.x += coin.vx;
+coin.y += coin.vy;
+coin.vy += 0.3;
+coin.life -= dt * 1.5;
 
-    // Đồng xu vàng văng
-    coins.forEach((coin, idx) => {
-        coin.x += coin.vx;
-        coin.y += coin.vy;
-        coin.vy += 0.3;
-        coin.life -= dt * 1.5;
+if (coin.life <= 0) {
+coins.splice(idx, 1);
+return;
+}
 
-        if (coin.life <= 0) {
-            coins.splice(idx, 1);
-            return;
-        }
+ctx.save();
+ctx.globalAlpha = Math.max(0, coin.life);
+ctx.fillStyle = '#ffd700';
+ctx.strokeStyle = '#b8860b';
+ctx.lineWidth = 2;
+ctx.beginPath();
+ctx.arc(coin.x, coin.y, 6, 0, Math.PI * 2);
+ctx.fill();
+ctx.stroke();
+ctx.restore();
+});
 
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, coin.life);
-        ctx.fillStyle = '#ffd700';
-        ctx.strokeStyle = '#b8860b';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(coin.x, coin.y, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-    });
-
-    requestAnimationFrame(gameLoop);
+requestAnimationFrame(gameLoop);
 }
 </script>
 </body>
