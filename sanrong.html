@@ -432,7 +432,7 @@ if (isGamePaused || isHapThuOnCooldown) return;
 initAudio();
 playSound('absorb');
 
-dragonGroup.position.z = THREE.MathUtils.lerp(dragonGroup.position.z, playerGroup.position.z - 20, 0.5);
+dragonGroup.position.z = THREE.MathUtils.lerp(dragonGroup.position.z, playerGroup.position.z - 10, 0.5);
 dragonGroup.position.x = THREE.MathUtils.lerp(dragonGroup.position.x, playerGroup.position.x, 0.4);
 dragonGroup.position.y = THREE.MathUtils.lerp(dragonGroup.position.y, playerGroup.position.y, 0.4);
 
