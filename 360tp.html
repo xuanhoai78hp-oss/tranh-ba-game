@@ -192,8 +192,8 @@ initialBeta = e.beta || 0;
 return;
 }
 // Chỉ tính độ lệch so với lúc mới bấm vào trận
-gyroOffsetX = (e.gamma - initialGamma) * 1.5;
-gyroOffsetY = (e.beta - initialBeta) * 1.5;
+gyroOffsetX = -(e.gamma - initialGamma) * 1.5;
+gyroOffsetY = -(e.beta - initialBeta) * 1.5;
 }
 
 // --- NÚT BẮN ---
