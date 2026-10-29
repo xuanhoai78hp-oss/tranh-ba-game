@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Không Chiến Thành Phố 3D - Sáng Sủa & Mượt Mà</title>
+<style>
+* { box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', Roboto, sans-serif; color: #00ff88; }
+
+#gameContainer { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; background: linear-gradient(to top, #2a0f00, #5c2205); }
+canvas#gameCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; }
+
+/* HUD Giao diện trên */
+.ui-top { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 30; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+.info-box { background: rgba(0,20,10,0.85); border: 1px solid #00ff88; padding: 8px 14px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,255,136,0.3); font-size: 13px; font-weight: bold; pointer-events: auto; }
+
+/* VIRTUAL JOYSTICK BÊN TRÁI (Cách cạnh 100px) */
+#joystickBase { position: absolute; bottom: 40px; left: 100px; width: 120px; height: 120px; background: rgba(0,255,136,0.15); border: 2px solid rgba(0,255,136,0.5); border-radius: 50%; z-index: 40; display: flex; justify-content: center; align-items: center; touch-action: none; }
+#joystickThumb { position: absolute; width: 50px; height: 50px; background: radial-gradient(circle, #00ff88, #00aa55); border-radius: 50%; box-shadow: 0 0 15px #00ff88; top: 35px; left: 35px; pointer-events: none; }
+
+/* NÚT BẮN BÊN PHẢI (Cách cạnh 100px, cao 100px) */
+#btnFire { position: absolute; bottom: 40px; right: 100px; width: 100px; height: 100px; background: radial-gradient(circle, #ff0055, #880022); border-radius: 50%; border: 3px solid #fff; color: #fff; font-weight: bold; font-size: 16px; box-shadow: 0 0 20px #ff0055; z-index: 40; cursor: pointer; display: flex; justify-content: center; align-items: center; touch-action: none; }
+#btnFire:active { transform: scale(0.92); }
+
+/* ỐNG NHÒM TRÒN CHÍNH GIỮA */
+.binocular-lens { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 220px; height: 220px; border-radius: 50%; border: 4px solid rgba(0,255,136,0.8); box-shadow: 0 0 0 9999px rgba(0,0,0,0.7), inset 0 0 25px rgba(0,255,136,0.4); pointer-events: none; z-index: 25; overflow: hidden; }
+.crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; pointer-events: none; z-index: 26; }
+.crosshair::before, .crosshair::after { content: ''; position: absolute; background: rgba(0, 255, 136, 0.9); }
+.crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
+.crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
+
+/* Màn hình giới thiệu */
+#introOverlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 5, 3, 0.96); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 25px; }
+#introOverlay h1 { font-size: 26px; color: #00ff88; margin-bottom: 12px; text-shadow: 0 0 20px #00ff88; text-transform: uppercase; }
+#introOverlay p { font-size: 14px; color: #ccc; max-width: 500px; line-height: 1.5; margin-bottom: 25px; }
+#btnStartGame { padding: 16px 45px; font-size: 18px; background: linear-gradient(135deg, #00ff88, #00aa55); border: none; border-radius: 30px; cursor: pointer; font-weight: bold; color: #000; box-shadow: 0 0 25px #00ff88; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div id="introOverlay">
+<h1>🌆 KHÔNG CHIẾN THÀNH PHỐ 3D 🌆</h1>
+<p>Đã khắc phục lỗi tự trôi và tăng độ sáng rực rỡ! Dùng Joystick trái để bay lượn, ống nhòm ngắm bắn 10 yêu thú để sang 360.html.</p>
+<button id="btnStartGame" onclick="startGame()">KHỞI ĐỘNG BAY 🚀</button>
+</div>
+
+<div id="gameContainer">
+<canvas id="gameCanvas"></canvas>
+<div class="binocular-lens"></div>
+<div class="crosshair"></div>
+
+<div id="joystickBase"><div id="joystickThumb"></div></div>
+<div id="btnFire">BẮN</div>
+
+<div class="ui-top">
+<div class="info-box">TẦNG KHÔNG (600m)</div>
+<div class="info-box">ĐÃ DIỆT: <b id="txtKills" style="color:#ff0055">0</b> / 10</div>
+</div>
+</div>
+
+<script>
+let gameStarted = false;
+let audioCtx = null, bgMusic = null;
+
+function initAudio() {
+if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+if (audioCtx.state === 'suspended') audioCtx.resume();
+if (!bgMusic) {
+bgMusic = new Audio('1.mp3');
+bgMusic.loop = true;
+bgMusic.volume = 0.4;
+bgMusic.play().catch(() => {});
+}
+}
+
+function startGame() {
+initAudio();
+if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+DeviceOrientationEvent.requestPermission().then(response => {
+if (response === 'granted') {
+window.addEventListener('deviceorientation', handleOrientation, true);
+}
+}).catch(console.error);
+} else {
+window.addEventListener('deviceorientation', handleOrientation, true);
+}
+
+gameStarted = true;
+document.getElementById('introOverlay').style.display = 'none';
+}
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+W = window.innerWidth;
+H = window.innerHeight;
+canvas.width = W;
+canvas.height = H;
+}
+window.addEventListener('resize', resize);
+resize();
+
+const mapImg = new Image();
+mapImg.src = 'anhtp.png';
+
+const spriteImg = new Image();
+spriteImg.src = 'anh.png';
+
+let posX = 0, posY = 0;
+let initialGamma = null, initialBeta = null;
+let gyroOffsetX = 0, gyroOffsetY = 0;
+
+// Hệ số Parallax theo khoảng cách
+const k1 = 0.05; // Núi (1200m)[cite: 1, 2]
+const k2 = 0.20; // Xa (900m)[cite: 1, 2]
+const k3 = 0.40; // Trung (750m)[cite: 1, 2]
+const k4 = 0.70; // Gần (600m)[cite: 1, 2]
+
+let insects = [];
+let kills = 0;
+
+function spawnInsects() {
+insects = [];
+for (let i = 0; i < 10; i++) {
+insects.push({
+x: (Math.random() - 0.5) * 1000,
+y: (Math.random() - 0.5) * 400,
+layer: Math.floor(Math.random() * 3) + 1,
+hp: 2,
+frame: Math.floor(Math.random() * 4)
+});
+}
+}
+spawnInsects();
+
+// --- JOYSTICK ĐA ĐIỂM ---
+const joystickBase = document.getElementById('joystickBase');
+const joystickThumb = document.getElementById('joystickThumb');
+let joystickActive = false;
+let joystickPointerId = null;
+let joystickCenter = { x: 0, y: 0 };
+let stickVector = { x: 0, y: 0 };
+
+joystickBase.addEventListener('pointerdown', e => {
+joystickActive = true;
+joystickPointerId = e.pointerId;
+joystickBase.setPointerCapture(e.pointerId);
+
+const rect = joystickBase.getBoundingClientRect();
+joystickCenter = { x: rect.left + rect.width/2, y: rect.top + rect.height/2 };
+updateJoystick(e.clientX, e.clientY);
+});
+
+joystickBase.addEventListener('pointermove', e => {
+if (!joystickActive || e.pointerId !== joystickPointerId) return;
+updateJoystick(e.clientX, e.clientY);
+});
+
+function endJoystick(e) {
+if (e.pointerId === joystickPointerId) {
+joystickActive = false;
+joystickPointerId = null;
+stickVector = { x: 0, y: 0 };
+joystickThumb.style.transform = `translate(0px, 0px)`;
+}
+}
+joystickBase.addEventListener('pointerup', endJoystick);
+joystickBase.addEventListener('pointercancel', endJoystick);
+
+function updateJoystick(clientX, clientY) {
+let dx = clientX - joystickCenter.x;
+let dy = clientY - joystickCenter.y;
+let dist = Math.hypot(dx, dy);
+let maxDist = 45;
+if (dist > maxDist) {
+dx = (dx / dist) * maxDist;
+dy = (dy / dist) * maxDist;
+}
+joystickThumb.style.transform = `translate(${dx}px, ${dy}px)`;
+stickVector = { x: dx / maxDist, y: dy / maxDist };
+}
+
+// --- GYRO CHUẨN XÁC KHÔNG TỰ TRÔI ---
+function handleOrientation(e) {
+if (!gameStarted) return;
+if (initialGamma === null) {
+initialGamma = e.gamma || 0;
+initialBeta = e.beta || 0;
+return;
+}
+// Chỉ tính độ lệch so với lúc mới bấm vào trận
+gyroOffsetX = (e.gamma - initialGamma) * 1.5;
+gyroOffsetY = (e.beta - initialBeta) * 1.5;
+}
+
+// --- NÚT BẮN ---
+document.getElementById('btnFire').addEventListener('pointerdown', e => {
+e.stopPropagation();
+if (!gameStarted) return;
+
+const crosshairX = W / 2;
+const crosshairY = H / 2;
+
+insects.forEach((ins, idx) => {
+let k = ins.layer === 1 ? k2 : (ins.layer === 2 ? k3 : k4);
+let renderX = W/2 + ins.x - (posX * k);
+let renderY = H/2 + ins.y - (posY * k);
+
+let dist = Math.hypot(crosshairX - renderX, crosshairY - renderY);
+if (dist < 60) {
+ins.hp--;
+if (ins.hp <= 0) {
+insects.splice(idx, 1);
+kills++;
+document.getElementById('txtKills').innerText = kills;
+if (kills >= 10) {
+alert("Đã diệt đủ 10 yêu thú! Chuyển sang 360.html...");
+window.location.href = '360.html';
+}
+}
+}
+});
+});
+
+// --- VÒNG LẶP RENDER ---
+function gameLoop() {
+ctx.clearRect(0, 0, W, H);
+
+if (gameStarted) {
+// Chỉ di chuyển khi đẩy joystick hoặc nghiêng máy thực tế
+posX += (stickVector.x * 8 + gyroOffsetX * 0.1);
+posY += (stickVector.y * 8 + gyroOffsetY * 0.1);
+}
+
+const halfW = mapImg.naturalWidth ? mapImg.naturalWidth / 2 : 500;
+const halfH = mapImg.naturalHeight ? mapImg.naturalHeight / 2 : 500;
+
+if (mapImg.complete && mapImg.naturalWidth) {
+// 1. Lớp 0: Đồi núi & Nước (Cố định 1200m)[cite: 1, 2]
+ctx.drawImage(mapImg, 0, halfH, halfW, halfH, 0, 0, W, H);
+
+// 2. Các lớp cao ốc Parallax (Dùng sáng sủa, chống tối màu)
+ctx.save();
+ctx.filter = 'brightness(1.25) contrast(1.1)'; // Tăng độ sáng và nét cho cao ốc
+
+// Lớp 1: Cao ốc xa (~900m)[cite: 1, 2]
+ctx.drawImage(mapImg, 0, 0, halfW, halfH, -posX * k1, -posY * k1, W, H);
+
+// Lớp 2: Cao ốc trung (~750m)[cite: 1, 2]
+ctx.drawImage(mapImg, halfW, 0, halfW, halfH, -posX * k2, -posY * k2, W, H);
+
+// Lớp 3: Cao ốc gần (~600m)[cite: 1, 2]
+ctx.drawImage(mapImg, halfW, halfH, halfW, halfH, -posX * k3, -posY * k3, W, H);
+
+ctx.restore();
+} else {
+ctx.fillStyle = '#221100';
+ctx.fillRect(0, 0, W, H);
+}
+
+// 3. VẼ CÔN TRÙNG XEN KẼ KHE CAO ỐC
+insects.forEach(ins => {
+let k = ins.layer === 1 ? k2 : (ins.layer === 2 ? k3 : k4);
+let rx = W/2 + ins.x - (posX * k);
+let ry = H/2 + ins.y - (posY * k);
+
+ctx.save();
+ctx.translate(rx, ry);
+if (spriteImg.complete && spriteImg.naturalWidth) {
+ctx.drawImage(spriteImg, 0, 0, 40, 40, -20, -20, 40, 40);
+} else {
+ctx.fillStyle = '#ff0055';
+ctx.beginPath();
+ctx.arc(0, 0, 15, 0, Math.PI * 2);
+ctx.fill();
+}
+ctx.restore();
+});
+
+// 4. HIỆU ỨNG ỐNG NHÒM TÂM NGẮM
+ctx.save();
+ctx.beginPath();
+ctx.arc(W/2, H/2, 110, 0, Math.PI * 2);
+ctx.clip();
+ctx.fillStyle = "rgba(0, 255, 136, 0.05)";
+ctx.fillRect(W/2 - 110, H/2 - 110, 220, 220);
+ctx.drawImage(canvas, W/2 - 75, H/2 - 75, 150, 150, W/2 - 110, H/2 - 110, 220, 220);
+ctx.restore();
+
+requestAnimationFrame(gameLoop);
+}
+
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
