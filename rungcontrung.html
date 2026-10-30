@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Hành Trình Rừng Rậm - Đại Chiến Yêu Trùng</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: none; }
+body { width: 100vw; height: 100vh; overflow: hidden; background: #050b14; font-family: sans-serif; display: flex; justify-content: center; align-items: center; }
+
+#game-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #000; }
+#gameCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; }
+
+/* HUD Giao Diện Thanh Trạng Thái (Góc Trái Trên) */
+.hud-layer { position: absolute; top: 15px; left: 15px; z-index: 10; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+.bar-box { width: 200px; height: 16px; background: rgba(0,0,0,0.75); border: 2px solid #d4af37; border-radius: 10px; overflow: hidden; position: relative; box-shadow: 0 0 10px rgba(0,0,0,0.8); }
+.hp-fill { width: 50%; height: 100%; background: linear-gradient(90deg, #ef4444, #22c55e); transition: width 0.2s ease-out; }
+.power-fill { width: 50%; height: 100%; background: linear-gradient(90deg, #3b82f6, #a855f7); transition: width 0.2s ease-out; }
+.bar-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 9px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+
+/* Khung Hướng Dẫn Thu Gọn (Góc Phải Trên) */
+.controls-hint-top {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 10;
+    color: #facc15;
+    font-size: 11px;
+    background: rgba(10, 15, 30, 0.85);
+    backdrop-filter: blur(6px);
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    pointer-events: none;
+    line-height: 1.4;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    max-width: 240px;
+}
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- Thanh trạng thái góc trái trên -->
+    <div class="hud-layer">
+        <div class="bar-box">
+            <div id="hp-fill" class="hp-fill"></div>
+            <div id="hp-text" class="bar-text">MÁU: 50%</div>
+        </div>
+        <div class="bar-box" style="border-color: #3b82f6;">
+            <div id="power-fill" class="power-fill"></div>
+            <div id="power-text" class="bar-text">UY LỰC CẦU LỬA: 50%</div>
+        </div>
+    </div>
+
+    <!-- Khung hướng dẫn gọn gàng ở góc phải trên -->
+    <div class="controls-hint-top">
+        📜 <b>BÍ KÍP ĐIỀU KHIỂN:</b><br>
+        • <b>A/D</b> hoặc <b>Chạm Trái/Phải</b>: Di chuyển.<br>
+        • <b>J / Space / Chạm Giữa</b>: Ném Cầu Lửa 🔥.
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<audio id="bg-music" loop></audio>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// 1. TẢI TÀI NGUYÊN HÌNH ẢNH
+const imgRung = new Image(); imgRung.src = 'rung.png'; // 11100x410
+const imgAtlas = new Image(); imgAtlas.src = 'anh.png'; // 8 cột x 5 hàng (40x40/ô)
+
+let isRungLoaded = false, isAtlasLoaded = false;
+imgRung.onload = () => isRungLoaded = true;
+imgAtlas.onload = () => isAtlasLoaded = true;
+
+// 2. HỆ THỐNG ÂM THANH
+const bgMusic = document.getElementById('bg-music');
+function playRandomMusic() {
+    let track = Math.floor(Math.random() * 9) + 1;
+    bgMusic.src = `${track}.mp3`;
+    bgMusic.volume = 0.4;
+    bgMusic.play().catch(() => {});
+}
+
+let audioCtx = null;
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        playRandomMusic();
+    }
+}
+
+function playSfx(type) {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+
+    if (type === 'fireball') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(70, audioCtx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+    } else if (type === 'hit') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+    } else if (type === 'step') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(80, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+    } else if (type === 'pickup') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+    }
+}
+
+// 3. THÔNG SỐ KHÔNG GIAN
+let screenW = 0, screenH = 0;
+let cameraX = 0;
+const RUNG_W = 11100, RUNG_H = 410;
+let shakeTime = 0;
+
+// 4. NHÂN VẬT & CHỈ SỐ
+let player = {
+    x: 0, y: 0, w: 0, h: 0,
+    hp: 50,
+    power: 50,
+    dir: 1,
+    state: 'idle',
+    breathTime: 0,
+    isAttacking: false,
+    attackCooldown: 0,
+    stepTimer: 0
+};
+
+let fireballs = [];
+let bugs = [];
+let items = [];
+let particles = [];
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    screenW = canvas.width;
+    screenH = canvas.height;
+
+    player.h = screenH / 3;
+    player.w = player.h * 0.7;
+    player.y = screenH - (screenH / 10) - player.h;
+
+    if (player.x === 0) {
+        player.x = RUNG_W / 2;
+        spawnBugsNearPlayer();
+    }
+}
+
+function spawnBugsNearPlayer() {
+    bugs = [];
+    let bugTypes = Math.random() > 0.5 ? [1, 2] : (Math.random() > 0.5 ? [1, 1] : [2, 2]);
+
+    bugTypes.forEach((type, idx) => {
+        let spawnX = player.x + (idx === 0 ? 380 : -380) + (Math.random() - 0.5) * 100;
+        bugs.push({
+            id: Math.random(),
+            type: type,
+            x: Math.max(200, Math.min(RUNG_W - 200, spawnX)),
+            y: player.y + player.h * 0.1,
+            w: player.w * 0.9,
+            h: player.h * 0.9,
+            hp: 8,
+            maxHp: 8,
+            dir: idx === 0 ? -1 : 1,
+            attackTimer: Math.random() * 2,
+            reboundVel: 0,
+            target: null,
+            isFighting: false
+        });
+    });
+}
+
+// 5. ĐIỀU KHIỂN & TƯƠNG TÁC
+const keys = {};
+window.addEventListener('keydown', e => {
+    initAudio();
+    keys[e.code] = true;
+    if ((e.code === 'KeyJ' || e.code === 'Space') && player.attackCooldown <= 0) {
+        shootFireball();
+    }
+});
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+window.addEventListener('touchstart', e => {
+    initAudio();
+    let touchX = e.touches[0].clientX;
+    if (touchX > screenW * 0.35 && touchX < screenW * 0.65) {
+        if (player.attackCooldown <= 0) shootFireball();
+    } else {
+        keys['TouchDir'] = touchX < screenW / 2 ? -1 : 1;
+    }
+});
+window.addEventListener('touchend', () => delete keys['TouchDir']);
+
+function shootFireball() {
+    player.isAttacking = true;
+    player.attackCooldown = 22;
+    playSfx('fireball');
+
+    player.power = Math.max(10, player.power - 2);
+    updateUI();
+
+    let fbX = player.dir === 1 ? player.x + player.w * 0.4 : player.x - player.w * 0.4;
+    let damageVal = 1 + (player.power / 50);
+
+    fireballs.push({
+        x: fbX,
+        y: player.y + player.h * 0.35,
+        vx: player.dir * 14,
+        size: player.h * 0.18,
+        damage: damageVal,
+        life: 100
+    });
+
+    setTimeout(() => player.isAttacking = false, 300);
+}
+
+// 6. CẬP NHẬT LOGIC
+function update() {
+    let moveDir = 0;
+    if (keys['KeyA'] || keys['ArrowLeft'] || keys['TouchDir'] === -1) moveDir = -1;
+    if (keys['KeyD'] || keys['ArrowRight'] || keys['TouchDir'] === 1) moveDir = 1;
+
+    if (moveDir !== 0) {
+        player.dir = moveDir;
+        player.x += moveDir * 5.5;
+        player.state = 'walk';
+        
+        player.stepTimer++;
+        if (player.stepTimer % 18 === 0) playSfx('step');
+    } else {
+        player.state = 'idle';
+    }
+
+    if (player.x <= 100 || player.x >= RUNG_W - 100) {
+        window.location.href = '360.html';
+        return;
+    }
+
+    cameraX = Math.max(0, Math.min(RUNG_W - screenW, player.x - screenW / 2));
+    if (player.attackCooldown > 0) player.attackCooldown--;
+    player.breathTime += 0.05;
+
+    for (let i = fireballs.length - 1; i >= 0; i--) {
+        let fb = fireballs[i];
+        fb.x += fb.vx;
+        fb.life--;
+
+        particles.push({
+            x: fb.x, y: fb.y + (Math.random() - 0.5) * 10,
+            vx: -fb.vx * 0.2, vy: (Math.random() - 0.5) * 2,
+            size: Math.random() * 8 + 4, color: '#ff4500', life: 15
+        });
+
+        bugs.forEach(bug => {
+            if (bug.hp > 0 && Math.abs(fb.x - bug.x) < bug.w * 0.4 && Math.abs(fb.y - bug.y) < bug.h * 0.5) {
+                bug.hp -= fb.damage;
+                bug.reboundVel = fb.vx > 0 ? 10 : -10;
+                shakeTime = 8;
+                playSfx('hit');
+
+                if (bug.hp <= 0) {
+                    let dropType = player.hp > 70 ? 'book' : 'hologram';
+                    items.push({
+                        x: bug.x, y: player.y + player.h * 0.6,
+                        type: dropType
+                    });
+                }
+                fb.life = 0;
+            }
+        });
+
+        if (fb.life <= 0 || fb.x < cameraX || fb.x > cameraX + screenW) {
+            fireballs.splice(i, 1);
+        }
+    }
+
+    let bug1 = bugs.find(b => b.type === 1 && b.hp > 0);
+    let bug2 = bugs.find(b => b.type === 2 && b.hp > 0);
+    let isDifferentBugsFighting = bug1 && bug2;
+
+    bugs.forEach(bug => {
+        if (bug.hp <= 0) return;
+
+        if (Math.abs(bug.reboundVel) > 0.1) {
+            bug.x += bug.reboundVel;
+            bug.reboundVel *= 0.8;
+            bug.isFighting = true;
+        } else {
+            bug.reboundVel = 0;
+
+            if (isDifferentBugsFighting) {
+                bug.target = bug.type === 1 ? bug2 : bug1;
+                bug.isFighting = true;
+            } else {
+                bug.target = player;
+                bug.isFighting = Math.abs(bug.x - player.x) < bug.w * 1.2;
+            }
+
+            let targetX = bug.target.x;
+            bug.dir = targetX > bug.x ? 1 : -1;
+            bug.x += bug.dir * 2.0;
+
+            bug.attackTimer += 0.016;
+            if (bug.attackTimer >= 4.0) {
+                bug.attackTimer = 0;
+                if (Math.abs(bug.x - bug.target.x) < bug.w * 0.9) {
+                    if (bug.target === player) {
+                        player.hp = Math.max(0, player.hp - 10);
+                        playSfx('hit');
+                        shakeTime = 8;
+                    } else if (bug.target.hp) {
+                        bug.target.hp -= 2;
+                        playSfx('hit');
+                    }
+                    bug.reboundVel = -bug.dir * 14;
+                }
+            }
+        }
+    });
+
+    if (bugs.length > 0 && bugs.every(b => b.hp <= 0)) {
+        setTimeout(() => { if (bugs.every(b => b.hp <= 0)) spawnBugsNearPlayer(); }, 2000);
+    }
+
+    for (let i = items.length - 1; i >= 0; i--) {
+        let it = items[i];
+        if (Math.abs(player.x - it.x) < player.w * 0.5) {
+            playSfx('pickup');
+            if (it.type === 'hologram') {
+                player.hp = Math.min(100, player.hp + 20);
+            } else {
+                player.power = Math.min(100, player.power + 10);
+            }
+            updateUI();
+            items.splice(i, 1);
+        }
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    if (shakeTime > 0) shakeTime--;
+}
+
+function updateUI() {
+    document.getElementById('hp-fill').style.width = player.hp + '%';
+    document.getElementById('hp-text').innerText = `MÁU: ${Math.floor(player.hp)}%`;
+
+    document.getElementById('power-fill').style.width = player.power + '%';
+    document.getElementById('power-text').innerText = `UY LỰC CẦU LỬA: ${Math.floor(player.power)}%`;
+}
+
+// 7. VẼ GIAO DIỆN & ANIMATION
+function draw() {
+    ctx.save();
+    if (shakeTime > 0) {
+        ctx.translate((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10);
+    }
+
+    ctx.clearRect(0, 0, screenW, screenH);
+
+    if (isRungLoaded) {
+        ctx.drawImage(imgRung, cameraX, 0, screenW, RUNG_H, 0, 0, screenW, screenH);
+    }
+
+    items.forEach(it => {
+        let screenX = it.x - cameraX;
+        ctx.save();
+        ctx.translate(screenX, it.y);
+        if (it.type === 'hologram') {
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath(); ctx.arc(0, -4, 8, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(0, -14, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#facc15'; ctx.fillRect(-2, -21, 4, 4);
+        } else {
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(-10, -12, 20, 16);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(-8, -10, 16, 12);
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(-2, -10, 4, 12);
+        }
+        ctx.restore();
+    });
+
+    bugs.forEach(bug => {
+        if (bug.hp <= 0) return;
+        let screenX = bug.x - cameraX;
+
+        ctx.save();
+        ctx.translate(screenX, bug.y + bug.h / 2);
+        if (bug.dir === -1) ctx.scale(-1, 1);
+
+        if (isAtlasLoaded) {
+            let row = bug.type;
+            let col = 0;
+            if (bug.isFighting) {
+                col = 4 + (Math.floor(Date.now() / 100) % 4);
+            } else {
+                col = Math.floor(Date.now() / 150) % 4;
+            }
+
+            ctx.drawImage(
+                imgAtlas,
+                col * 40, row * 40, 40, 40,
+                -bug.w / 2, -bug.h / 2, bug.w, bug.h
+            );
+        }
+        ctx.restore();
+
+        let barW = bug.w;
+        let barH = 5;
+        let barX = screenX - barW / 2;
+        let barY = bug.y - 12;
+
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(barX, barY, barW, barH);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(barX, barY, barW * (bug.hp / bug.maxHp), barH);
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+        ctx.strokeRect(barX, barY, barW, barH);
+    });
+
+    let pScreenX = player.x - cameraX;
+    ctx.save();
+
+    let breathScale = 1.0;
+    let isWatchingFight = bugs.filter(b => b.hp > 0).length >= 2 && player.state === 'idle';
+    if (isWatchingFight) {
+        breathScale = 1.0 + Math.sin(player.breathTime * 4) * 0.04;
+    }
+
+    ctx.translate(pScreenX, player.y + player.h / 2);
+    ctx.scale(breathScale, breathScale);
+    if (player.dir === -1) ctx.scale(-1, 1);
+
+    if (isAtlasLoaded) {
+        let row = 4;
+        let col = 0;
+        if (player.isAttacking) {
+            col = 4 + (Math.floor(Date.now() / 80) % 4);
+        } else if (player.state === 'walk') {
+            col = Math.floor(Date.now() / 120) % 4;
+        }
+
+        ctx.drawImage(
+            imgAtlas,
+            col * 40, row * 40, 40, 40,
+            -player.w / 2, -player.h / 2, player.w, player.h
+        );
+    }
+    ctx.restore();
+
+    fireballs.forEach(fb => {
+        let screenX = fb.x - cameraX;
+        ctx.save();
+        ctx.shadowColor = '#ff4500'; ctx.shadowBlur = 18;
+        ctx.fillStyle = '#ff4500';
+        ctx.beginPath(); ctx.arc(screenX, fb.y, fb.size, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fffb00';
+        ctx.beginPath(); ctx.arc(screenX, fb.y, fb.size * 0.5, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    });
+
+    particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x - cameraX, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    });
+
+    ctx.restore();
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+window.addEventListener('resize', resize);
+resize();
+updateUI();
+loop();
+</script>
+</body>
+</html>
