@@ -9,6 +9,7 @@
 @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&display=swap');
 
 * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: none; }
+
 body { margin: 0; overflow: hidden; background: #0b1329; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
 #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
@@ -26,7 +27,8 @@ body { margin: 0; overflow: hidden; background: #0b1329; font-family: -apple-sys
 
 #flash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 0, 0, 0); z-index: 99; pointer-events: none; transition: background 0.1s; }
 
-.controls-area { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: env(safe-area-inset-bottom, 20px); }
+/* NÂNG 2 NÚT LÊN 100px ĐỂ TỐI ƯU THAO TÁC NGÓN CÁI TRÊN MOBILE */
+.controls-area { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: 100px; }
 
 .joystick-base { width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(212, 175, 55, 0.5); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
 .joystick-stick { width: 50px; height: 50px; background: rgba(212, 175, 55, 0.8); border-radius: 50%; position: absolute; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
@@ -160,7 +162,7 @@ background: linear-gradient(135deg, #dc2626, #b91c1c);
 
 <script>
 let isGamePaused = false;
-let caughtDragonCount = 0; // Đếm số lượng rồng đã bắt (mục tiêu 12 con)
+let caughtDragonCount = 0;
 let targetPage = '';
 let isHapThuOnCooldown = false;
 let cooldownTimer = 0;
@@ -218,15 +220,15 @@ osc.start(); osc.stop(audioCtx.currentTime + 0.2);
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x060b19);
-scene.fog = new THREE.FogExp2(0x060b19, 0.0025);
+scene.fog = new THREE.FogExp2(0x060b19, 0.002);
 
-const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1500);
+const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 3000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 container.appendChild(renderer.domElement);
 
-const ambientLight = new THREE.AmbientLight(0xdff0ff, 0.6);
+const ambientLight = new THREE.AmbientLight(0xdff0ff, 0.7);
 scene.add(ambientLight);
 const sunLight = new THREE.DirectionalLight(0xff7733, 1.8);
 sunLight.position.set(150, 200, 100);
@@ -320,34 +322,97 @@ playerGroup.position.z - 120 + (Math.random() - 0.5) * 100
 respawnNewDragon();
 
 const obstacles = [];
-const mountainMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+const mountainMat = new THREE.MeshStandardMaterial({ color: 0x1b4d3e, roughness: 0.8 }); // Màu xanh sậm lá cây
+
+const textureLoader = new THREE.TextureLoader();
 
 function createEnvironment() {
-const ocean = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshStandardMaterial({ color: 0x091428, roughness: 0.2 }));
-ocean.rotation.x = -Math.PI / 2;
-scene.add(ocean);
+// 1. Hình hộp mỏng làm mặt nước dưới đáy núi
+const waterMesh = new THREE.Mesh(
+new THREE.BoxGeometry(2000, 2, 3000),
+new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.8 })
+);
+waterMesh.position.set(0, -1, -800);
+scene.add(waterMesh);
 
-for(let i = 0; i < 30; i++) {
-const height = 60 + Math.random() * 90;
-const radius = 30 + Math.random() * 45;
-const mountain = new THREE.Mesh(new THREE.ConeGeometry(radius, height, 6), mountainMat);
-let angle = (i / 30) * Math.PI * 2;
-let dist = 150 + Math.random() * 300;
-mountain.position.set(Math.cos(angle) * dist, height / 2, Math.sin(angle) * dist - 300);
+// 2. Dựng 4 bức tường xung quanh hộp thiên không & load 8 ô hàng trên của anhtp.png
+textureLoader.load('anhtp.png', (texture) => {
+texture.wrapS = THREE.RepeatWrapping;
+texture.wrapT = THREE.RepeatWrapping;
+texture.repeat.set(4, 0.5);
+texture.offset.set(0, 0.0); // 0.0 là hàng trên
+texture.needsUpdate = true;
+
+const wallMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide });
+const wallGeo = new THREE.BoxGeometry(2000, 1200, 3000);
+const skyBox = new THREE.Mesh(wallGeo, wallMat);
+skyBox.position.set(0, 400, -800);
+scene.add(skyBox);
+});
+
+// 3. Load 8 ô hàng dưới của anhtp.png để dán lên các tòa nhà
+textureLoader.load('anhtp.png', (buildingTex) => {
+buildingTex.wrapS = THREE.RepeatWrapping;
+buildingTex.wrapT = THREE.RepeatWrapping;
+const colWidth = 1 / 8;
+
+// Dựng các dãy núi xanh sậm lá cây và cắm 4-6 tòa nhà (chiều cao bằng 50% núi) hướng ra mặt tiền
+for(let i = 0; i < 35; i++) {
+let mHeight = 65 + Math.random() * 55;
+let mRadius = 30 + Math.random() * 35;
+const mountain = new THREE.Mesh(new THREE.ConeGeometry(mRadius, mHeight, 6), mountainMat);
+
+let angle = (i / 35) * Math.PI * 2;
+let dist = 120 + Math.random() * 180;
+let mX = Math.cos(angle) * dist;
+let mZ = -i * 80 - 50;
+
+mountain.position.set(mX, mHeight / 2, mZ);
 scene.add(mountain);
-obstacles.push({ type: 'mountain', mesh: mountain, radius: radius * 0.8, pos: mountain.position });
-}
+obstacles.push({ type: 'mountain', mesh: mountain, radius: mRadius * 0.8, pos: mountain.position });
 
-for(let z = -100; z > -1500; z -= 200) {
+// Cắm 4 đến 6 tòa nhà vào sườn núi (chiều cao = 50% núi), hướng các tòa nhà ra phía đường bay trung tâm
+let buildingCount = 4 + Math.floor(Math.random() * 3);
+for (let b = 0; b < buildingCount; b++) {
+let bIndex = Math.floor(Math.random() * 8);
+
+let matTex = buildingTex.clone();
+matTex.wrapS = THREE.RepeatWrapping;
+matTex.wrapT = THREE.RepeatWrapping;
+matTex.repeat.set(colWidth, 0.5);
+matTex.offset.set(bIndex * colWidth, 0.5); // 0.5 là hàng dưới
+matTex.needsUpdate = true;
+
+let bHeight = (mHeight * 0.5); // Chiều cao bằng 50% núi
+let bGeo = new THREE.BoxGeometry(14, bHeight, 14);
+let bMat = new THREE.MeshStandardMaterial({ map: matTex, roughness: 0.5 });
+let building = new THREE.Mesh(bGeo, bMat);
+
+// Hướng các tòa nhà về phía tâm (trục X=0) để người chơi luôn nhìn thấy mặt tiền
+let sideSign = mX > 0 ? -1 : 1;
+let bX = mX + sideSign * (mRadius * 0.45);
+let bZ = mZ + (b - 2) * 12;
+let bY = bHeight / 2;
+
+building.position.set(bX, bY, bZ);
+scene.add(building);
+obstacles.push({ type: 'building', pos: building.position, radius: 10, size: bHeight });
+}
+}
+});
+
+// 4. Khôi phục các cột đá / cổng đá bắc ngang núi để tạo cảm giác luồn lách cực bốc như code chuẩn
+for(let z = -100; z > -2500; z -= 180) {
 const archGroup = new THREE.Group();
-const pillarGeo = new THREE.CylinderGeometry(8, 12, 80, 8);
-const p1 = new THREE.Mesh(pillarGeo, mountainMat); p1.position.set(-35, 40, 0);
-const p2 = new THREE.Mesh(pillarGeo, mountainMat); p2.position.set(35, 40, 0);
-const cross = new THREE.Mesh(new THREE.BoxGeometry(90, 14, 16), mountainMat); cross.position.set(0, 75, 0);
+const pillarGeo = new THREE.CylinderGeometry(6, 10, 70, 8);
+const p1 = new THREE.Mesh(pillarGeo, mountainMat); p1.position.set(-30, 35, 0);
+const p2 = new THREE.Mesh(pillarGeo, mountainMat); p2.position.set(30, 35, 0);
+const cross = new THREE.Mesh(new THREE.BoxGeometry(80, 12, 14), mountainMat); cross.position.set(0, 68, 0);
 archGroup.add(p1); archGroup.add(p2); archGroup.add(cross);
-archGroup.position.set((Math.random() - 0.5) * 80, 0, z);
+
+archGroup.position.set((Math.random() - 0.5) * 60, 0, z);
 scene.add(archGroup);
-obstacles.push({ type: 'arch', pos: archGroup.position, size: 40 });
+obstacles.push({ type: 'arch', pos: archGroup.position, size: 35 });
 }
 }
 createEnvironment();
@@ -367,8 +432,7 @@ if (isGamePaused || isHapThuOnCooldown) return;
 initAudio();
 playSound('absorb');
 
-// Nút Hấp Thu kéo rồng lại gần chiến lược
-dragonGroup.position.z = THREE.MathUtils.lerp(dragonGroup.position.z, playerGroup.position.z - 20, 0.5);
+dragonGroup.position.z = THREE.MathUtils.lerp(dragonGroup.position.z, playerGroup.position.z - 10, 0.5);
 dragonGroup.position.x = THREE.MathUtils.lerp(dragonGroup.position.x, playerGroup.position.x, 0.4);
 dragonGroup.position.y = THREE.MathUtils.lerp(dragonGroup.position.y, playerGroup.position.y, 0.4);
 
@@ -423,7 +487,6 @@ document.getElementById('dragon-modal').style.display = 'none';
 if (targetPage) {
 window.location.href = targetPage;
 } else {
-// Reset nhân vật về vạch xuất phát, sinh rồng mới
 playerGroup.position.set(0, 25, 0);
 respawnNewDragon();
 isGamePaused = false;
@@ -499,7 +562,6 @@ let progressPercent = Math.max(0, Math.min(100, (1 - distanceToDragonZ / 200) * 
 const barEl = document.getElementById('distance-bar');
 if (barEl) barEl.style.width = progressPercent + '%';
 
-// SIẾT CHẶT TỌA ĐỘ: Bắt buộc cả 3 trục X, Y, Z phải thật gần nhau mới tính là bắt được rồng
 let diffX = Math.abs(playerGroup.position.x - dragonGroup.position.x);
 let diffY = Math.abs(playerGroup.position.y - dragonGroup.position.y);
 let diffZ = Math.abs(playerGroup.position.z - dragonGroup.position.z);
@@ -517,7 +579,6 @@ const modalTitle = document.getElementById('modal-title');
 const modalDesc = document.getElementById('modal-desc');
 const modalBtn = document.getElementById('modal-btn');
 
-// Kiểm tra đủ 12 con chưa
 if (caughtDragonCount >= 12) {
 modalTitle.innerText = "🐉 Thu Phục Hỏa Long Cốt Linh!";
 modalDesc.innerHTML = "Đạo hạnh đại thành! Ngài đã săn đủ 12 yêu thú, thu thập được <strong>[Cốt Linh]</strong> thượng cổ quý hiếm!";

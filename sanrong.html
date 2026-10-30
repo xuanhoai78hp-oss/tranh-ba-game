@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Săn Rồng Phi Kiếm - Hấp Tinh Đại Pháp</title>
+<title>Săn Ngọc Rồng Ván Trượt - Hấp Tinh Đại Pháp</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&display=swap');
@@ -25,9 +25,8 @@ body { margin: 0; overflow: hidden; background: #0b1329; font-family: -apple-sys
 .progress-container { width: 200px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 6px; }
 .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #d4af37, #f43f5e); transition: width 0.2s; }
 
-#flash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 0, 0, 0); z-index: 99; pointer-events: none; transition: background 0.1s; }
+#flash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 0, 0, 0); z-index: 99; pointer-events: none; transition: background 0.15s; }
 
-/* NÂNG 2 NÚT LÊN 100px ĐỂ TỐI ƯU THAO TÁC NGÓN CÁI TRÊN MOBILE */
 .controls-area { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: 100px; }
 
 .joystick-base { width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(212, 175, 55, 0.5); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
@@ -133,23 +132,25 @@ background: linear-gradient(135deg, #dc2626, #b91c1c);
 
 <div id="dragon-modal">
 <div class="modal-content">
-<h2 id="modal-title">🌟 Kỳ Ngộ Tu Tiên</h2>
-<p id="modal-desc">Thu phục yêu thú thành công!</p>
+<h2 id="modal-title">🌟 Kỳ Ngộ Viên Ngọc</h2>
+<p id="modal-desc">Thu thập viên ngọc thành công!</p>
 <button class="btn-luyen interactive" id="modal-btn" onclick="closeOrNext()">Tiếp tục hành trình</button>
 </div>
 </div>
+
+<audio id="bg-music" loop></audio>
 
 <div id="flash-screen"></div>
 <div id="canvas-container"></div>
 <div class="hud-overlay">
 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
 <div class="info-panel">
-<h1>🗡️ Hấp Tinh Đại Pháp</h1>
-<p>Săn đủ 12 con rồng để luyện Cốt Linh!</p>
+<h1>🛹 Ván Ngọc Tím Pháp Bảo</h1>
+<p><span id="speed-display" style="color: #facc15; font-weight: bold;">Tốc độ: 0 km/h</span> | Đạt >100 km/h để bắt!</p>
 <div class="progress-container"><div id="distance-bar" class="progress-bar"></div></div>
 </div>
 <div class="status-badge">
-<span id="hunt-count-text">Đã bắt: 0/12 con</span>
+<span id="hunt-count-text">Đã thu: 0/7 viên</span>
 </div>
 </div>
 <div class="controls-area">
@@ -162,29 +163,30 @@ background: linear-gradient(135deg, #dc2626, #b91c1c);
 
 <script>
 let isGamePaused = false;
-let caughtDragonCount = 0;
+let collectedGemCount = 0; 
 let targetPage = '';
-let isHapThuOnCooldown = false;
-let cooldownTimer = 0;
-const maxCooldown = 8.0;
+
+let currentSpeedKmh = 0;
+let runTimeTimer = 0;
+let speedStage = 0; 
+let fruitTimer = 0;
+
+let redFruitActive = false;
+
+const bgMusic = document.getElementById('bg-music');
+function playRandomMusic() {
+let randomTrack = Math.floor(Math.random() * 9) + 1;
+bgMusic.src = `${randomTrack}.mp3`;
+bgMusic.volume = 0.5;
+bgMusic.play().catch(e => console.log("Audio autoplay waiting for interaction"));
+}
 
 let audioCtx = null;
 function initAudio() {
-if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+if (!audioCtx) {
+audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+playRandomMusic();
 }
-
-let windOsc = null, windGain = null;
-function startWindSound() {
-if (!audioCtx) return;
-if (windOsc) return;
-windOsc = audioCtx.createOscillator();
-windGain = audioCtx.createGain();
-windOsc.type = 'sine';
-windOsc.frequency.setValueAtTime(80, audioCtx.currentTime);
-windGain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-windOsc.connect(windGain);
-windGain.connect(audioCtx.destination);
-windOsc.start();
 }
 
 function playSound(type) {
@@ -202,18 +204,18 @@ gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
 osc.start(); osc.stop(audioCtx.currentTime + 0.3);
 } else if (type === 'catch') {
 osc.type = 'sine';
-osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.5);
+osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.5);
 gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
 gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
 osc.start(); osc.stop(audioCtx.currentTime + 0.5);
 } else if (type === 'absorb') {
 osc.type = 'triangle';
-osc.frequency.setValueAtTime(200, audioCtx.currentTime);
-osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.2);
-gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.3);
+gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+osc.start(); osc.stop(audioCtx.currentTime + 0.3);
 }
 }
 
@@ -234,36 +236,58 @@ const sunLight = new THREE.DirectionalLight(0xff7733, 1.8);
 sunLight.position.set(150, 200, 100);
 scene.add(sunLight);
 
-// Nhân vật Hiệp Nữ
 const playerGroup = new THREE.Group();
 scene.add(playerGroup);
-playerGroup.position.set(0, 25, 0);
 
-const swordGroup = new THREE.Group();
-const swordMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x009999, metalness: 0.9, roughness: 0.1 });
-const blade = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.05, 4), swordMat);
-blade.position.z = -1.5;
-swordGroup.add(blade);
-playerGroup.add(swordGroup);
+const hoverOffset = 2.4; 
 
-const womanGroup = new THREE.Group();
-womanGroup.position.y = 0.5;
-const dress = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 16), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
-dress.position.y = 0.6;
-womanGroup.add(dress);
+// THIẾT KẾ VÁN TRƯỢT: NGỌC TÍM - THU NHỎ 50% - Ô-VAL BO TRÒN 2 ĐẦU
+const boardGroup = new THREE.Group();
+const boardMat = new THREE.MeshStandardMaterial({ 
+    color: 0x8b5cf6, 
+    emissive: 0x581c87, 
+    metalness: 0.85, 
+    roughness: 0.15 
+});
 
-const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
-head.position.y = 1.35;
-womanGroup.add(head);
+// Thân ván ô-val thu nhỏ 50% (rộng 0.6, dài 1.6)
+const boardBody = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.08, 1.6), boardMat);
+boardBody.position.y = 0.2;
+boardGroup.add(boardBody);
 
-const hatMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 });
-const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.04, 24), hatMat);
-hatBrim.position.y = 1.55;
-womanGroup.add(hatBrim);
-const hatTop = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.3, 16), hatMat);
-hatTop.position.y = 1.7;
-womanGroup.add(hatTop);
-playerGroup.add(womanGroup);
+// Đầu và đuôi ván thêm nửa hình tròn (bán nguyệt) để tạo dáng ô-val cực mượt
+const capGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.08, 16);
+const frontCap = new THREE.Mesh(capGeo, boardMat);
+frontCap.rotation.z = Math.PI / 2;
+frontCap.position.set(0, 0.2, 0.8);
+boardGroup.add(frontCap);
+
+const backCap = new THREE.Mesh(capGeo, boardMat);
+backCap.rotation.z = Math.PI / 2;
+backCap.position.set(0, 0.2, -0.8);
+boardGroup.add(backCap);
+
+playerGroup.add(boardGroup);
+
+const skaterGroup = new THREE.Group();
+skaterGroup.position.y = 0.25;
+const bodyMesh = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 16), new THREE.MeshStandardMaterial({ color: 0x38bdf8 }));
+bodyMesh.position.y = 0.6;
+skaterGroup.add(bodyMesh);
+
+const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
+headMesh.position.y = 1.35;
+skaterGroup.add(headMesh);
+
+const hatMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.5 });
+const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.03, 24), hatMat);
+hatBrim.position.y = 1.52;
+skaterGroup.add(hatBrim);
+const hatTop = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.25, 16), hatMat);
+hatTop.position.y = 1.68;
+skaterGroup.add(hatTop);
+
+playerGroup.add(skaterGroup);
 
 const particlesGeo = new THREE.BufferGeometry();
 const particleCount = 150;
@@ -274,153 +298,169 @@ posArray[i+1] = (Math.random() - 0.5) * 0.4;
 posArray[i+2] = Math.random() * 6;
 }
 particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-const trailParticles = new THREE.Points(particlesGeo, new THREE.PointsMaterial({ size: 0.1, color: 0x00ffff, transparent: true, opacity: 0.7 }));
+const trailParticles = new THREE.Points(particlesGeo, new THREE.PointsMaterial({ size: 0.1, color: 0xa855f7, transparent: true, opacity: 0.8 }));
 playerGroup.add(trailParticles);
 
-// Tạo Rồng AI
+// Linh Quả Đỏ
+const redFruitGroup = new THREE.Group();
+const fruitMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x991b1b, roughness: 0.1, metalness: 0.8 });
+const fruitMesh = new THREE.Mesh(new THREE.SphereGeometry(0.7, 16, 16), fruitMat);
+redFruitGroup.add(fruitMesh);
+scene.add(redFruitGroup);
+redFruitGroup.visible = false;
+
+function spawnRedFruit() {
+    let tZ = playerGroup.position.z - 80;
+    let tRoadY = getRoadHeightAtZ(tZ);
+    redFruitGroup.position.set(getRoadCurveAtZ(tZ), tRoadY + 3.5, tZ);
+    redFruitGroup.visible = true;
+    redFruitActive = true;
+}
+
+// Viên Ngọc Rồng
 const dragonGroup = new THREE.Group();
-const dragonMat = new THREE.MeshStandardMaterial({ color: 0xff3366, emissive: 0x990033, roughness: 0.3 });
-const dragonBody = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 3.2, 16), dragonMat);
-dragonBody.rotation.x = Math.PI / 2;
+const gemMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xca8a04, roughness: 0.1, metalness: 0.9 });
+const dragonBody = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 24), gemMat);
 dragonGroup.add(dragonBody);
 
-const wingGeo = new THREE.BoxGeometry(1.5, 0.05, 0.8);
-const leftWing = new THREE.Mesh(wingGeo, dragonMat); leftWing.position.set(0.8, 0, 0);
-const rightWing = new THREE.Mesh(wingGeo, dragonMat); rightWing.position.set(-0.8, 0, 0);
-dragonGroup.add(leftWing); dragonGroup.add(rightWing);
+const subGem = new THREE.Mesh(new THREE.DodecahedronGeometry(0.3), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff }));
+subGem.position.set(1.2, 0, 0);
+dragonGroup.add(subGem);
 scene.add(dragonGroup);
 
-const dragonColors = [
-{ body: 0xff3366, emissive: 0x990033 },
-{ body: 0xf59e0b, emissive: 0xb45309 },
-{ body: 0x10b981, emissive: 0x047857 },
-{ body: 0x8b5cf6, emissive: 0x5b21b6 }
-];
-
 function respawnNewDragon() {
-let randomColor = dragonColors[Math.floor(Math.random() * dragonColors.length)];
-dragonMat.color.setHex(randomColor.body);
-dragonMat.emissive.setHex(randomColor.emissive);
-
-let sideX = (Math.random() > 0.5 ? 1 : -1) * (60 + Math.random() * 60);
+let targetZ = playerGroup.position.z - 300 - Math.random() * 100;
+let targetRoadY = getRoadHeightAtZ(targetZ);
 dragonGroup.position.set(
-sideX,
-20 + Math.random() * 25,
-playerGroup.position.z - 140 - Math.random() * 60
+getRoadCurveAtZ(targetZ) + (Math.random() - 0.5) * 30,
+targetRoadY + 3.5,
+targetZ
 );
 newDragonTarget();
 }
 
 let dragonTarget = new THREE.Vector3();
 function newDragonTarget() {
+let tZ = playerGroup.position.z - 250 + (Math.random() - 0.5) * 100;
+let tRoadY = getRoadHeightAtZ(tZ);
 dragonTarget.set(
-(Math.random() - 0.5) * 150,
-15 + Math.random() * 35,
-playerGroup.position.z - 120 + (Math.random() - 0.5) * 100
+getRoadCurveAtZ(tZ) + (Math.random() - 0.5) * 35,
+tRoadY + 3.5,
+tZ
 );
 }
 respawnNewDragon();
 
 const obstacles = [];
-const mountainMat = new THREE.MeshStandardMaterial({ color: 0x1b4d3e, roughness: 0.8 }); // Màu xanh sậm lá cây
-
+const mountainMat = new THREE.MeshStandardMaterial({ color: 0x1b4d3e, roughness: 0.8 });
 const textureLoader = new THREE.TextureLoader();
 
+function getRoadHeightAtZ(z) {
+    let progress = Math.abs(z) / 2400;
+    return THREE.MathUtils.lerp(65, 5, progress % 1);
+}
+
+function getRoadCurveAtZ(z) {
+    return Math.sin(z * 0.003) * 20;
+}
+
 function createEnvironment() {
-// 1. Hình hộp mỏng làm mặt nước dưới đáy núi
-const waterMesh = new THREE.Mesh(
-new THREE.BoxGeometry(2000, 2, 3000),
-new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.8 })
-);
-waterMesh.position.set(0, -1, -800);
-scene.add(waterMesh);
+  const waterMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(2000, 2, 3000),
+    new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.8 })
+  );
+  waterMesh.position.set(0, -1, -800);
+  scene.add(waterMesh);
 
-// 2. Dựng 4 bức tường xung quanh hộp thiên không & load 8 ô hàng trên của anhtp.png
-textureLoader.load('anhtp.png', (texture) => {
-texture.wrapS = THREE.RepeatWrapping;
-texture.wrapT = THREE.RepeatWrapping;
-texture.repeat.set(4, 0.5);
-texture.offset.set(0, 0.0); // 0.0 là hàng trên
-texture.needsUpdate = true;
+  textureLoader.load('anhtp.png', (texture) => {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(4, 0.5); 
+    texture.offset.set(0, 0.0);
+    texture.needsUpdate = true;
 
-const wallMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide });
-const wallGeo = new THREE.BoxGeometry(2000, 1200, 3000);
-const skyBox = new THREE.Mesh(wallGeo, wallMat);
-skyBox.position.set(0, 400, -800);
-scene.add(skyBox);
-});
+    const wallMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide });
+    const wallGeo = new THREE.BoxGeometry(2000, 1200, 3000);
+    const skyBox = new THREE.Mesh(wallGeo, wallMat);
+    skyBox.position.set(0, 400, -800);
+    scene.add(skyBox);
+  });
 
-// 3. Load 8 ô hàng dưới của anhtp.png để dán lên các tòa nhà
-textureLoader.load('anhtp.png', (buildingTex) => {
-buildingTex.wrapS = THREE.RepeatWrapping;
-buildingTex.wrapT = THREE.RepeatWrapping;
-const colWidth = 1 / 8;
+  textureLoader.load('anhtp.png', (buildingTex) => {
+    buildingTex.wrapS = THREE.RepeatWrapping;
+    buildingTex.wrapT = THREE.RepeatWrapping;
+    const colWidth = 1 / 8;
 
-// Dựng các dãy núi xanh sậm lá cây và cắm 4-6 tòa nhà (chiều cao bằng 50% núi) hướng ra mặt tiền
-for(let i = 0; i < 35; i++) {
-let mHeight = 65 + Math.random() * 55;
-let mRadius = 30 + Math.random() * 35;
-const mountain = new THREE.Mesh(new THREE.ConeGeometry(mRadius, mHeight, 6), mountainMat);
+    for(let i = 0; i < 35; i++) {
+      let mHeight = 65 + Math.random() * 55;
+      let mRadius = 30 + Math.random() * 25;
+      const mountain = new THREE.Mesh(new THREE.ConeGeometry(mRadius, mHeight, 6), mountainMat);
+      
+      let sideSign = (i % 2 === 0) ? 1 : -1;
+      let mX = sideSign * (55 + Math.random() * 60);
+      let mZ = -i * 80 - 50;
+      
+      mountain.position.set(mX, mHeight / 2, mZ);
+      scene.add(mountain);
+      obstacles.push({ type: 'mountain', mesh: mountain, radius: mRadius * 0.8, pos: mountain.position });
 
-let angle = (i / 35) * Math.PI * 2;
-let dist = 120 + Math.random() * 180;
-let mX = Math.cos(angle) * dist;
-let mZ = -i * 80 - 50;
+      let buildingCount = 2 + Math.floor(Math.random() * 2); 
+      for (let b = 0; b < buildingCount; b++) {
+        let bIndex = Math.floor(Math.random() * 8); 
+        
+        let matTex = buildingTex.clone();
+        matTex.wrapS = THREE.RepeatWrapping;
+        matTex.wrapT = THREE.RepeatWrapping;
+        matTex.repeat.set(colWidth, 0.5);
+        matTex.offset.set(bIndex * colWidth, 0.5);
+        matTex.needsUpdate = true;
 
-mountain.position.set(mX, mHeight / 2, mZ);
-scene.add(mountain);
-obstacles.push({ type: 'mountain', mesh: mountain, radius: mRadius * 0.8, pos: mountain.position });
+        let bHeight = (mHeight * 0.4);
+        let bGeo = new THREE.BoxGeometry(12, bHeight, 12);
+        let bMat = new THREE.MeshStandardMaterial({ map: matTex, roughness: 0.5 });
+        let building = new THREE.Mesh(bGeo, bMat);
 
-// Cắm 4 đến 6 tòa nhà vào sườn núi (chiều cao = 50% núi), hướng các tòa nhà ra phía đường bay trung tâm
-let buildingCount = 4 + Math.floor(Math.random() * 3);
-for (let b = 0; b < buildingCount; b++) {
-let bIndex = Math.floor(Math.random() * 8);
+        let bX = mX + (sideSign > 0 ? -15 : 15);
+        let bZ = mZ + (b - 1) * 15;
+        let bY = bHeight / 2;
 
-let matTex = buildingTex.clone();
-matTex.wrapS = THREE.RepeatWrapping;
-matTex.wrapT = THREE.RepeatWrapping;
-matTex.repeat.set(colWidth, 0.5);
-matTex.offset.set(bIndex * colWidth, 0.5); // 0.5 là hàng dưới
-matTex.needsUpdate = true;
+        building.position.set(bX, bY, bZ);
+        scene.add(building);
+        obstacles.push({ type: 'building', pos: building.position, radius: 8, size: bHeight });
+      }
+    }
+  });
 
-let bHeight = (mHeight * 0.5); // Chiều cao bằng 50% núi
-let bGeo = new THREE.BoxGeometry(14, bHeight, 14);
-let bMat = new THREE.MeshStandardMaterial({ map: matTex, roughness: 0.5 });
-let building = new THREE.Mesh(bGeo, bMat);
+  const roadSegments = 100;
+  for(let j = 0; j < roadSegments; j++) {
+    let zCoord = -20 - (j * 25);
+    let roadY = getRoadHeightAtZ(zCoord);
+    let roadX = getRoadCurveAtZ(zCoord);
 
-// Hướng các tòa nhà về phía tâm (trục X=0) để người chơi luôn nhìn thấy mặt tiền
-let sideSign = mX > 0 ? -1 : 1;
-let bX = mX + sideSign * (mRadius * 0.45);
-let bZ = mZ + (b - 2) * 12;
-let bY = bHeight / 2;
+    const roadGroup = new THREE.Group();
+    const roadSlab = new THREE.Mesh(new THREE.BoxGeometry(45, 3, 26), mountainMat);
+    roadGroup.add(roadSlab);
 
-building.position.set(bX, bY, bZ);
-scene.add(building);
-obstacles.push({ type: 'building', pos: building.position, radius: 10, size: bHeight });
-}
-}
-});
+    const pillarGeo = new THREE.CylinderGeometry(4, 6, roadY + 10, 8);
+    const p1 = new THREE.Mesh(pillarGeo, mountainMat); p1.position.set(-18, -roadY/2, 0);
+    const p2 = new THREE.Mesh(pillarGeo, mountainMat); p2.position.set(18, -roadY/2, 0);
+    roadGroup.add(p1); roadGroup.add(p2);
 
-// 4. Khôi phục các cột đá / cổng đá bắc ngang núi để tạo cảm giác luồn lách cực bốc như code chuẩn
-for(let z = -100; z > -2500; z -= 180) {
-const archGroup = new THREE.Group();
-const pillarGeo = new THREE.CylinderGeometry(6, 10, 70, 8);
-const p1 = new THREE.Mesh(pillarGeo, mountainMat); p1.position.set(-30, 35, 0);
-const p2 = new THREE.Mesh(pillarGeo, mountainMat); p2.position.set(30, 35, 0);
-const cross = new THREE.Mesh(new THREE.BoxGeometry(80, 12, 14), mountainMat); cross.position.set(0, 68, 0);
-archGroup.add(p1); archGroup.add(p2); archGroup.add(cross);
-
-archGroup.position.set((Math.random() - 0.5) * 60, 0, z);
-scene.add(archGroup);
-obstacles.push({ type: 'arch', pos: archGroup.position, size: 35 });
-}
+    roadGroup.position.set(roadX, roadY, zCoord);
+    scene.add(roadGroup);
+  }
 }
 createEnvironment();
+
+let initialZ = 0;
+let initialRoadY = getRoadHeightAtZ(initialZ);
+let initialRoadX = getRoadCurveAtZ(initialZ);
+playerGroup.position.set(initialRoadX, initialRoadY + hoverOffset, initialZ);
 
 const keys = {};
 window.addEventListener('keydown', e => {
 if (isGamePaused) return;
-initAudio(); startWindSound();
+initAudio();
 keys[e.code] = true;
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
@@ -428,19 +468,35 @@ window.addEventListener('keyup', e => keys[e.code] = false);
 const btnHapThu = document.getElementById('btnHapThu');
 
 function triggerHapThu() {
-if (isGamePaused || isHapThuOnCooldown) return;
+if (isGamePaused || !redFruitActive) return;
 initAudio();
 playSound('absorb');
 
-dragonGroup.position.z = THREE.MathUtils.lerp(dragonGroup.position.z, playerGroup.position.z - 10, 0.5);
-dragonGroup.position.x = THREE.MathUtils.lerp(dragonGroup.position.x, playerGroup.position.x, 0.4);
-dragonGroup.position.y = THREE.MathUtils.lerp(dragonGroup.position.y, playerGroup.position.y, 0.4);
+let startPos = redFruitGroup.position.clone();
+let startTime = performance.now();
+function animateFruitFly() {
+    let elapsed = (performance.now() - startTime) / 400;
+    if (elapsed < 1) {
+        redFruitGroup.position.lerpVectors(startPos, playerGroup.position, elapsed);
+        requestAnimationFrame(animateFruitFly);
+    } else {
+        redFruitGroup.visible = false;
+        redFruitActive = false;
+    }
+}
+animateFruitFly();
 
-isHapThuOnCooldown = true;
-cooldownTimer = maxCooldown;
-btnHapThu.classList.add('cooldown');
-btnHapThu.style.transform = 'scale(0.6)';
-btnHapThu.style.opacity = '0.3';
+const flash = document.getElementById('flash-screen');
+flash.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.6), rgba(56, 189, 248, 0.6), rgba(250, 204, 21, 0.6))';
+setTimeout(() => flash.style.background = 'rgba(255,0,0,0)', 300);
+
+if (speedStage === 1) {
+    speedStage = 2; 
+    fruitTimer = runTimeTimer;
+} else if (speedStage === 3) {
+    speedStage = 4; 
+    fruitTimer = runTimeTimer;
+}
 }
 
 btnHapThu.addEventListener('touchstart', (e) => { e.preventDefault(); triggerHapThu(); });
@@ -453,7 +509,7 @@ let isDragging = false, centerPos = { x: 0, y: 0 };
 
 joystick.addEventListener('touchstart', e => {
 if (isGamePaused) return;
-initAudio(); startWindSound(); isDragging = true;
+initAudio(); isDragging = true;
 const rect = joystick.getBoundingClientRect();
 centerPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 });
@@ -470,7 +526,6 @@ window.addEventListener('touchend', () => {
 isDragging = false; stick.style.transform = `translate(0px, 0px)`; joystickMove = { x: 0, y: 0 };
 });
 
-let playerSpeed = 0.5;
 let gameTime = 0;
 let rollAngle = 0;
 let hitCooldown = 0;
@@ -480,6 +535,16 @@ playSound('hit');
 const flash = document.getElementById('flash-screen');
 flash.style.background = 'rgba(255, 0, 0, 0.4)';
 setTimeout(() => flash.style.background = 'rgba(255,0,0,0)', 150);
+
+if (currentSpeedKmh > 80) {
+    currentSpeedKmh = 80;
+    speedStage = 2;
+} else if (currentSpeedKmh > 50) {
+    currentSpeedKmh = 50;
+    speedStage = 0;
+} else {
+    currentSpeedKmh = Math.max(0, currentSpeedKmh - 10);
+}
 }
 
 function closeOrNext() {
@@ -487,8 +552,16 @@ document.getElementById('dragon-modal').style.display = 'none';
 if (targetPage) {
 window.location.href = targetPage;
 } else {
-playerGroup.position.set(0, 25, 0);
+let curZ = playerGroup.position.z;
+let rY = getRoadHeightAtZ(curZ);
+let rX = getRoadCurveAtZ(curZ);
+playerGroup.position.set(rX, rY + hoverOffset, curZ);
 respawnNewDragon();
+runTimeTimer = 0;
+currentSpeedKmh = 0;
+speedStage = 0;
+redFruitActive = false;
+redFruitGroup.visible = false;
 isGamePaused = false;
 }
 }
@@ -496,31 +569,49 @@ isGamePaused = false;
 function animate() {
 requestAnimationFrame(animate);
 
-if (isHapThuOnCooldown) {
-cooldownTimer -= 0.016;
-let progress = 1 - (cooldownTimer / maxCooldown);
-let currentScale = 0.6 + (progress * 0.4);
-let currentOpacity = 0.3 + (progress * 0.7);
-btnHapThu.style.transform = `scale(${currentScale})`;
-btnHapThu.style.opacity = currentOpacity;
-
-if (cooldownTimer <= 0) {
-isHapThuOnCooldown = false;
-btnHapThu.classList.remove('cooldown');
-btnHapThu.style.transform = 'scale(1)';
-btnHapThu.style.opacity = '1';
-}
-}
-
 if (isGamePaused) return;
 
 gameTime += 0.016;
+runTimeTimer += 0.016;
+
+if (speedStage === 0) {
+    currentSpeedKmh = Math.min(50, (runTimeTimer / 5.0) * 50);
+    if (currentSpeedKmh >= 50 && !redFruitActive) {
+        speedStage = 1;
+        spawnRedFruit();
+    }
+} else if (speedStage === 2) {
+    let stage2Time = (runTimeTimer - fruitTimer);
+    currentSpeedKmh = Math.min(80, 50 + (stage2Time / 6.0) * 30);
+    if (currentSpeedKmh >= 80 && !redFruitActive) {
+        speedStage = 3;
+        spawnRedFruit();
+    }
+} else if (speedStage === 4) {
+    let stage3Time = (runTimeTimer - fruitTimer);
+    currentSpeedKmh = Math.min(120, 80 + (stage3Time / 6.0) * 40);
+}
+
+document.getElementById('speed-display').innerText = `Tốc độ: ${Math.floor(currentSpeedKmh)} km/h`;
+
+let playerSpeed = (currentSpeedKmh / 60) * 1.4;
 playerGroup.position.z -= playerSpeed;
 
-const oldDragonPos = dragonGroup.position.clone();
-dragonGroup.position.lerp(dragonTarget, 0.015);
+if (playerGroup.position.z < -2400) {
+playerGroup.position.z = 0;
+runTimeTimer = 0;
+currentSpeedKmh = 0;
+speedStage = 0;
+}
 
-if (dragonGroup.position.distanceTo(dragonTarget) < 12) {
+let targetRoadY = getRoadHeightAtZ(playerGroup.position.z);
+let targetRoadX = getRoadCurveAtZ(playerGroup.position.z);
+
+const oldDragonPos = dragonGroup.position.clone();
+let gemLerpSpeed = 0.035; 
+dragonGroup.position.lerp(dragonTarget, gemLerpSpeed);
+
+if (dragonGroup.position.distanceTo(dragonTarget) < 15) {
 newDragonTarget();
 }
 
@@ -528,27 +619,35 @@ const moveDir = dragonGroup.position.clone().sub(oldDragonPos);
 if (moveDir.length() > 0.001) {
 dragonGroup.lookAt(dragonGroup.position.clone().add(moveDir));
 }
+dragonGroup.rotation.y += 0.08;
 
-dragonGroup.rotation.y += Math.sin(gameTime * 3) * 0.02;
-leftWing.rotation.z = Math.sin(gameTime * 12) * 0.6;
-rightWing.rotation.z = -Math.sin(gameTime * 12) * 0.6;
-
-let moveX = 0, moveY = 0;
+let moveX = 0;
 if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
 if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
-if (keys['KeyW'] || keys['ArrowUp']) moveY += 1;
-if (keys['KeyS'] || keys['ArrowDown']) moveY -= 1;
-moveX += joystickMove.x; moveY += joystickMove.y;
+moveX += joystickMove.x;
 
-playerGroup.position.x += moveX * 0.5;
-playerGroup.position.y = Math.max(3, playerGroup.position.y + moveY * 0.5);
-rollAngle = moveX * -0.35;
+let desiredX = targetRoadX + (playerGroup.position.x - targetRoadX) + moveX * 0.6;
+
+let roadHalfWidth = 21.5;
+if (Math.abs(desiredX - targetRoadX) > roadHalfWidth) {
+triggerHitEffect();
+desiredX = targetRoadX + Math.sign(desiredX - targetRoadX) * roadHalfWidth;
+playerGroup.position.z += 10;
+}
+
+playerGroup.position.x = desiredX;
+playerGroup.position.y = targetRoadY + hoverOffset;
+
+dragonTarget.y = getRoadHeightAtZ(dragonTarget.z) + 3.5;
+dragonGroup.position.y = THREE.MathUtils.lerp(dragonGroup.position.y, getRoadHeightAtZ(dragonGroup.position.z) + 3.5, 0.1);
+
+rollAngle = moveX * -0.25;
 playerGroup.rotation.z = THREE.MathUtils.lerp(playerGroup.rotation.z, rollAngle, 0.1);
 
 if (hitCooldown > 0) hitCooldown--;
 if (hitCooldown === 0) {
 for (let obs of obstacles) {
-if (playerGroup.position.distanceTo(obs.pos) < (obs.size || obs.radius || 35)) {
+if (playerGroup.position.distanceTo(obs.pos) < (obs.size || obs.radius || 30)) {
 triggerHitEffect();
 playerGroup.position.z += 12;
 hitCooldown = 60;
@@ -558,49 +657,49 @@ break;
 }
 
 let distanceToDragonZ = Math.abs(playerGroup.position.z - dragonGroup.position.z);
-let progressPercent = Math.max(0, Math.min(100, (1 - distanceToDragonZ / 200) * 100));
+let progressPercent = Math.max(0, Math.min(100, (1 - distanceToDragonZ / 300) * 100));
 const barEl = document.getElementById('distance-bar');
 if (barEl) barEl.style.width = progressPercent + '%';
 
 let diffX = Math.abs(playerGroup.position.x - dragonGroup.position.x);
-let diffY = Math.abs(playerGroup.position.y - dragonGroup.position.y);
-let diffZ = Math.abs(playerGroup.position.z - dragonGroup.position.z);
+let catchCondition = (currentSpeedKmh > 100) && (distanceToDragonZ < 40);
 
-if (diffX < 15 && diffY < 15 && diffZ < 15) {
-playSound('catch');
-if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-isGamePaused = true;
-if (windGain) windGain.gain.setValueAtTime(0, audioCtx.currentTime);
+if (diffX < 20 && catchCondition) {
+    playSound('catch');
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    isGamePaused = true;
 
-caughtDragonCount++;
-document.getElementById('hunt-count-text').innerText = `Đã bắt: ${caughtDragonCount}/12 con`;
+    playRandomMusic();
 
-const modalTitle = document.getElementById('modal-title');
-const modalDesc = document.getElementById('modal-desc');
-const modalBtn = document.getElementById('modal-btn');
+    collectedGemCount++;
+    document.getElementById('hunt-count-text').innerText = `Đã thu: ${collectedGemCount}/7 viên`;
 
-if (caughtDragonCount >= 12) {
-modalTitle.innerText = "🐉 Thu Phục Hỏa Long Cốt Linh!";
-modalDesc.innerHTML = "Đạo hạnh đại thành! Ngài đã săn đủ 12 yêu thú, thu thập được <strong>[Cốt Linh]</strong> thượng cổ quý hiếm!";
-modalBtn.innerText = "✨ Luyện kiếm ngay";
-targetPage = 'luyenkiem.html';
-} else {
-modalTitle.innerText = "🌿 Kỳ Ngộ Thảo Dược";
-modalDesc.innerHTML = `Đã thu phục ${caughtDragonCount}/12 con yêu thú.<br>Yêu thú này chưa kết tinh Cốt Linh, ngài nhận được <strong>[Linh Thạch]</strong>!`;
-modalBtn.innerText = "⚡ Tiếp tục hành trình";
-targetPage = '';
+    const modalTitle = document.getElementById('modal-title');
+    const modalDesc = document.getElementById('modal-desc');
+    const modalBtn = document.getElementById('modal-btn');
+
+    if (collectedGemCount >= 7) {
+    modalTitle.innerText = "🐉 Tụ Hội Đủ 7 Viên Ngọc Rồng!";
+    modalDesc.innerHTML = "Thần Long hiển linh! Ngài đã vượt ải thành công!";
+    modalBtn.innerText = "✨ Sang trang luyện kiếm";
+    targetPage = 'sanrong2.html';
+    } else {
+    modalTitle.innerText = "🌟 Kỳ Ngộ Viên Ngọc";
+    modalDesc.innerHTML = `Đã thu thập ${collectedGemCount}/7 viên ngọc rồng.<br>Ván ngọc tím lướt cực êm!`;
+    modalBtn.innerText = "⚡ Tiếp tục lướt ván";
+    targetPage = '';
+    }
+
+    document.getElementById('dragon-modal').style.display = 'flex';
 }
 
-document.getElementById('dragon-modal').style.display = 'flex';
-}
-
-const targetCamPos = new THREE.Vector3(playerGroup.position.x * 0.5, playerGroup.position.y + 4, playerGroup.position.z + 12);
+const targetCamPos = new THREE.Vector3(playerGroup.position.x * 0.4, playerGroup.position.y + 4, playerGroup.position.z + 14);
 camera.position.lerp(targetCamPos, 0.1);
-camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z - 10);
+camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z - 12);
 
 const positions = trailParticles.geometry.attributes.position.array;
 for (let i = 2; i < particleCount * 3; i += 3) {
-positions[i] += 0.25;
+positions[i] += 0.35;
 if (positions[i] > 6) positions[i] = 0;
 }
 trailParticles.geometry.attributes.position.needsUpdate = true;
