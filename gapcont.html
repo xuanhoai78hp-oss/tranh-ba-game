@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Game 3D - Chiêu Thức Quả Cầu Sét & Hiệu Ứng Điện Giật</title>
+    <title>Game 3D - Quả Cầu Sét & Âm Thanh Web Audio API</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body, html { width: 100%; height: 100%; overflow: hidden; background: #0b0f19; font-family: sans-serif; }
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
 
-        /* HUD thông số */
+        /* HUD hiển thị thông số */
         #hud {
             position: absolute; top: 15px; left: 15px; color: #fff;
             background: rgba(15, 23, 42, 0.85); padding: 12px 18px; border-radius: 8px;
@@ -66,14 +66,14 @@
 </head>
 <body>
 
-    <div id="portal-msg">⚡ ĐẠT ĐỦ MÁU & CÔNG LỰC! MỞ CỔNG VỀ THÔN TÂN THỦ... ⚡</div>
+    <div id="portal-msg">⚡ ĐẠT > 90% MÁU & > 180 CÔNG LỰC! MỞ CỔNG VỀ THÔN... ⚡</div>
 
     <div id="hud">
-        ⚡ <b>QUẢ CẦU SÉT - SĂN CÔN TRÙNG</b><br>
+        ⚡ <b>QUẢ CẦU SÉT & ÂM THANH API</b><br>
         ❤️ Máu: <span id="hp-val">100</span>% 
         <div class="hp-bar-container"><div id="hp-bar-fill"></div></div><br>
-        ⚡ Công lực (Điểm): <span id="score-val">0</span> / 9<br>
-        - Dùng chiêu Sét tiêu diệt quái, nhặt vật phẩm để qua cửa!
+        ⚡ Công lực: <span id="score-val">0</span> / 180<br>
+        - Điều kiện qua cửa: Máu > 90% & Công lực > 180!
     </div>
 
     <div class="joystick-base" id="joystick">
@@ -84,20 +84,70 @@
 
     <div id="canvas-container"></div>
 
-    <!-- Âm thanh nền ngẫu nhiên từ 1 đến 9.mp3 -->
-    <audio id="bg-audio" loop></audio>
-
     <script>
-        // 1. KÍCH HOẠT ÂM THANH NỀN NGẪU NHIÊN 1-9.MP3
-        const audioElem = document.getElementById('bg-audio');
-        const randomTrack = Math.floor(Math.random() * 9) + 1;
-        audioElem.src = `${randomTrack}.mp3`;
-        
-        function playAudio() {
-            audioElem.play().catch(() => {});
+        // ==========================================
+        // 1. HỆ THỐNG WEB AUDIO API (TẠO ÂM THANH TRỰC TIẾP)
+        // ==========================================
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
         }
-        window.addEventListener('pointerdown', playAudio, { once: true });
-        window.addEventListener('keydown', playAudio, { once: true });
+
+        // Âm thanh khi tung chiêu Quả Cầu Sét (Tiếng hú điện năng vút cao)
+        function playThunderSound() {
+            initAudio();
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        // Âm thanh khi sét đánh trúng quái (Tiếng nổ rẹt rẹt / sấm sét)
+        function playHitSound() {
+            initAudio();
+            if (!audioCtx) return;
+            const bufferSize = audioCtx.sampleRate * 0.25;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1; // Tạo tiếng ồn trắng (white noise)
+            }
+
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 800;
+
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            noise.start();
+        }
+
+        window.addEventListener('pointerdown', initAudio, { once: true });
+        window.addEventListener('keydown', initAudio, { once: true });
 
         // Hàm cắt sprite pixel chuẩn từ ảnh gốc
         function createSpriteTextureFromPixel(img, x, y, width, height) {
@@ -118,7 +168,7 @@
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0f172a);
-        scene.fog = new THREE.FogExp2(0x0f172a, 0.005);
+        scene.fog = new THREE.FogExp2(0x0f172a, 0.004);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -135,29 +185,29 @@
 
         // Mặt đất & Lưới
         const floor = new THREE.Mesh(
-            new THREE.PlaneGeometry(300, 300),
+            new THREE.PlaneGeometry(500, 500),
             new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 })
         );
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         scene.add(floor);
 
-        const gridHelper = new THREE.GridHelper(300, 60, 0x38bdf8, 0x334155);
+        const gridHelper = new THREE.GridHelper(500, 100, 0x38bdf8, 0x334155);
         gridHelper.position.y = 0.01;
         scene.add(gridHelper);
 
-        // 3. TẠO CỔNG QUA MẢN (PORTAL VỀ THÔN TÂN THỦ) ở tọa độ (0, 0, -40)
-        const portalGeo = new THREE.CylinderGeometry(3, 3, 0.2, 32);
+        // 3. TẠO CỔNG QUA MẢN (PORTAL) ở tọa độ (0, 0, -60)
+        const portalGeo = new THREE.CylinderGeometry(3.5, 3.5, 0.2, 32);
         const portalMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true });
         const portalMesh = new THREE.Mesh(portalGeo, portalMat);
-        portalMesh.position.set(0, 0.1, -40);
+        portalMesh.position.set(0, 0.1, -60);
         scene.add(portalMesh);
 
-        const portalLight = new THREE.PointLight(0x38bdf8, 3, 12);
-        portalLight.position.set(0, 2, -40);
+        const portalLight = new THREE.PointLight(0x38bdf8, 4, 15);
+        portalLight.position.set(0, 2, -60);
         scene.add(portalLight);
 
-        // 4. TẠO BÃI CONTAINER (Ô 200x100px từ gapcont.png) & HỆ THỐNG VA CHẠM
+        // 4. TẠO BÃI CONTAINER KHỔNG LỒ (4-5 TẦNG, 12 CỘT, CHỈ DÙNG 5 LOẠI ĐÃ CẮT)
         const CONT_W = 2.4, CONT_H = 3.2, CONT_L = 12.2;
         const boxGeometry = new THREE.BoxGeometry(CONT_W, CONT_H, CONT_L);
         const containerBoxes = [];
@@ -168,39 +218,39 @@
 
         let contMaterials = [];
         imgCont.onload = () => {
-            for(let i=0; i<5; i++) {
+            for(let i = 0; i < 5; i++) {
                 const tex = createSpriteTextureFromPixel(imgCont, i * 200, 0, 200, 100);
                 contMaterials.push(new THREE.MeshStandardMaterial({ map: tex, roughness: 0.4 }));
             }
             buildContainerYard();
         };
 
-        for(let i=0; i<5; i++) {
-            contMaterials.push(new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 }));
-        }
-
         function buildContainerYard() {
-            const NUM_CLUSTERS_X = 4;
-            const NUM_CLUSTERS_Z = 4;
-            const ROAD_WIDTH = 18;
+            const NUM_CLUSTERS_X = 5;
+            const NUM_CLUSTERS_Z = 5;
+            const ROAD_WIDTH = 16;
 
             for (let cx = 0; cx < NUM_CLUSTERS_X; cx++) {
                 for (let cz = 0; cz < NUM_CLUSTERS_Z; cz++) {
-                    const clusterX = (cx - NUM_CLUSTERS_X / 2) * (3 * CONT_W + ROAD_WIDTH);
+                    const clusterX = (cx - NUM_CLUSTERS_X / 2) * (6 * CONT_W + ROAD_WIDTH);
                     const clusterZ = (cz - NUM_CLUSTERS_Z / 2) * (CONT_L + ROAD_WIDTH);
 
-                    if (Math.abs(clusterX) < 10 && Math.abs(clusterZ + 40) < 10) continue;
+                    if (Math.abs(clusterX) < 12 && Math.abs(clusterZ + 60) < 12) continue;
 
-                    containerBoxes.push({
-                        minX: clusterX - 0.5, maxX: clusterX + 2 * CONT_W + 0.5,
-                        minZ: clusterZ - CONT_L / 2 - 0.5, maxZ: clusterZ + CONT_L / 2 + 0.5
-                    });
+                    for (let c = 0; c < 12; c++) {
+                        const colX = clusterX + (c % 4) * CONT_W;
+                        const colZ = clusterZ + Math.floor(c / 4) * (CONT_L + 1);
+                        const stackHeight = Math.floor(Math.random() * 2) + 4; // 4-5 tầng
 
-                    for (let r = 0; r < 2; r++) {
-                        for (let h = 0; h < 2; h++) {
+                        containerBoxes.push({
+                            minX: colX - 0.5, maxX: colX + CONT_W + 0.5,
+                            minZ: colZ - CONT_L / 2 - 0.5, maxZ: colZ + CONT_L / 2 + 0.5
+                        });
+
+                        for (let h = 0; h < stackHeight; h++) {
                             const matIndex = Math.floor(Math.random() * contMaterials.length);
                             const mesh = new THREE.Mesh(boxGeometry, contMaterials[matIndex]);
-                            mesh.position.set(clusterX + r * CONT_W, h * CONT_H + CONT_H / 2, clusterZ);
+                            mesh.position.set(colX, h * CONT_H + CONT_H / 2, colZ);
                             mesh.castShadow = true; mesh.receiveShadow = true;
                             scene.add(mesh);
                         }
@@ -208,7 +258,6 @@
                 }
             }
         }
-        buildContainerYard();
 
         function isValidPosition(x, z) {
             for (let box of containerBoxes) {
@@ -218,7 +267,7 @@
         }
 
         // 5. NHÂN VẬT & CÔN TRÙNG TỪ anh.png
-        let gameState = { posX: 0, posZ: 20, angle: 0, hp: 100, score: 0, isTransitioning: false };
+        let gameState = { posX: 0, posZ: 30, angle: 0, hp: 100, score: 0, isTransitioning: false };
 
         const charGeo = new THREE.PlaneGeometry(2, 2);
         const charMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
@@ -271,15 +320,14 @@
                 createSpriteTextureFromPixel(imgChar, 240, 80, 40, 40),
                 createSpriteTextureFromPixel(imgChar, 280, 80, 40, 40)
             ];
-
-            spawnEnemies();
         };
 
         const enemies = [];
         const items = [];
 
-        function spawnEnemies() {
-            for (let i = 0; i < 12; i++) {
+        // Sinh quái dần dần, luôn dưới 5 con, không đè trong container
+        function spawnEnemyIfNeeded() {
+            if (enemies.filter(e => e.alive).length < 5 && imgChar.complete && contMaterials.length > 0) {
                 const enemyMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
                 const enemyMesh = new THREE.Mesh(charGeo, enemyMat);
                 
@@ -289,9 +337,9 @@
 
                 let ex, ez, valid = false;
                 while (!valid) {
-                    ex = (Math.random() - 0.5) * 80;
-                    ez = (Math.random() - 0.5) * 80;
-                    valid = isValidPosition(ex, ez) && Math.abs(ez + 40) > 5;
+                    ex = (Math.random() - 0.5) * 120;
+                    ez = (Math.random() - 0.5) * 120;
+                    valid = isValidPosition(ex, ez) && Math.abs(ez + 60) > 10;
                 }
 
                 enemyMesh.position.set(ex, 1, ez);
@@ -305,34 +353,37 @@
                     timer: 0, 
                     alive: true, 
                     hitCount: 0, 
-                    speed: type === 1 ? 1.5 : 1.1 
+                    speed: type === 1 ? 1.4 : 1.0 
                 });
             }
         }
+        setInterval(spawnEnemyIfNeeded, 2000);
 
-        // 6. HỆ THỐNG TẠO QUẢ CẦU SÉT & HIỆU ỨNG TIA SÉT ZIGZAG (BALL LIGHTNING)
+        // 6. QUẢ CẦU SÉT & RUNG CAMERA
         const lightningBalls = [];
+        let shakeTime = 0;
+
+        function triggerScreenShake(duration = 0.3) {
+            shakeTime = duration;
+        }
 
         function createLightningBall() {
+            playThunderSound(); // Phát âm thanh API sấm sét khi ném
+
             const ballGroup = new THREE.Group();
 
-            // Lớp lõi trắng sáng chói (White core)
             const coreGeo = new THREE.SphereGeometry(0.35, 16, 16);
             const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-            const coreMesh = new THREE.Mesh(coreGeo, coreMat);
-            ballGroup.add(coreMesh);
+            ballGroup.add(new THREE.Mesh(coreGeo, coreMat));
 
-            // Lớp cầu sét bên trong (Inner Glow)
             const innerGeo = new THREE.SphereGeometry(0.6, 16, 16);
             const innerMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 });
             ballGroup.add(new THREE.Mesh(innerGeo, innerMat));
 
-            // Lớp hào quang rộng bên ngoài (Outer Glow)
             const outerGeo = new THREE.SphereGeometry(1.0, 16, 16);
             const outerMat = new THREE.MeshBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
             ballGroup.add(new THREE.Mesh(outerGeo, outerMat));
 
-            // Tạo các tia sét Zigzag gãy khúc quấn quanh quả cầu
             const lightningLines = [];
             for (let i = 0; i < 4; i++) {
                 const points = [];
@@ -363,10 +414,6 @@
                 speed: 18.0,
                 life: 1.5
             });
-
-            // Hiệu ứng chớp màn hình (Flicker / Flash) nhẹ khi tung chiêu
-            renderer.domElement.style.filter = "brightness(1.5)";
-            setTimeout(() => { renderer.domElement.style.filter = "brightness(1)"; }, 100);
         }
 
         // 7. ĐIỀU KHIỂN & NÚT CHIÊU SÉT
@@ -428,7 +475,7 @@
             }, 80);
         });
 
-        // 8. VÒNG LẶP GAME & HIỆU ỨNG FLICKER, GIẬT ĐIỆN, KHÓI QUÁI
+        // 8. VÒNG LẶP GAME & XỬ LÝ HIỆU ỨNG
         let lastTime = 0, animTimer = 0, frameIndex = 0;
 
         function animate(time) {
@@ -454,21 +501,21 @@
             }
             characterMesh.position.set(gameState.posX, 1, gameState.posZ);
 
-            // Kiểm tra cổng qua màn (0, -40)
+            // Kiểm tra cổng qua màn (0, -60) với điều kiện Máu > 90% và Công lực > 180
             const distToPortal = characterMesh.position.distanceTo(portalMesh.position);
             if (distToPortal < 3) {
-                if (gameState.hp >= 90 && gameState.score >= 9) {
+                if (gameState.hp > 90 && gameState.score > 180) {
                     gameState.isTransitioning = true;
                     document.getElementById('portal-msg').style.display = 'block';
                     setTimeout(() => {
                         window.location.href = 'rungcontrung2.html';
                     }, 1500);
                 } else {
-                    document.getElementById('portal-msg').innerText = "⚠️ CẦN ĐẠT ≥ 90% MÁU & ≥ 9 ĐIỂM CÔNG LỰC ĐỂ VỀ THÔN!";
+                    document.getElementById('portal-msg').innerText = "⚠️ CẦN ĐẠT > 90% MÁU & > 180 CÔNG LỰC ĐỂ QUA CỬA!";
                     document.getElementById('portal-msg').style.display = 'block';
                     setTimeout(() => {
                         document.getElementById('portal-msg').style.display = 'none';
-                        document.getElementById('portal-msg').innerText = "⚡ ĐẠT ĐỦ MÁU & CÔNG LỰC! ĐANG TIẾN VÀO CỔNG VỀ THÔN TÂN THỦ... ⚡";
+                        document.getElementById('portal-msg').innerText = "⚡ ĐẠT > 90% MÁU & > 180 CÔNG LỰC! MỞ CỔNG VỀ THÔN... ⚡";
                     }, 2000);
                 }
             }
@@ -483,14 +530,13 @@
                 }
             }
 
-            // Cập nhật Quả Cầu Sét bay và hiệu ứng Flicker (đổi dáng tia sét liên tục mỗi frame)
+            // Cập nhật Quả Cầu Sét bay và va chạm
             for (let i = lightningBalls.length - 1; i >= 0; i--) {
                 const lb = lightningBalls[i];
                 lb.life -= delta;
                 lb.group.position.x += lb.dirX * lb.speed * delta;
                 lb.group.position.z += lb.dirZ * lb.speed * delta;
 
-                // Hiệu ứng Flicker: Đổi hình dáng tia sét ngẫu nhiên mỗi vài frame cho có lực
                 lb.lines.forEach(line => {
                     const positions = line.geometry.attributes.position.array;
                     for (let p = 3; p < positions.length; p += 3) {
@@ -501,7 +547,6 @@
                     line.geometry.attributes.position.needsUpdate = true;
                 });
 
-                // Va chạm với côn trùng
                 for (let j = 0; j < enemies.length; j++) {
                     const enemy = enemies[j];
                     if (!enemy.alive) continue;
@@ -511,21 +556,23 @@
                         scene.remove(lb.group);
                         lightningBalls.splice(i, 1);
 
+                        playHitSound(); // Phát âm thanh API trúng quái
+
                         enemy.hitCount++;
                         enemy.mesh.material.map = enemy.hitFrames[Math.min(enemy.hitCount - 1, 3)];
                         enemy.mesh.material.needsUpdate = true;
 
-                        // Khi quái hết máu (đủ 5 chiêu): Giật điện, cháy đen và bốc khói
+                        triggerScreenShake(0.35); // Rung camera khi trúng
+
                         if (enemy.hitCount >= 5) {
                             enemy.alive = false;
                             enemy.mesh.material.color.set(0x111111); // Cháy đen
                             
-                            // Hiệu ứng khói/giật điện rồi biến mất sau 0.4s
                             setTimeout(() => {
                                 scene.remove(enemy.mesh);
                             }, 400);
 
-                            gameState.score += 1;
+                            gameState.score += 20;
                             document.getElementById('score-val').innerText = gameState.score;
                             spawnDropItem(enemy.mesh.position.x, enemy.mesh.position.z);
                         }
@@ -552,7 +599,7 @@
                     const nez = enemy.mesh.position.z + (dirZ / dist) * step;
                     if (isValidPosition(nex, nez)) enemy.mesh.position.set(nex, 1, nez);
                 } else {
-                    gameState.hp = Math.max(0, gameState.hp - 2.5 * delta);
+                    gameState.hp = Math.max(0, gameState.hp - 2.0 * delta);
                     document.getElementById('hp-val').innerText = Math.floor(gameState.hp);
                     document.getElementById('hp-bar-fill').style.width = gameState.hp + '%';
                 }
@@ -570,26 +617,34 @@
             });
 
             // Nhặt vật phẩm
-            items.forEach((item, idx) => {
+            items.forEach((item) => {
                 if (!item.active) return;
-                const dist = characterMesh.position.distanceTo(item.mesh.position);
-                if (dist < 2.0) {
+                if (characterMesh.position.distanceTo(item.mesh.position) < 2.0) {
                     item.active = false;
                     scene.remove(item.mesh);
                     if (item.type === 'hp') {
-                        gameState.hp = Math.min(100, gameState.hp + 15);
+                        gameState.hp = Math.min(100, gameState.hp + 20);
                         document.getElementById('hp-val').innerText = Math.floor(gameState.hp);
                         document.getElementById('hp-bar-fill').style.width = gameState.hp + '%';
                     } else {
-                        gameState.score += 2;
+                        gameState.score += 30;
                         document.getElementById('score-val').innerText = gameState.score;
                     }
                 }
             });
 
             const camDist = 9, camHeight = 4.5;
-            camera.position.x += (gameState.posX - Math.sin(gameState.angle) * camDist - camera.position.x) * 0.1;
-            camera.position.z += (gameState.posZ - Math.cos(gameState.angle) * camDist - camera.position.z) * 0.1;
+            let targetCamX = gameState.posX - Math.sin(gameState.angle) * camDist;
+            let targetCamZ = gameState.posZ - Math.cos(gameState.angle) * camDist;
+
+            if (shakeTime > 0) {
+                shakeTime -= delta;
+                targetCamX += (Math.random() - 0.5) * 0.8;
+                targetCamZ += (Math.random() - 0.5) * 0.8;
+            }
+
+            camera.position.x += (targetCamX - camera.position.x) * 0.1;
+            camera.position.z += (targetCamZ - camera.position.z) * 0.1;
             camera.position.y = camHeight;
             camera.lookAt(gameState.posX, 1, gameState.posZ);
 
