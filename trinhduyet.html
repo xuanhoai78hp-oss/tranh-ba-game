@@ -1,140 +1,266 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Trình Duyệt Tối Giản</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Hub Game Tụi Mình</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
 
-/* Thanh địa chỉ siêu gọn, tự động trượt lên ẩn đi khi không dùng */
-#url-bar-container {
-position: fixed;
-top: env(safe-area-inset-top, 10px);
-left: 10px;
-right: 10px;
-height: 40px;
-background: rgba(15, 23, 42, 0.85);
-backdrop-filter: blur(10px);
-border: 1px solid rgba(255, 255, 255, 0.2);
-border-radius: 20px;
-display: flex;
-align-items: center;
-padding: 0 12px;
-z-index: 1000;
-transition: transform 0.3s ease, opacity 0.3s ease;
-}
+        /* Container chứa thanh địa chỉ và lưới danh sách game */
+        #ui-container {
+            position: fixed;
+            top: env(safe-area-inset-top, 10px);
+            left: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
 
-#url-bar-container.hidden {
-transform: translateY(-60px);
-opacity: 0;
-pointer-events: none;
-}
+        #ui-container.hidden {
+            transform: translateY(-80px);
+            opacity: 0;
+            pointer-events: none;
+        }
 
-#url-input {
-flex: 1;
-background: transparent;
-border: none;
-color: #fff;
-font-size: 14px;
-outline: none;
-padding: 0 8px;
-}
+        /* Thanh địa chỉ tối giản */
+        #url-bar-container {
+            height: 40px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+        }
 
-.nav-btn {
-background: none;
-border: none;
-color: #facc15;
-font-size: 14px;
-font-weight: bold;
-cursor: pointer;
-padding: 4px 8px;
-}
+        #url-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            padding: 0 8px;
+        }
 
-/* Khung hiển thị trang web (Iframe) */
-#web-frame {
-width: 100%;
-height: 100%;
-border: none;
-background: #fff;
-padding-top: env(safe-area-inset-top, 0px);
-}
+        .nav-btn {
+            background: none;
+            border: none;
+            color: #facc15;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
 
-/* Nút nhỏ nổi lên để gọi lại thanh địa chỉ khi bị ẩn */
-#toggle-btn {
-position: fixed;
-top: 10px;
-right: 15px;
-width: 32px;
-height: 32px;
-background: rgba(0, 0, 0, 0.6);
-border: 1px solid rgba(255, 255, 255, 0.3);
-border-radius: 50%;
-color: #fff;
-font-size: 12px;
-display: flex;
-align-items: center;
-justify-content: center;
-z-index: 999;
-cursor: pointer;
-}
-</style>
+        /* Lưới danh sách game: 3 nút 1 hàng, cuộn dọc, căn chỉnh chuẩn xác */
+        #game-shortcuts {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            max-height: 220px; /* Hiển thị gọn vài hàng, có thể cuộn dọc xem đủ 14 hàng */
+            overflow-y: auto;
+            padding: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(250, 204, 21, 0.4) transparent;
+        }
+        #game-shortcuts::-webkit-scrollbar {
+            width: 4px;
+        }
+        #game-shortcuts::-webkit-scrollbar-thumb {
+            background: rgba(250, 204, 21, 0.4);
+            border-radius: 4px;
+        }
+
+        .game-chip {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            color: #fde047;
+            padding: 8px 6px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-align: center;
+            /* Lấy chuẩn độ dài nút Rừng Côn Trùng 2 */
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .game-chip:active {
+            transform: scale(0.95);
+            background: rgba(250, 204, 21, 0.2);
+        }
+
+        /* Khung hiển thị trang web (Iframe) */
+        #web-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+        }
+
+        /* Nút nhỏ nổi lên để gọi lại menu khi bị ẩn */
+        #toggle-btn {
+            position: fixed;
+            top: 10px;
+            right: 15px;
+            width: 32px;
+            height: 32px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            color: #fff;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
 
-<!-- Nút gọi nhanh thanh địa chỉ -->
-<div id="toggle-btn" onclick="toggleUrlBar()">🌐</div>
+    <!-- Nút gọi nhanh menu khi ẩn -->
+    <div id="toggle-btn" onclick="toggleUi()">🌐</div>
 
-<!-- Thanh địa chỉ tối giản -->
-<div id="url-bar-container">
-<button class="nav-btn" onclick="goBack()">◀</button>
-<input type="text" id="url-input" placeholder="Nhập địa chỉ web (VD: https://google.com)..." onkeypress="handleNav(event)">
-<button class="nav-btn" onclick="loadWeb()">🔍</button>
-</div>
+    <!-- Khu vực điều khiển -->
+    <div id="ui-container">
+        <!-- Thanh địa chỉ tối giản -->
+        <div id="url-bar-container">
+            <button class="nav-btn" onclick="goBack()">◀</button>
+            <input type="text" id="url-input" placeholder="Nhập địa chỉ web hoặc tìm kiếm..." onkeypress="handleNav(event)">
+            <button class="nav-btn" onclick="loadWeb()">🔍</button>
+        </div>
 
-<!-- Nội dung web duyệt qua Iframe -->
-<iframe id="web-frame" src="https://www.google.com"></iframe>
+        <!-- Lưới danh sách 42 game (3 nút 1 hàng x 14 hàng) -->
+        <div id="game-shortcuts">
+            <!-- Hàng 1 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/rungcontrung2.html')">Rừng Côn Trùng 2</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/rungcontrung.html')">Rừng Côn Trùng</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/sanrong.html')">Săn Rồng</button>
+            <!-- Hàng 2 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/sanrong2.html')">Săn Rồng 2</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/sanrong.html.html')">Săn Rồng (Alt)</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/360.html')">360 Game</button>
+            <!-- Hàng 3 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/360tp.html')">360 Thành Phố</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/bandiabay.html')">Bay Đi Bay</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/bandiabay2.html')">Bay Đi Bay 2</button>
+            <!-- Hàng 4 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/luyenkiem.html')">Luyện Kiếm</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/thanhpho.html')">Thành Phố</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tuongzalo.html')">Tướng Zalo</button>
+            <!-- Hàng 5 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tạo trứng.html')">Tạo Trứng</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/3.html')">Game 3</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/4.html')">Game 4</button>
+            <!-- Hàng 6 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/duacano.html')">Đua Ca Nô</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/giaonhanplayer.html')">Giao Nhận Player</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/hungnote.html')">Hứng Note</button>
+            <!-- Hàng 7 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/in3d.html')">In 3D</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/piano36.html')">Piano 36</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/sinhbong.html')">Sinh Bóng</button>
+            <!-- Hàng 8 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/sniper.html')">Sniper</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tutien3.html')">Tu Tiên 3</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/2.html')">Game 2</button>
+            <!-- Hàng 9 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/danbau.html')">Đàn Bầu</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/danhquai.html')">Đánh Quái</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/danhquai310.html')">Đánh Quái 310</button>
+            <!-- Hàng 10 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/hoclamcotruong.html')">Học Làm Cờ Trưởng</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/index.html')">Index</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/laimayxuc.html')">Lái Máy Xúc</button>
+            <!-- Hàng 11 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tank.html')">Tank</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tutienrungtruc.html')">Tu Tiên Rừng Trúc</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/1.html')">Game 1</button>
+            <!-- Hàng 12 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/flycamvantai.html')">Flycam Vận Tải</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/flycamvantai2.html')">Flycam Vận Tải 2</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/forumchat.html')">Forum Chat</button>
+            <!-- Hàng 13 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/giaonhanplayer.HTML')">Giao Nhận (HTML)</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/gioithieu.HTML')">Giới Thiệu</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/helicopter.html')">Helicopter</button>
+            <!-- Hàng 14 -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/hungtrung.html')">Hứng Trứng</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/laixenang.html')">Lái Xe Nâng</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/snakeanchu.html')">Snake Ăn Chữ</button>
+            <!-- Hàng bổ sung trọn vẹn 42 game -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/snakeanchu3.html')">Snake Ăn Chữ 3</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/snakecodien.html')">Snake Cổ Điển</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tronvuongmeo.html')">Tròn Vuông Mèo</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tronvuongmeo.html.html')">Tròn Vuông Mèo (Alt)</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tutientap.html')">Tu Tiên Tập</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/xecontainer.html')">Xe Container</button>
+        </div>
+    </div>
 
-<script>
-const urlInput = document.getElementById('url-input');
-const webFrame = document.getElementById('web-frame');
-const urlBar = document.getElementById('url-bar-container');
+    <!-- Mặc định load game mới nhất -->
+    <iframe id="web-frame" src="https://tranh-ba-game-gw3q.vercel.app/rungcontrung2.html"></iframe>
 
-function loadWeb() {
-let url = urlInput.value.trim();
-if (!url) return;
-if (!url.startsWith('http://') && !url.startsWith('https://')) {
-// Nếu gõ từ khóa không phải link, tự động search Google
-if (!url.includes('.') || url.includes(' ')) {
-url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
-} else {
-url = 'https://' + url;
-}
-}
-webFrame.src = url;
-urlBar.classList.add('hidden'); // Tự ẩn thanh địa chỉ khi load xong web để rộng màn hình
-}
+    <script>
+        const urlInput = document.getElementById('url-input');
+        const webFrame = document.getElementById('web-frame');
+        const uiContainer = document.getElementById('ui-container');
 
-function handleNav(e) {
-if (e.key === 'Enter') {
-loadWeb();
-}
-}
+        function loadWeb() {
+            let url = urlInput.value.trim();
+            if (!url) return;
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                if (!url.includes('.') || url.includes(' ')) {
+                    url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
+                } else {
+                    url = 'https://' + url;
+                }
+            }
+            webFrame.src = url;
+            uiContainer.classList.add('hidden');
+        }
 
-function toggleUrlBar() {
-urlBar.classList.toggle('hidden');
-}
+        function openGame(url) {
+            urlInput.value = url;
+            webFrame.src = url;
+            uiContainer.classList.add('hidden');
+        }
 
-// Chạm vào màn hình web thì tự động ẩn thanh địa chỉ đi cho rộng
-window.addEventListener('touchstart', (e) => {
-if (!e.target.closest('#url-bar-container') && !e.target.closest('#toggle-btn')) {
-urlBar.classList.add('hidden');
-}
-});
-</script>
+        function handleNav(e) {
+            if (e.key === 'Enter') {
+                loadWeb();
+            }
+        }
 
+        function toggleUi() {
+            uiContainer.classList.toggle('hidden');
+        }
+
+        // Tự động ẩn giao diện khi chạm vào màn hình chơi game cho rộng thoáng
+    window.addEventListener('touchstart', (e) => {
+            if (!e.target.closest('#ui-container') && !e.target.closest('#toggle-btn')) {
+                uiContainer.classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 </html>
