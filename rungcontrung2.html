@@ -89,7 +89,7 @@ padding: 12px 24px; font-size: 15px; font-weight: bold; border-radius: 10px; cur
 <div class="controls-hint-top">
 🎯 <b>HÀN BĂNG CHUẨN XÁC:</b><br>
 • Tiêu diệt đủ 250 kẻ thù để qua cửa.<br>
-• Quái sinh liên tục từ cạnh PHẢI.<br>
+• NPC & Đồng minh di chuyển & ném sang PHẢI!<br>
 • Bắn nhầm NPC/Đồng minh: Trừ 10% máu.
 </div>
 
@@ -188,20 +188,19 @@ crosshair.y = screenH / 2;
 }
 }
 
-// Bảng cấu hình 5 loại thực thể
+// Cấu hình 5 loại thực thể:
+// - Kẻ thù / Côn trùng (bug1, bug2, enemy): Sinh từ bên phải (x > screenW), đi sang TRÁI (dir = -1)
+// - NPC / Đồng minh (npc, ally): Sinh từ bên trái (x < 0), đi sang PHẢI (dir = 1), ném chiêu sang PHẢI
 const TYPE_CONFIG = {
-'bug1': { row: 1, isFriendly: false, speed: 2.2 },
-'bug2': { row: 2, isFriendly: false, speed: 2.5 },
-'npc': { row: 4, isFriendly: true, speed: 1.8 },
-'ally': { row: 6, isFriendly: true, speed: 1.8 },
-'enemy':{ row: 8, isFriendly: false, speed: 2.8 }
+'bug1': { row: 1, isFriendly: false, dir: -1, startSide: 'right', speed: 2.2 },
+'bug2': { row: 2, isFriendly: false, dir: -1, startSide: 'right', speed: 2.5 },
+'enemy':{ row: 8, isFriendly: false, dir: -1, startSide: 'right', speed: 2.8 },
+'npc': { row: 4, isFriendly: true, dir: 1, startSide: 'left', speed: 1.8 },
+'ally': { row: 6, isFriendly: true, dir: 1, startSide: 'left', speed: 1.8 }
 };
 
-// Hàm sinh duy nhất 1 thực thể MỚI hoàn toàn từ MÉP PHẢI màn hình vào
-function spawnSingleEntityFromRight(forcedType = null) {
+function spawnSingleEntity(forcedType = null) {
 let types = ['bug1', 'bug2', 'enemy', 'npc', 'ally'];
-
-// Giới hạn số lượng NPC/Đồng minh tối đa 2 con để không làm rối màn hình
 let friendlyCount = entities.filter(e => e.isFriendly).length;
 let selectedType = forcedType;
 if (!selectedType) {
@@ -212,12 +211,14 @@ selectedType = types[Math.floor(Math.random() * types.length)];
 }
 
 let cfg = TYPE_CONFIG[selectedType];
+let startX = cfg.startSide === 'right' ? screenW + 80 + Math.random() * 150 : -100 - Math.random() * 150;
+
 entities.push({
 id: Math.random(),
 type: selectedType,
 row: cfg.row,
 isFriendly: cfg.isFriendly,
-x: screenW + 80 + Math.random() * 150, // Luôn sinh từ cạnh PHẢI
+x: startX,
 y: screenH * 0.35 + Math.random() * (screenH * 0.4),
 w: 60, h: 60,
 freezeState: 0,
@@ -225,15 +226,14 @@ flashTimer: 0,
 hp: 2,
 maxHp: 2,
 speed: cfg.speed,
-dir: -1, // Tất cả đều đi trôi sang TRÁI
+dir: cfg.dir, // -1: đi trái, 1: đi phải
 fireTimer: Math.random() * 3
 });
 }
 
-// Giữ nhịp luôn có từ 5-7 quái trên màn hình, sinh liên tục từ lề phải
 function maintainBattlefield() {
 while (entities.length < 6) {
-spawnSingleEntityFromRight();
+spawnSingleEntity();
 }
 }
 
@@ -273,7 +273,6 @@ e.preventDefault(); initAudio();
 if (!isDead) shootIceSpells();
 });
 
-// Phóng đạn băng bay chuẩn xác tới tọa độ Tâm Ngắm (Crosshair)
 function shootIceSpells() {
 playSfx('ice');
 player.power = Math.max(0, player.power - 1.5);
@@ -300,7 +299,6 @@ rotation: 0, size: 20
 });
 }
 
-// Xử lý nổ AoE (Diện rộng) tại tọa độ đích
 function explodeAoE(x, y) {
 playSfx('explode');
 
@@ -320,14 +318,12 @@ if (ent.hp <= 0) continue;
 let d = Math.hypot(ent.x - x, ent.y - y);
 if (d <= aoeRadius + ent.w / 2) {
 if (ent.isFriendly) {
-// Bắn nhầm Đồng Minh / NPC -> Chỉ nhấp nháy chớp sáng và trừ 10% máu (Bất tử)
 player.hp = Math.max(0, player.hp - 10);
 updateUI();
 ent.flashTimer = 20;
 playSfx('hit');
 if (player.hp <= 0) { isDead = true; document.getElementById('respawn-modal').style.display = 'flex'; }
 } else {
-// Kẻ thù / Côn trùng
 if (player.power >= 90) {
 ent.hp = 0;
 playSfx('freeze');
@@ -346,7 +342,7 @@ playSfx('explode');
 }
 
 if (ent.hp <= 0) {
-player.kills++; // Tăng điểm tích lũy hạ gục
+player.kills++;
 updateUI();
 
 items.push({
@@ -354,9 +350,8 @@ x: ent.x, y: ent.y,
 type: Math.random() > 0.5 ? 'hologram' : 'book'
 });
 
-// Xóa quái chết và lập tức sinh quái mới từ LỀ PHẢI vào
 entities.splice(i, 1);
-spawnSingleEntityFromRight();
+spawnSingleEntity();
 }
 }
 }
@@ -369,7 +364,6 @@ if (isDead) return;
 carouselOffset = (carouselOffset + 2) % RUNG_W;
 maintainBattlefield();
 
-// Joystick di chuyển tâm ngắm
 if (joystickVector.x !== 0 || joystickVector.y !== 0) {
 crosshair.x += joystickVector.x * 12;
 crosshair.y += joystickVector.y * 12;
@@ -377,7 +371,6 @@ crosshair.x = Math.max(40, Math.min(screenW - 40, crosshair.x));
 crosshair.y = Math.max(40, Math.min(screenH - 40, crosshair.y));
 }
 
-// Đạn Băng bay
 for (let i = iceProjectiles.length - 1; i >= 0; i--) {
 let p = iceProjectiles[i];
 p.x += p.vx; p.y += p.vy; p.rotation += 0.2; p.life--;
@@ -394,11 +387,10 @@ iceProjectiles.splice(i, 1);
 }
 }
 
-// Cập nhật Thực thể (Chỉ trôi từ PHẢI sang TRÁI)
 for (let i = entities.length - 1; i >= 0; i--) {
 let ent = entities[i];
 if (ent.freezeState !== 1) {
-ent.x -= ent.speed;
+ent.x += ent.dir * ent.speed; // Dir = -1 trôi trái, Dir = 1 trôi phải
 }
 
 if (ent.flashTimer > 0) ent.flashTimer--;
@@ -408,27 +400,28 @@ if (ent.fireTimer >= 3.5 && ent.freezeState !== 1) {
 ent.fireTimer = 0;
 npcAttacks.push({
 x: ent.x, y: ent.y,
-vx: -5,
+vx: ent.dir * 5, // Chiêu thức bay theo hướng của thực thể
 color: ent.isFriendly ? '#38bdf8' : '#ef4444',
 life: 60
 });
 }
 
-// Nếu trôi ra khỏi mép trái màn hình -> Xóa hẳn và tái sinh từ MÉP PHẢI vào
-if (ent.x < -100) {
-let deadType = ent.type;
+// Kiểm tra ra khỏi màn hình để tái sinh
+if (ent.dir === -1 && ent.x < -100) {
 entities.splice(i, 1);
-spawnSingleEntityFromRight(deadType);
+spawnSingleEntity();
+} else if (ent.dir === 1 && ent.x > screenW + 100) {
+entities.splice(i, 1);
+spawnSingleEntity();
 }
 }
 
 for (let i = npcAttacks.length - 1; i >= 0; i--) {
 let atk = npcAttacks[i];
 atk.x += atk.vx; atk.life--;
-if (atk.life <= 0 || atk.x < -20) npcAttacks.splice(i, 1);
+if (atk.life <= 0 || atk.x < -20 || atk.x > screenW + 20) npcAttacks.splice(i, 1);
 }
 
-// Vật phẩm hút về góc trái trên (x: 40, y: 40)
 for (let i = items.length - 1; i >= 0; i--) {
 let it = items[i];
 let targetX = 40, targetY = 40;
@@ -448,7 +441,6 @@ items.splice(i, 1);
 }
 }
 
-// Kiểm tra điều kiện qua cửa: Tiêu diệt ĐỦ 250 KẺ THÙ tích lũy
 if (player.kills >= 250) {
 window.location.href = 'rungcontrung.html';
 return;
@@ -470,7 +462,6 @@ document.getElementById('kill-text').innerText = `⚔️ ĐÃ DIỆT: ${player.k
 
 function goToVillage() { window.location.href = 'thanhpho.html'; }
 
-// 7. VẼ CANVAS
 function draw() {
 ctx.clearRect(0, 0, screenW, screenH);
 
@@ -492,7 +483,13 @@ entities.forEach(ent => {
 if (ent.hp <= 0) return;
 ctx.save();
 ctx.translate(ent.x, ent.y);
-ctx.scale(-1, 1); // Tất cả quay mặt sang trái
+
+// GIỮ NGUYÊN GỐC HÌNH: Nếu đi phải (dir = 1) thì scale(1, 1), đi trái (dir = -1) lật mặt nhìn trái
+if (ent.dir === 1) {
+ctx.scale(1, 1);
+} else {
+ctx.scale(-1, 1);
+}
 
 if (ent.flashTimer > 0 && Math.floor(ent.flashTimer / 3) % 2 === 0) {
 ctx.globalAlpha = 0.3;
@@ -544,7 +541,6 @@ iceParticles.forEach(p => {
 ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
 });
 
-// Tâm Ngắm Định Tọa Độ
 ctx.save();
 ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.5;
 ctx.beginPath(); ctx.arc(crosshair.x, crosshair.y, 18, 0, Math.PI * 2); ctx.stroke();
