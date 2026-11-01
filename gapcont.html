@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Game 3D - Luyện Hỏa Cầu Săn Côn Trùng</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #0b0f19; font-family: sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+
+        /* HUD hiển thị thông số */
+        #hud {
+            position: absolute; top: 15px; left: 15px; color: #fff;
+            background: rgba(15, 23, 42, 0.85); padding: 12px 18px; border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2); font-size: 13px; z-index: 10; line-height: 1.6;
+        }
+        #hud b { color: #facc15; }
+
+        /* Thanh máu */
+        .hp-bar-container {
+            width: 150px; height: 10px; background: #334155; border-radius: 5px;
+            overflow: hidden; display: inline-block; vertical-align: middle; margin-left: 5px;
+        }
+        #hp-bar-fill { width: 100%; height: 100%; background: #22c55e; transition: width 0.2s; }
+
+        /* Thông báo qua cửa / rớt vật phẩm */
+        #portal-msg {
+            position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+            background: rgba(234, 179, 8, 0.95); color: #000; padding: 12px 24px;
+            border-radius: 20px; font-weight: bold; font-size: 15px; display: none;
+            z-index: 20; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center;
+        }
+
+        /* Joystick ảo */
+        .joystick-base {
+            position: absolute; bottom: 40px; left: 40px;
+            width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%;
+            touch-action: none; z-index: 10;
+        }
+        .joystick-thumb {
+            position: absolute; top: 35px; left: 35px;
+            width: 50px; height: 50px; background: rgba(250, 204, 21, 0.8);
+            border-radius: 50%; pointer-events: none; transition: transform 0.05s linear;
+        }
+
+        /* Nút Tấn công Hỏa Cầu */
+        .action-btn {
+            position: absolute; bottom: 50px; right: 50px;
+            width: 85px; height: 85px; background: linear-gradient(135deg, #dc2626, #f59e0b);
+            border: 3px solid rgba(255, 255, 255, 0.8); border-radius: 50%;
+            color: #fff; font-weight: bold; font-size: 13px;
+            display: flex; align-items: center; justify-content: center;
+            touch-action: none; z-index: 10; cursor: pointer; text-align: center;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.8); animation: glow 1s infinite alternate;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 0 10px rgba(239, 68, 68, 0.6); }
+            to { box-shadow: 0 0 25px rgba(250, 204, 21, 0.9); }
+        }
+        .action-btn:active { transform: scale(0.92); }
+    </style>
+    <!-- Thư viện Three.js CDN chuẩn -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="portal-msg">✨ ĐẠT ĐỦ MÁU & CÔNG LỰC! ĐANG TIẾN VÀO CỔNG VỀ THÔN TÂN THỦ... ✨</div>
+
+    <div id="hud">
+        🔥 <b>LUYỆN HỎA CẦU - SĂN CÔN TRÙNG</b><br>
+        ❤️ Máu: <span id="hp-val">100</span>% 
+        <div class="hp-bar-container"><div id="hp-bar-fill"></div></div><br>
+        ⚡ Công lực (Điểm): <span id="score-val">0</span> / 9<br>
+        - Tiêu diệt quái, nhặt phẩm vật văng ra để về thôn!
+    </div>
+
+    <div class="joystick-base" id="joystick">
+        <div class="joystick-thumb" id="joystick-thumb"></div>
+    </div>
+    
+    <div class="action-btn" id="btn-attack">HỎA CẦU</div>
+
+    <div id="canvas-container"></div>
+
+    <!-- Âm thanh nền ngẫu nhiên từ 1 đến 9.mp3 -->
+    <audio id="bg-audio" loop></audio>
+
+    <script>
+        // 1. KÍCH HOẠT ÂM THANH NỀN NGẪU NHIÊN 1-9.MP3
+        const audioElem = document.getElementById('bg-audio');
+        const randomTrack = Math.floor(Math.random() * 9) + 1;
+        audioElem.src = `${randomTrack}.mp3`;
+        
+        function playAudio() {
+            audioElem.play().catch(() => {});
+        }
+        window.addEventListener('pointerdown', playAudio, { once: true });
+        window.addEventListener('keydown', playAudio, { once: true });
+
+        // Hàm cắt sprite pixel chuẩn từ ảnh gốc
+        function createSpriteTextureFromPixel(img, x, y, width, height) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(img, x, y, width, height, 0, 0, width, height);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.magFilter = THREE.NearestFilter;
+            texture.minFilter = THREE.NearestFilter;
+            return texture;
+        }
+
+        // 2. SCENE, CAMERA, RENDERER
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0f172a);
+        scene.fog = new THREE.FogExp2(0x0f172a, 0.005);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+        const dirLight = new THREE.DirectionalLight(0xfff7ed, 1.2);
+        dirLight.position.set(100, 200, 100);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        // Mặt đất & Lưới
+        const floor = new THREE.Mesh(
+            new THREE.PlaneGeometry(300, 300),
+            new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 })
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const gridHelper = new THREE.GridHelper(300, 60, 0xfacc15, 0x334155);
+        gridHelper.position.y = 0.01;
+        scene.add(gridHelper);
+
+        // 3. TẠO CỔNG QUA MẢN (PORTAL VỀ THÔN TÂN THỦ) ở tọa độ (0, 0, -40)
+        const portalGeo = new THREE.CylinderGeometry(3, 3, 0.2, 32);
+        const portalMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, wireframe: true });
+        const portalMesh = new THREE.Mesh(portalGeo, portalMat);
+        portalMesh.position.set(0, 0.1, -40);
+        scene.add(portalMesh);
+
+        const portalLight = new THREE.PointLight(0xfacc15, 3, 12);
+        portalLight.position.set(0, 2, -40);
+        scene.add(portalLight);
+
+        // 4. TẠO BÃI CONTAINER (Ô 200x100px từ gapcont.png) & HỆ THỐNG VA CHẠM
+        const CONT_W = 2.4, CONT_H = 3.2, CONT_L = 12.2;
+        const boxGeometry = new THREE.BoxGeometry(CONT_W, CONT_H, CONT_L);
+        const containerBoxes = [];
+
+        const imgCont = new Image();
+        imgCont.crossOrigin = "anonymous";
+        imgCont.src = 'https://tranh-ba-game-gw3q.vercel.app/gapcont.png';
+
+        let contMaterials = [];
+        imgCont.onload = () => {
+            for(let i=0; i<5; i++) {
+                const tex = createSpriteTextureFromPixel(imgCont, i * 200, 0, 200, 100);
+                contMaterials.push(new THREE.MeshStandardMaterial({ map: tex, roughness: 0.4 }));
+            }
+            buildContainerYard();
+        };
+
+        for(let i=0; i<5; i++) {
+            contMaterials.push(new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 }));
+        }
+
+        function buildContainerYard() {
+            const NUM_CLUSTERS_X = 4;
+            const NUM_CLUSTERS_Z = 4;
+            const ROAD_WIDTH = 18;
+
+            for (let cx = 0; cx < NUM_CLUSTERS_X; cx++) {
+                for (let cz = 0; cz < NUM_CLUSTERS_Z; cz++) {
+                    const clusterX = (cx - NUM_CLUSTERS_X / 2) * (3 * CONT_W + ROAD_WIDTH);
+                    const clusterZ = (cz - NUM_CLUSTERS_Z / 2) * (CONT_L + ROAD_WIDTH);
+
+                    if (Math.abs(clusterX) < 10 && Math.abs(clusterZ + 40) < 10) continue;
+
+                    containerBoxes.push({
+                        minX: clusterX - 0.5, maxX: clusterX + 2 * CONT_W + 0.5,
+                        minZ: clusterZ - CONT_L / 2 - 0.5, maxZ: clusterZ + CONT_L / 2 + 0.5
+                    });
+
+                    for (let r = 0; r < 2; r++) {
+                        for (let h = 0; h < 2; h++) {
+                            const matIndex = Math.floor(Math.random() * contMaterials.length);
+                            const mesh = new THREE.Mesh(boxGeometry, contMaterials[matIndex]);
+                            mesh.position.set(clusterX + r * CONT_W, h * CONT_H + CONT_H / 2, clusterZ);
+                            mesh.castShadow = true; mesh.receiveShadow = true;
+                            scene.add(mesh);
+                        }
+                    }
+                }
+            }
+        }
+        buildContainerYard();
+
+        function isValidPosition(x, z) {
+            for (let box of containerBoxes) {
+                if (x >= box.minX && x <= box.maxX && z >= box.minZ && z <= box.maxZ) return false;
+            }
+            return true;
+        }
+
+        // 5. NHÂN VẬT & CÔN TRÙNG TỪ anh.png (Cắt đúng từng ô 40x40px)
+        let gameState = { posX: 0, posZ: 20, angle: 0, hp: 100, score: 0, isTransitioning: false };
+
+        const charGeo = new THREE.PlaneGeometry(2, 2);
+        const charMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
+        const characterMesh = new THREE.Mesh(charGeo, charMat);
+        characterMesh.position.set(gameState.posX, 1, gameState.posZ);
+        scene.add(characterMesh);
+
+        let walkFrames = [], attackFrames = [];
+        let enemyFrames1 = [], enemyFrames2 = [], enemyHitFrames1 = [], enemyHitFrames2 = [];
+        const imgChar = new Image();
+        imgChar.crossOrigin = "anonymous";
+        imgChar.src = 'https://tranh-ba-game-gw3q.vercel.app/anh.png';
+        imgChar.onload = () => {
+            // Nhân vật di chuyển: 4 ô đầu hàng 1 (x: 0, 40, 80, 120, y: 0)
+            walkFrames = [
+                createSpriteTextureFromPixel(imgChar, 0, 0, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 40, 0, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 80, 0, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 120, 0, 40, 40)
+            ];
+            // Nhân vật tung chiêu Hỏa Cầu: Ô 5, 6, 7, 8 hàng 1 (x: 160, 200, 240, 280, y: 0)
+            attackFrames = [
+                createSpriteTextureFromPixel(imgChar, 160, 0, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 200, 0, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 240, 0, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 280, 0, 40, 40)
+            ];
+            charMat.map = walkFrames[0];
+
+            // Côn trùng 1 (Di chuyển): 4 ô đầu hàng 2 (y = 40)
+            enemyFrames1 = [
+                createSpriteTextureFromPixel(imgChar, 0, 40, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 40, 40, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 80, 40, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 120, 40, 40, 40)
+            ];
+            // Côn trùng 1 (Trúng chiêu): Ô 5, 6, 7, 8 hàng 2 (x: 160 đến 280, y = 40)
+            enemyHitFrames1 = [
+                createSpriteTextureFromPixel(imgChar, 160, 40, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 200, 40, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 240, 40, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 280, 40, 40, 40)
+            ];
+
+            // Côn trùng 2 (Di chuyển): 4 ô đầu hàng 3 (y = 80)
+            enemyFrames2 = [
+                createSpriteTextureFromPixel(imgChar, 0, 80, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 40, 80, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 80, 80, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 120, 80, 40, 40)
+            ];
+            // Côn trùng 2 (Trúng chiêu): Ô 5, 6, 7, 8 hàng 3 (x: 160 đến 280, y = 80)
+            enemyHitFrames2 = [
+                createSpriteTextureFromPixel(imgChar, 160, 80, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 200, 80, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 240, 80, 40, 40),
+                createSpriteTextureFromPixel(imgChar, 280, 80, 40, 40)
+            ];
+
+            spawnEnemies();
+        };
+
+        const enemies = [];
+        const items = []; // Danh sách vật phẩm văng ra (máu/công pháp)
+
+        function spawnEnemies() {
+            for (let i = 0; i < 12; i++) {
+                const enemyMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
+                const enemyMesh = new THREE.Mesh(charGeo, enemyMat);
+                
+                const type = Math.random() > 0.5 ? 1 : 2;
+                const frames = type === 1 ? enemyFrames1 : enemyFrames2;
+                enemyMat.map = frames[0];
+
+                let ex, ez, valid = false;
+                while (!valid) {
+                    ex = (Math.random() - 0.5) * 80;
+                    ez = (Math.random() - 0.5) * 80;
+                    valid = isValidPosition(ex, ez) && Math.abs(ez + 40) > 5;
+                }
+
+                enemyMesh.position.set(ex, 1, ez);
+                scene.add(enemyMesh);
+                enemies.push({ 
+                    mesh: enemyMesh, 
+                    type: type, 
+                    frames: frames, 
+                    hitFrames: type === 1 ? enemyHitFrames1 : enemyHitFrames2,
+                    frameIndex: 0, 
+                    timer: 0, 
+                    alive: true, 
+                    hitCount: 0, // Đếm số chiêu trúng (cần trúng 5 chiêu)
+                    speed: type === 1 ? 1.5 : 1.1 
+                });
+            }
+        }
+
+        // 6. HỆ THỐNG HỎA CẦU (HIỆU ỨNG LỬA PHUN)
+        const fireballs = [];
+        const fireballGeo = new THREE.SphereGeometry(0.5, 16, 16);
+        const fireballMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+
+        function shootFireball() {
+            const fireball = new THREE.Mesh(fireballGeo, fireballMat);
+            fireball.position.copy(characterMesh.position);
+            
+            // Hướng bay thẳng theo góc mặt nhân vật
+            const dirX = Math.sin(gameState.angle);
+            const dirZ = Math.cos(gameState.angle);
+
+            scene.add(fireball);
+            fireballs.push({
+                mesh: fireball,
+                dirX: dirX,
+                dirZ: dirZ,
+                speed: 18.0,
+                life: 1.5 // Thời gian tồn tại (giây)
+            });
+
+            // Hiệu ứng ánh sáng hỏa cầu chớp lóe
+            const fbLight = new THREE.PointLight(0xef4444, 3, 5);
+            fbLight.position.copy(fireball.position);
+            scene.add(fbLight);
+            setTimeout(() => scene.remove(fbLight), 200);
+        }
+
+        // 7. ĐIỀU KHIỂN & NÚT HỎA CẦU
+        const keys = { w: false, s: false, a: false, d: false };
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'w' || e.key === 'W') keys.w = true;
+            if (e.key === 's' || e.key === 'S') keys.s = true;
+            if (e.key === 'a' || e.key === 'A') keys.a = true;
+            if (e.key === 'd' || e.key === 'D') keys.d = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'w' || e.key === 'W') keys.w = false;
+            if (e.key === 's' || e.key === 'S') keys.s = false;
+            if (e.key === 'a' || e.key === 'A') keys.a = false;
+            if (e.key === 'd' || e.key === 'D') keys.d = false;
+        });
+
+        let joystickInput = { forward: 0, turn: 0 };
+        const joystick = document.getElementById('joystick');
+        const thumb = document.getElementById('joystick-thumb');
+        let joystickActive = false, touchId = null;
+
+        joystick.addEventListener('pointerdown', (e) => {
+            joystickActive = true; touchId = e.pointerId; joystick.setPointerCapture(touchId);
+        });
+        joystick.addEventListener('pointermove', (e) => {
+            if (!joystickActive || e.pointerId !== touchId) return;
+            const rect = joystick.getBoundingClientRect();
+            let dx = e.clientX - (rect.left + rect.width / 2);
+            let dy = e.clientY - (rect.top + rect.height / 2);
+            const dist = Math.sqrt(dx*dx + dy*dy), maxDist = 40;
+            if (dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
+            thumb.style.transform = `translate(${dx}px, ${dy}px)`;
+            joystickInput.forward = -dy / maxDist; joystickInput.turn = dx / maxDist;
+        });
+        function resetJoystick() {
+            joystickActive = false; thumb.style.transform = `translate(0px, 0px)`;
+            joystickInput.forward = 0; joystickInput.turn = 0;
+        }
+        joystick.addEventListener('pointerup', resetJoystick);
+        joystick.addEventListener('pointercancel', resetJoystick);
+
+        // Nút bấm Hỏa Cầu
+        let isAttacking = false;
+        document.getElementById('btn-attack').addEventListener('click', () => {
+            if (isAttacking) return;
+            isAttacking = true;
+            shootFireball();
+
+            // Chạy hoạt ảnh tấn công (ô 5, 6, 7, 8 hàng 1) trong 0.4 giây
+            let attIndex = 0;
+            const attInterval = setInterval(() => {
+                if (attIndex < attackFrames.length && attackFrames.length > 0) {
+                    charMat.map = attackFrames[attIndex];
+                    charMat.needsUpdate = true;
+                    attIndex++;
+                } else {
+                    clearInterval(attInterval);
+                    isAttacking = false;
+                }
+            }, 80);
+        });
+
+        // 8. VÒNG LẶP GAME & XỬ LÝ HỎA CẦU, VẬT PHẨM VĂNG RA
+        let lastTime = 0, animTimer = 0, frameIndex = 0;
+
+        function animate(time) {
+            requestAnimationFrame(animate);
+            const delta = (time - lastTime) / 1000;
+            lastTime = time;
+
+            if (gameState.isTransitioning) return;
+
+            let moveVal = (keys.w ? 1 : 0) - (keys.s ? 1 : 0) + joystickInput.forward;
+            moveVal = Math.max(-1, Math.min(1, moveVal));
+            let turnVal = (keys.d ? 1 : 0) - (keys.a ? 1 : 0) + joystickInput.turn;
+            turnVal = Math.max(-1, Math.min(1, turnVal));
+
+            gameState.angle -= turnVal * 3.0 * delta;
+            const moveSpeed = 6.0;
+            const nextX = gameState.posX + Math.sin(gameState.angle) * moveVal * moveSpeed * delta;
+            const nextZ = gameState.posZ + Math.cos(gameState.angle) * moveVal * moveSpeed * delta;
+
+            if (isValidPosition(nextX, nextZ)) {
+                gameState.posX = nextX;
+                gameState.posZ = nextZ;
+            }
+            characterMesh.position.set(gameState.posX, 1, gameState.posZ);
+
+            // Kiểm tra tiến vào cổng (0, -40)
+            const distToPortal = characterMesh.position.distanceTo(portalMesh.position);
+            if (distToPortal < 3) {
+                if (gameState.hp >= 90 && gameState.score >= 9) {
+                    gameState.isTransitioning = true;
+                    document.getElementById('portal-msg').style.display = 'block';
+                    setTimeout(() => {
+                        window.location.href = 'rungcontrung2.html';
+                    }, 1500);
+                } else {
+                    document.getElementById('portal-msg').innerText = "⚠️ CẦN ĐẠT ≥ 90% MÁU & ≥ 9 ĐIỂM CÔNG LỰC ĐỂ VỀ THÔN!";
+                    document.getElementById('portal-msg').style.display = 'block';
+                    setTimeout(() => {
+                        document.getElementById('portal-msg').style.display = 'none';
+                        document.getElementById('portal-msg').innerText = "✨ ĐẠT ĐỦ MÁU & CÔNG LỰC! ĐANG TIẾN VÀO CỔNG VỀ THÔN TÂN THỦ... ✨";
+                    }, 2000);
+                }
+            }
+
+            // Hoạt ảnh nhân vật di chuyển (nếu không đang tung chiêu)
+            if (!isAttacking && Math.abs(moveVal) > 0.1 && walkFrames.length > 0) {
+                animTimer += delta;
+                if (animTimer > 0.12) {
+                    animTimer = 0;
+                    frameIndex = (frameIndex + 1) % walkFrames.length;
+                    charMat.map = walkFrames[frameIndex];
+                    charMat.needsUpdate = true;
+                }
+            }
+
+            // Cập nhật Hỏa Cầu bay và va chạm với côn trùng
+            for (let i = fireballs.length - 1; i >= 0; i--) {
+                const fb = fireballs[i];
+                fb.life -= delta;
+                fb.mesh.position.x += fb.dirX * fb.speed * delta;
+                fb.mesh.position.z += fb.dirZ * fb.speed * delta;
+
+                // Kiểm tra va chạm hỏa cầu với côn trùng
+                for (let j = 0; j < enemies.length; j++) {
+                    const enemy = enemies[j];
+                    if (!enemy.alive) continue;
+
+                    const dist = fb.mesh.position.distanceTo(enemy.mesh.position);
+                    if (dist < 2.0) {
+                        // Trúng đạn hỏa cầu!
+                        scene.remove(fb.mesh);
+                        fireballs.splice(i, 1);
+
+                        enemy.hitCount++;
+                        
+                        // Côn trùng chuyển sang hoạt ảnh trúng chiêu (ô 5, 6, 7, 8 hàng 2 hoặc 3)
+                        enemy.mesh.material.map = enemy.hitFrames[Math.min(enemy.hitCount - 1, 3)];
+                        enemy.mesh.material.needsUpdate = true;
+
+                        // Đủ 5 chiêu thì tiêu diệt quái và văng máu/công pháp
+                        if (enemy.hitCount >= 5) {
+                            enemy.alive = false;
+                            scene.remove(enemy.mesh);
+                            gameState.score += 1;
+                            document.getElementById('score-val').innerText = gameState.score;
+
+                            // Văng vật phẩm (máu hoặc công pháp) tại chỗ quái ngã
+                            spawnDropItem(enemy.mesh.position.x, enemy.mesh.position.z);
+                        }
+                        break;
+                    }
+                }
+
+                if (fb.life <= 0) {
+                    scene.remove(fb.mesh);
+                    fireballs.splice(i, 1);
+                }
+            }
+
+            // AI Côn trùng đuổi theo nhân vật
+            enemies.forEach(enemy => {
+                if (!enemy.alive) return;
+                const dirX = gameState.posX - enemy.mesh.position.x;
+                const dirZ = gameState.posZ - enemy.mesh.position.z;
+                const dist = Math.sqrt(dirX*dirX + dirZ*dirZ);
+
+                if (dist > 1.2) {
+                    const step = enemy.speed * delta;
+                    const nex = enemy.mesh.position.x + (dirX / dist) * step;
+                    const nez = enemy.mesh.position.z + (dirZ / dist) * step;
+                    if (isValidPosition(nex, nez)) enemy.mesh.position.set(nex, 1, nez);
+                } else {
+                    // Trừ máu khi quái cắn
+                    gameState.hp = Math.max(0, gameState.hp - 2.5 * delta);
+                    document.getElementById('hp-val').innerText = Math.floor(gameState.hp);
+                    document.getElementById('hp-bar-fill').style.width = gameState.hp + '%';
+                }
+
+                if (enemy.hitCount === 0) {
+                    enemy.timer += delta;
+                    if (enemy.timer > 0.15) {
+                        enemy.timer = 0;
+                        enemy.frameIndex = (enemy.frameIndex + 1) % enemy.frames.length;
+                        enemy.mesh.material.map = enemy.frames[enemy.frameIndex];
+                        enemy.mesh.material.needsUpdate = true;
+                    }
+                }
+                enemy.mesh.quaternion.copy(camera.quaternion);
+            });
+
+            // Kiểm tra nhân vật nhặt vật phẩm văng ra
+            items.forEach((item, idx) => {
+                if (!item.active) return;
+                const dist = characterMesh.position.distanceTo(item.mesh.position);
+                if (dist < 2.0) {
+                    item.active = false;
+                    scene.remove(item.mesh);
+                    if (item.type === 'hp') {
+                        gameState.hp = Math.min(100, gameState.hp + 15);
+                        document.getElementById('hp-val').innerText = Math.floor(gameState.hp);
+                        document.getElementById('hp-bar-fill').style.width = gameState.hp + '%';
+                    } else {
+                        gameState.score += 2; // Tăng công pháp
+                        document.getElementById('score-val').innerText = gameState.score;
+                    }
+                }
+            });
+
+            const camDist = 9, camHeight = 4.5;
+            camera.position.x += (gameState.posX - Math.sin(gameState.angle) * camDist - camera.position.x) * 0.1;
+            camera.position.z += (gameState.posZ - Math.cos(gameState.angle) * camDist - camera.position.z) * 0.1;
+            camera.position.y = camHeight;
+            camera.lookAt(gameState.posX, 1, gameState.posZ);
+
+            characterMesh.quaternion.copy(camera.quaternion);
+            renderer.render(scene, camera);
+        }
+        requestAnimationFrame(animate);
+
+        // Hàm tạo vật phẩm văng ra (máu hoặc công pháp)
+        function spawnDropItem(x, z) {
+            const isHp = Math.random() > 0.5;
+            const geo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+            const mat = new THREE.MeshBasicMaterial({ color: isHp ? 0x22c55e : 0xa855f7 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, 0.5, z);
+            scene.add(mesh);
+
+            items.push({ mesh: mesh, type: isHp ? 'hp' : 'power', active: true });
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
