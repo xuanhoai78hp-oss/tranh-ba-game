@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Vòng Quay Ngựa Gỗ - Hàn Băng Định Tọa Độ</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: none; }
+body { width: 100vw; height: 100vh; overflow: hidden; background: #020617; font-family: sans-serif; display: flex; justify-content: center; align-items: center; }
+
+#game-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #000; }
+#gameCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; }
+
+/* HUD Giao Diện Thanh Trạng Thái (Góc Trái Trên) */
+.hud-layer { position: absolute; top: 15px; left: 15px; z-index: 10; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+.bar-box { width: 220px; height: 18px; background: rgba(2, 6, 23, 0.85); border: 2px solid #38bdf8; border-radius: 10px; overflow: hidden; position: relative; box-shadow: 0 0 12px rgba(56, 189, 248, 0.4); }
+.hp-fill { width: 50%; height: 100%; background: linear-gradient(90deg, #ef4444, #22c55e); transition: width 0.2s; }
+.power-fill { width: 50%; height: 100%; background: linear-gradient(90deg, #0284c7, #38bdf8); transition: width 0.2s; }
+.bar-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+
+.kill-counter {
+width: 220px; padding: 4px 8px; background: rgba(15, 23, 42, 0.9); border: 1.5px solid #facc15;
+border-radius: 8px; color: #facc15; font-size: 11px; font-weight: bold; text-align: center;
+box-shadow: 0 0 10px rgba(250, 204, 21, 0.3);
+}
+
+.controls-hint-top {
+position: absolute; top: 15px; right: 15px; z-index: 10; color: #7dd3fc; font-size: 11px;
+background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px); padding: 8px 12px;
+border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.4); pointer-events: none; line-height: 1.4;
+}
+
+/* Joystick Điều Chỉnh Tọa Độ Tâm Ngắm */
+.virtual-joystick {
+position: absolute; bottom: 80px; left: 80px; width: 110px; height: 110px;
+background: rgba(56, 189, 248, 0.1); border: 2px solid rgba(56, 189, 248, 0.4);
+border-radius: 50%; z-index: 20; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+}
+.joystick-knob { width: 45px; height: 45px; background: rgba(56, 189, 248, 0.5); border: 1px solid #fff; border-radius: 50%; position: absolute; }
+
+/* Nút Phóng Hàn Băng Chuẩn Tọa Độ */
+.btn-iceball {
+position: absolute; bottom: 80px; right: 80px; width: 95px; height: 95px;
+background: linear-gradient(135deg, rgba(14, 165, 233, 0.5), rgba(3, 105, 161, 0.7));
+border: 2px solid #7dd3fc; border-radius: 50%; z-index: 20; color: #e0f2fe;
+font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center;
+text-shadow: 0 0 8px #0284c7; backdrop-filter: blur(4px); box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+}
+
+/* Modal Hồi Sinh */
+#respawn-modal {
+position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+background: rgba(2, 6, 23, 0.9); backdrop-filter: blur(8px); z-index: 1000;
+display: none; justify-content: center; align-items: center;
+}
+.modal-content {
+background: linear-gradient(135deg, #0f172a, #1e293b); border: 3px solid #38bdf8;
+padding: 30px; border-radius: 20px; text-align: center; color: #e0f2fe; max-width: 380px; width: 90%;
+}
+.btn-respawn {
+background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; border: 2px solid #7dd3fc;
+padding: 12px 24px; font-size: 15px; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 15px; width: 100%;
+}
+</style>
+</head>
+<body>
+
+<div id="respawn-modal">
+<div class="modal-content">
+<h2>❄️ THẤT BẠI TRONG VÒNG QUAY</h2>
+<p>Sinh khí đã cạn kiệt giữa luồng băng tuyết!<br>Linh hồn quay trở về <b>Thôn Tân Thủ</b>.</p>
+<button class="btn-respawn" onclick="goToVillage()">Về Thôn Tân Thủ</button>
+</div>
+</div>
+
+<div id="game-container">
+<div class="hud-layer">
+<div class="bar-box">
+<div id="hp-fill" class="hp-fill"></div>
+<div id="hp-text" class="bar-text">MÁU: 50%</div>
+</div>
+<div class="bar-box">
+<div id="power-fill" class="power-fill"></div>
+<div id="power-text" class="bar-text">CÔNG LỰC HÀN BĂNG: 50%</div>
+</div>
+<div id="kill-text" class="kill-counter">⚔️ ĐÃ DIỆT: 0 / 250</div>
+</div>
+
+<div class="controls-hint-top">
+🎯 <b>HÀN BĂNG CHUẨN XÁC:</b><br>
+• Tiêu diệt đủ 250 kẻ thù để qua cửa.<br>
+• Quái sinh liên tục từ cạnh PHẢI.<br>
+• Bắn nhầm NPC/Đồng minh: Trừ 10% máu.
+</div>
+
+<div class="virtual-joystick" id="vJoystick"><div class="joystick-knob" id="vKnob"></div></div>
+<div class="btn-iceball" id="btnIce">❄️ BẮN BĂNG</div>
+
+<canvas id="gameCanvas"></canvas>
+</div>
+
+<audio id="bg-music" loop></audio>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const imgRung = new Image(); imgRung.src = 'rung.png';
+const imgAtlas = new Image(); imgAtlas.src = 'anh.png';
+
+let isRungLoaded = false, isAtlasLoaded = false;
+imgRung.onload = () => isRungLoaded = true;
+imgAtlas.onload = () => isAtlasLoaded = true;
+
+const bgMusic = document.getElementById('bg-music');
+function playRandomMusic() {
+let track = Math.floor(Math.random() * 9) + 1;
+bgMusic.src = `${track}.mp3`; bgMusic.volume = 0.4; bgMusic.play().catch(() => {});
+}
+
+let audioCtx = null;
+function initAudio() {
+if (!audioCtx) {
+audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+playRandomMusic();
+}
+}
+
+function playSfx(type) {
+if (!audioCtx) return;
+const osc = audioCtx.createOscillator();
+const gain = audioCtx.createGain();
+osc.connect(gain); gain.connect(audioCtx.destination);
+
+if (type === 'ice') {
+osc.type = 'sine';
+osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.2);
+gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+} else if (type === 'freeze') {
+osc.type = 'triangle';
+osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.3);
+gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+} else if (type === 'explode') {
+osc.type = 'sawtooth';
+osc.frequency.setValueAtTime(250, audioCtx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.35);
+gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+osc.start(); osc.stop(audioCtx.currentTime + 0.35);
+} else if (type === 'pickup') {
+osc.type = 'sine';
+osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.25);
+gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+}
+}
+
+let screenW = 0, screenH = 0;
+const RUNG_W = 11100, RUNG_H_HALF = 410;
+let carouselOffset = 0;
+let isDead = false;
+
+let crosshair = { x: 0, y: 0 };
+let player = { hp: 50, power: 50, kills: 0 };
+
+let iceProjectiles = [];
+let entities = [];
+let items = [];
+let iceParticles = [];
+let npcAttacks = [];
+
+function resize() {
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+screenW = canvas.width; screenH = canvas.height;
+
+if (crosshair.x === 0) {
+crosshair.x = screenW / 2;
+crosshair.y = screenH / 2;
+}
+}
+
+// Bảng cấu hình 5 loại thực thể
+const TYPE_CONFIG = {
+'bug1': { row: 1, isFriendly: false, speed: 2.2 },
+'bug2': { row: 2, isFriendly: false, speed: 2.5 },
+'npc': { row: 4, isFriendly: true, speed: 1.8 },
+'ally': { row: 6, isFriendly: true, speed: 1.8 },
+'enemy':{ row: 8, isFriendly: false, speed: 2.8 }
+};
+
+// Hàm sinh duy nhất 1 thực thể MỚI hoàn toàn từ MÉP PHẢI màn hình vào
+function spawnSingleEntityFromRight(forcedType = null) {
+let types = ['bug1', 'bug2', 'enemy', 'npc', 'ally'];
+
+// Giới hạn số lượng NPC/Đồng minh tối đa 2 con để không làm rối màn hình
+let friendlyCount = entities.filter(e => e.isFriendly).length;
+let selectedType = forcedType;
+if (!selectedType) {
+if (friendlyCount >= 2) {
+types = ['bug1', 'bug2', 'enemy'];
+}
+selectedType = types[Math.floor(Math.random() * types.length)];
+}
+
+let cfg = TYPE_CONFIG[selectedType];
+entities.push({
+id: Math.random(),
+type: selectedType,
+row: cfg.row,
+isFriendly: cfg.isFriendly,
+x: screenW + 80 + Math.random() * 150, // Luôn sinh từ cạnh PHẢI
+y: screenH * 0.35 + Math.random() * (screenH * 0.4),
+w: 60, h: 60,
+freezeState: 0,
+flashTimer: 0,
+hp: 2,
+maxHp: 2,
+speed: cfg.speed,
+dir: -1, // Tất cả đều đi trôi sang TRÁI
+fireTimer: Math.random() * 3
+});
+}
+
+// Giữ nhịp luôn có từ 5-7 quái trên màn hình, sinh liên tục từ lề phải
+function maintainBattlefield() {
+while (entities.length < 6) {
+spawnSingleEntityFromRight();
+}
+}
+
+// Controls
+const keys = {};
+window.addEventListener('keydown', e => {
+initAudio(); keys[e.code] = true;
+if ((e.code === 'KeyJ' || e.code === 'Space') && !isDead) shootIceSpells();
+});
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+let joystickVector = { x: 0, y: 0 };
+const vJoystick = document.getElementById('vJoystick');
+const vKnob = document.getElementById('vKnob');
+let joystickActive = false;
+
+vJoystick.addEventListener('touchstart', e => { initAudio(); joystickActive = true; });
+window.addEventListener('touchmove', e => {
+if (!joystickActive) return;
+let touch = e.touches[0];
+let rect = vJoystick.getBoundingClientRect();
+let dx = touch.clientX - (rect.left + rect.width / 2);
+let dy = touch.clientY - (rect.top + rect.height / 2);
+let maxDist = 40;
+let dist = Math.hypot(dx, dy);
+if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
+vKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+joystickVector = { x: dx / maxDist, y: dy / maxDist };
+});
+window.addEventListener('touchend', () => {
+joystickActive = false; joystickVector = { x: 0, y: 0 };
+vKnob.style.transform = `translate(0px, 0px)`;
+});
+
+document.getElementById('btnIce').addEventListener('touchstart', e => {
+e.preventDefault(); initAudio();
+if (!isDead) shootIceSpells();
+});
+
+// Phóng đạn băng bay chuẩn xác tới tọa độ Tâm Ngắm (Crosshair)
+function shootIceSpells() {
+playSfx('ice');
+player.power = Math.max(0, player.power - 1.5);
+updateUI();
+
+let startX = screenW / 2;
+let startY = screenH - 50;
+
+let targetX = crosshair.x;
+let targetY = crosshair.y;
+
+let dist = Math.hypot(targetX - startX, targetY - startY);
+let speed = 20;
+let vx = ((targetX - startX) / dist) * speed;
+let vy = ((targetY - startY) / dist) * speed;
+let travelTime = dist / speed;
+
+iceProjectiles.push({
+x: startX, y: startY,
+targetX: targetX, targetY: targetY,
+vx: vx, vy: vy,
+life: travelTime,
+rotation: 0, size: 20
+});
+}
+
+// Xử lý nổ AoE (Diện rộng) tại tọa độ đích
+function explodeAoE(x, y) {
+playSfx('explode');
+
+for (let k = 0; k < 25; k++) {
+iceParticles.push({
+x: x, y: y,
+vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 0.5) * 12,
+size: Math.random() * 8 + 3, color: '#38bdf8', life: 25
+});
+}
+
+let aoeRadius = 85;
+
+for (let i = entities.length - 1; i >= 0; i--) {
+let ent = entities[i];
+if (ent.hp <= 0) continue;
+let d = Math.hypot(ent.x - x, ent.y - y);
+if (d <= aoeRadius + ent.w / 2) {
+if (ent.isFriendly) {
+// Bắn nhầm Đồng Minh / NPC -> Chỉ nhấp nháy chớp sáng và trừ 10% máu (Bất tử)
+player.hp = Math.max(0, player.hp - 10);
+updateUI();
+ent.flashTimer = 20;
+playSfx('hit');
+if (player.hp <= 0) { isDead = true; document.getElementById('respawn-modal').style.display = 'flex'; }
+} else {
+// Kẻ thù / Côn trùng
+if (player.power >= 90) {
+ent.hp = 0;
+playSfx('freeze');
+} else if (player.power >= 70) {
+ent.hp -= 2;
+playSfx('freeze');
+} else {
+if (ent.freezeState === 0) {
+ent.freezeState = 1;
+playSfx('freeze');
+} else if (ent.freezeState === 1) {
+ent.freezeState = 2;
+ent.hp = 0;
+playSfx('explode');
+}
+}
+
+if (ent.hp <= 0) {
+player.kills++; // Tăng điểm tích lũy hạ gục
+updateUI();
+
+items.push({
+x: ent.x, y: ent.y,
+type: Math.random() > 0.5 ? 'hologram' : 'book'
+});
+
+// Xóa quái chết và lập tức sinh quái mới từ LỀ PHẢI vào
+entities.splice(i, 1);
+spawnSingleEntityFromRight();
+}
+}
+}
+}
+}
+
+function update() {
+if (isDead) return;
+
+carouselOffset = (carouselOffset + 2) % RUNG_W;
+maintainBattlefield();
+
+// Joystick di chuyển tâm ngắm
+if (joystickVector.x !== 0 || joystickVector.y !== 0) {
+crosshair.x += joystickVector.x * 12;
+crosshair.y += joystickVector.y * 12;
+crosshair.x = Math.max(40, Math.min(screenW - 40, crosshair.x));
+crosshair.y = Math.max(40, Math.min(screenH - 40, crosshair.y));
+}
+
+// Đạn Băng bay
+for (let i = iceProjectiles.length - 1; i >= 0; i--) {
+let p = iceProjectiles[i];
+p.x += p.vx; p.y += p.vy; p.rotation += 0.2; p.life--;
+
+iceParticles.push({
+x: p.x, y: p.y, vx: (Math.random() - 0.5) * 2, vy: Math.random() * 2,
+size: Math.random() * 5 + 2, color: '#e0f2fe', life: 12
+});
+
+let distToTarget = Math.hypot(p.targetX - p.x, p.targetY - p.y);
+if (p.life <= 0 || distToTarget < 15) {
+explodeAoE(p.targetX, p.targetY);
+iceProjectiles.splice(i, 1);
+}
+}
+
+// Cập nhật Thực thể (Chỉ trôi từ PHẢI sang TRÁI)
+for (let i = entities.length - 1; i >= 0; i--) {
+let ent = entities[i];
+if (ent.freezeState !== 1) {
+ent.x -= ent.speed;
+}
+
+if (ent.flashTimer > 0) ent.flashTimer--;
+
+ent.fireTimer += 0.016;
+if (ent.fireTimer >= 3.5 && ent.freezeState !== 1) {
+ent.fireTimer = 0;
+npcAttacks.push({
+x: ent.x, y: ent.y,
+vx: -5,
+color: ent.isFriendly ? '#38bdf8' : '#ef4444',
+life: 60
+});
+}
+
+// Nếu trôi ra khỏi mép trái màn hình -> Xóa hẳn và tái sinh từ MÉP PHẢI vào
+if (ent.x < -100) {
+let deadType = ent.type;
+entities.splice(i, 1);
+spawnSingleEntityFromRight(deadType);
+}
+}
+
+for (let i = npcAttacks.length - 1; i >= 0; i--) {
+let atk = npcAttacks[i];
+atk.x += atk.vx; atk.life--;
+if (atk.life <= 0 || atk.x < -20) npcAttacks.splice(i, 1);
+}
+
+// Vật phẩm hút về góc trái trên (x: 40, y: 40)
+for (let i = items.length - 1; i >= 0; i--) {
+let it = items[i];
+let targetX = 40, targetY = 40;
+let dx = targetX - it.x;
+let dy = targetY - it.y;
+let dist = Math.hypot(dx, dy);
+
+it.x += (dx / dist) * 14;
+it.y += (dy / dist) * 14;
+
+if (dist < 35) {
+playSfx('pickup');
+if (it.type === 'hologram') player.hp = Math.min(100, player.hp + 15);
+else player.power = Math.min(100, player.power + 15);
+updateUI();
+items.splice(i, 1);
+}
+}
+
+// Kiểm tra điều kiện qua cửa: Tiêu diệt ĐỦ 250 KẺ THÙ tích lũy
+if (player.kills >= 250) {
+window.location.href = 'rungcontrung.html';
+return;
+}
+
+for (let i = iceParticles.length - 1; i >= 0; i--) {
+let p = iceParticles[i]; p.x += p.vx; p.y += p.vy; p.life--;
+if (p.life <= 0) iceParticles.splice(i, 1);
+}
+}
+
+function updateUI() {
+document.getElementById('hp-fill').style.width = player.hp + '%';
+document.getElementById('hp-text').innerText = `MÁU: ${Math.floor(player.hp)}%`;
+document.getElementById('power-fill').style.width = player.power + '%';
+document.getElementById('power-text').innerText = `CÔNG LỰC HÀN BĂNG: ${Math.floor(player.power)}%`;
+document.getElementById('kill-text').innerText = `⚔️ ĐÃ DIỆT: ${player.kills} / 250`;
+}
+
+function goToVillage() { window.location.href = 'thanhpho.html'; }
+
+// 7. VẼ CANVAS
+function draw() {
+ctx.clearRect(0, 0, screenW, screenH);
+
+if (isRungLoaded) {
+let bgX1 = carouselOffset % RUNG_W;
+ctx.drawImage(imgRung, bgX1, 0, screenW, RUNG_H_HALF, 0, 0, screenW, screenH);
+let bgX2 = (carouselOffset * 2) % RUNG_W;
+ctx.drawImage(imgRung, bgX2, RUNG_H_HALF, screenW, RUNG_H_HALF, 0, 0, screenW, screenH);
+}
+
+items.forEach(it => {
+ctx.save(); ctx.translate(it.x, it.y);
+ctx.fillStyle = it.type === 'hologram' ? '#ef4444' : '#38bdf8';
+ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
+ctx.restore();
+});
+
+entities.forEach(ent => {
+if (ent.hp <= 0) return;
+ctx.save();
+ctx.translate(ent.x, ent.y);
+ctx.scale(-1, 1); // Tất cả quay mặt sang trái
+
+if (ent.flashTimer > 0 && Math.floor(ent.flashTimer / 3) % 2 === 0) {
+ctx.globalAlpha = 0.3;
+}
+
+if (isAtlasLoaded) {
+let col = Math.floor(Date.now() / 140) % 4;
+ctx.drawImage(imgAtlas, col * 40, ent.row * 40, 40, 40, -ent.w / 2, -ent.h / 2, ent.w, ent.h);
+}
+
+if (ent.freezeState === 1) {
+ctx.fillStyle = 'rgba(56, 189, 248, 0.65)';
+ctx.strokeStyle = '#e0f2fe';
+ctx.lineWidth = 3;
+ctx.beginPath(); ctx.arc(0, 0, ent.w * 0.7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+}
+
+ctx.restore();
+
+let barW = ent.w * 0.8;
+ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(ent.x - barW / 2, ent.y - ent.h / 2 - 8, barW, 4);
+ctx.fillStyle = ent.isFriendly ? '#22c55e' : '#ef4444';
+ctx.fillRect(ent.x - barW / 2, ent.y - ent.h / 2 - 8, barW * (ent.hp / ent.maxHp), 4);
+});
+
+npcAttacks.forEach(atk => {
+ctx.save();
+ctx.fillStyle = atk.color;
+ctx.beginPath(); ctx.arc(atk.x, atk.y, 8, 0, Math.PI * 2); ctx.fill();
+ctx.restore();
+});
+
+iceProjectiles.forEach(p => {
+ctx.save();
+ctx.translate(p.x, p.y);
+ctx.rotate(p.rotation);
+ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 15;
+ctx.strokeStyle = '#e0f2fe'; ctx.lineWidth = 2.5;
+for (let a = 0; a < 6; a++) {
+let rad = (a * Math.PI) / 3;
+ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(rad) * p.size, Math.sin(rad) * p.size); ctx.stroke();
+}
+ctx.fillStyle = '#38bdf8';
+ctx.beginPath(); ctx.arc(0, 0, p.size * 0.4, 0, Math.PI * 2); ctx.fill();
+ctx.restore();
+});
+
+iceParticles.forEach(p => {
+ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+});
+
+// Tâm Ngắm Định Tọa Độ
+ctx.save();
+ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.5;
+ctx.beginPath(); ctx.arc(crosshair.x, crosshair.y, 18, 0, Math.PI * 2); ctx.stroke();
+ctx.beginPath(); ctx.moveTo(crosshair.x - 24, crosshair.y); ctx.lineTo(crosshair.x + 24, crosshair.y); ctx.stroke();
+ctx.beginPath(); ctx.moveTo(crosshair.x, crosshair.y - 24); ctx.lineTo(crosshair.x, crosshair.y + 24); ctx.stroke();
+ctx.restore();
+}
+
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+window.addEventListener('resize', resize);
+resize(); updateUI(); loop();
+</script>
+</body>
+</html>
