@@ -87,10 +87,10 @@ padding: 12px 24px; font-size: 15px; font-weight: bold; border-radius: 10px; cur
 </div>
 
 <div class="controls-hint-top">
-🎯 <b>HÀN BĂNG CHUẨN XÁC:</b><br>
-• Tiêu diệt đủ 250 kẻ thù để qua cửa.<br>
-• Nhạc nền tự động đổi bài liên tục.<br>
-• Bắn nhầm NPC/Đồng minh: Trừ 10% máu.
+🎯 <b>VÒNG LẶP KHÔNG GIAN:</b><br>
+• Chưa đủ 250 điểm, vòng quay nối tiếp từ trái.<br>
+• Đạt $\ge 250$ điểm tự động qua cửa.<br>
+• Nhạc nền tự động đổi bài liên tục.
 </div>
 
 <div class="virtual-joystick" id="vJoystick"><div class="joystick-knob" id="vKnob"></div></div>
@@ -112,15 +112,14 @@ let isRungLoaded = false, isAtlasLoaded = false;
 imgRung.onload = () => isRungLoaded = true;
 imgAtlas.onload = () => isAtlasLoaded = true;
 
-// Xử lý nhạc nền ngẫu nhiên và tự động đổi bài khi phát xong
 const bgMusic = document.getElementById('bg-music');
 function playRandomMusic() {
-let track = Math.floor(Math.random() * 9) + 1; // Random từ 1 đến 9
+let track = Math.floor(Math.random() * 9) + 1;
 bgMusic.src = `${track}.mp3`;
 bgMusic.volume = 0.4;
 bgMusic.play().catch(() => {});
 }
-bgMusic.onended = playRandomMusic; // Tự động đổi bài mới khi bài cũ chạy hết
+bgMusic.onended = playRandomMusic;
 
 let audioCtx = null;
 function initAudio() {
@@ -346,7 +345,7 @@ if (ent.hp <= 0) {
 player.kills++;
 updateUI();
 
-// KIỂM TRA QUA CỬA NGAY KHI ĐỦ 250 ĐIỂM TIÊU DIỆT
+// Kiểm tra điều kiện qua cửa ngay khi đạt 250 điểm tiêu diệt
 if (player.kills >= 250) {
 window.location.href = 'rungcontrung.html';
 return;
@@ -413,12 +412,11 @@ life: 60
 });
 }
 
+// HẾT CẠNH PHẢI HOẶC CẠNH TRÁI -> NỐI TIẾP VÒNG LẶP KHÔNG GIAN
 if (ent.dir === -1 && ent.x < -100) {
-entities.splice(i, 1);
-spawnSingleEntity();
+ent.x = screenW + 100; // Chạy hết cạnh trái thì vòng lại lề phải
 } else if (ent.dir === 1 && ent.x > screenW + 100) {
-entities.splice(i, 1);
-spawnSingleEntity();
+ent.x = -100; // Chạy hết cạnh phải thì vòng lại lề trái
 }
 }
 
@@ -447,7 +445,7 @@ items.splice(i, 1);
 }
 }
 
-// Phòng hờ kiểm tra qua cửa lần nữa trong vòng lặp chính
+// Kiểm tra qua cửa liên tục ở vòng lặp
 if (player.kills >= 250) {
 window.location.href = 'rungcontrung.html';
 return;
@@ -469,23 +467,16 @@ document.getElementById('kill-text').innerText = `⚔️ ĐÃ DIỆT: ${player.k
 
 function goToVillage() { window.location.href = 'thanhpho.html'; }
 
-// 7. VẼ CANVAS & XỬ LÝ LỚP PARALLAX CHUẨN XÁC
 function draw() {
 ctx.clearRect(0, 0, screenW, screenH);
 
-// ==========================================
-// LỚP 1 (DƯỚI CÙNG): Nền rừng xa (Hàng 1 rung.png: 0px -> 410px)
-// ==========================================
+// LỚP 1: Nền rừng xa
 if (isRungLoaded) {
 let bgX1 = carouselOffset % RUNG_W;
 ctx.drawImage(imgRung, bgX1, 0, screenW, RUNG_H_HALF, 0, 0, screenW, screenH);
 }
 
-// ==========================================
-// LỚP 2 (Ở GIỮA): Vật phẩm, Thực thể, Đạn hỏa cầu, Hiệu ứng Hàn băng & Tâm ngắm
-// ==========================================
-
-// 1. Vật phẩm bay hút về góc trái trên
+// LỚP 2: Vật phẩm, Thực thể, Đạn, Hiệu ứng băng
 items.forEach(it => {
 ctx.save(); ctx.translate(it.x, it.y);
 ctx.fillStyle = it.type === 'hologram' ? '#ef4444' : '#38bdf8';
@@ -493,7 +484,6 @@ ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
 ctx.restore();
 });
 
-// 2. Thực thể (NPC, Đồng minh, Côn trùng, Kẻ thù) + Thanh Máu
 entities.forEach(ent => {
 if (ent.hp <= 0) return;
 ctx.save();
@@ -514,7 +504,6 @@ let col = Math.floor(Date.now() / 140) % 4;
 ctx.drawImage(imgAtlas, col * 40, ent.row * 40, 40, 40, -ent.w / 2, -ent.h / 2, ent.w, ent.h);
 }
 
-// Hiệu ứng Hóa băng (Cục nước đá bao quanh)
 if (ent.freezeState === 1) {
 ctx.fillStyle = 'rgba(56, 189, 248, 0.65)';
 ctx.strokeStyle = '#e0f2fe';
@@ -530,7 +519,6 @@ ctx.fillStyle = ent.isFriendly ? '#22c55e' : '#ef4444';
 ctx.fillRect(ent.x - barW / 2, ent.y - ent.h / 2 - 8, barW * (ent.hp / ent.maxHp), 4);
 });
 
-// 3. Đạn hỏa cầu giao chiến giữa các NPC
 npcAttacks.forEach(atk => {
 ctx.save();
 ctx.fillStyle = atk.color;
@@ -538,7 +526,6 @@ ctx.beginPath(); ctx.arc(atk.x, atk.y, 8, 0, Math.PI * 2); ctx.fill();
 ctx.restore();
 });
 
-// 4. Bông Tuyết Hàn Băng Chưởng Định Tọa Độ
 iceProjectiles.forEach(p => {
 ctx.save();
 ctx.translate(p.x, p.y);
@@ -554,12 +541,10 @@ ctx.beginPath(); ctx.arc(0, 0, p.size * 0.4, 0, Math.PI * 2); ctx.fill();
 ctx.restore();
 });
 
-// 5. Hạt Tuyết rơi vãi
 iceParticles.forEach(p => {
 ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
 });
 
-// 6. Tâm Ngắm Định Tọa Độ
 ctx.save();
 ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.5;
 ctx.beginPath(); ctx.arc(crosshair.x, crosshair.y, 18, 0, Math.PI * 2); ctx.stroke();
@@ -567,10 +552,7 @@ ctx.beginPath(); ctx.moveTo(crosshair.x - 24, crosshair.y); ctx.lineTo(crosshair
 ctx.beginPath(); ctx.moveTo(crosshair.x, crosshair.y - 24); ctx.lineTo(crosshair.x, crosshair.y + 24); ctx.stroke();
 ctx.restore();
 
-// ==========================================
-// LỚP 3 (TRÊN CÙNG): Hàng cây thưa (Hàng 2 rung.png: 410px -> 820px)
-// Phủ đè lên nhân vật, cuộn nhanh gấp đôi tạo cảm giác luồn lách giữa rừng!
-// ==========================================
+// LỚP 3: Hàng cây thưa phủ trên cùng
 if (isRungLoaded) {
 let bgX2 = (carouselOffset * 2) % RUNG_W;
 ctx.drawImage(imgRung, bgX2, RUNG_H_HALF, screenW, RUNG_H_HALF, 0, 0, screenW, screenH);
