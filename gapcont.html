@@ -1,673 +1,577 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Game 3D - Quả Cầu Sét & Âm Thanh Web Audio API</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: #0b0f19; font-family: sans-serif; }
-        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Game 3D - Quả Cầu Sét & NPC Online</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
+#canvas-container { width: 100vw; height: 100vh; }
 
-        /* HUD hiển thị thông số */
-        #hud {
-            position: absolute; top: 15px; left: 15px; color: #fff;
-            background: rgba(15, 23, 42, 0.85); padding: 12px 18px; border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2); font-size: 13px; z-index: 10; line-height: 1.6;
-        }
-        #hud b { color: #38bdf8; }
+/* HUD Người chơi (Góc trái) */
+#hud {
+position: absolute; top: 15px; left: 15px;
+color: #fff; background: rgba(15, 23, 42, 0.85);
+padding: 12px 18px; border-radius: 10px;
+border: 1px solid rgba(255, 255, 255, 0.2);
+backdrop-filter: blur(5px); pointer-events: none;
+line-height: 1.5; font-size: 13px; z-index: 10;
+}
+#hud h3 { color: #facc15; font-size: 15px; margin-bottom: 4px; }
 
-        /* Thanh máu */
-        .hp-bar-container {
-            width: 150px; height: 10px; background: #334155; border-radius: 5px;
-            overflow: hidden; display: inline-block; vertical-align: middle; margin-left: 5px;
-        }
-        #hp-bar-fill { width: 100%; height: 100%; background: #22c55e; transition: width 0.2s; }
+/* HUD NPC (Góc phải) */
+#npc-hud {
+position: absolute; top: 15px; right: 15px;
+color: #fff; background: rgba(30, 41, 59, 0.85);
+padding: 12px 18px; border-radius: 10px;
+border: 1px solid rgba(56, 189, 248, 0.3);
+backdrop-filter: blur(5px); pointer-events: none;
+line-height: 1.5; font-size: 13px; z-index: 10; text-align: right;
+}
+#npc-hud h3 { color: #38bdf8; font-size: 15px; margin-bottom: 4px; }
 
-        /* Thông báo qua cửa */
-        #portal-msg {
-            position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
-            background: rgba(56, 189, 248, 0.95); color: #000; padding: 12px 24px;
-            border-radius: 20px; font-weight: bold; font-size: 15px; display: none;
-            z-index: 20; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center;
-        }
+.health-bar {
+width: 150px; height: 10px; background: rgba(255,255,255,0.2);
+border-radius: 5px; overflow: hidden; display: inline-block;
+vertical-align: middle; margin-left: 5px;
+}
+.health-fill { width: 50%; height: 100%; background: #22c55e; transition: width 0.3s; }
+.npc-health-fill { width: 50%; height: 100%; background: #38bdf8; transition: width 0.3s; }
 
-        /* Joystick ảo */
-        .joystick-base {
-            position: absolute; bottom: 40px; left: 40px;
-            width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%;
-            touch-action: none; z-index: 10;
-        }
-        .joystick-thumb {
-            position: absolute; top: 35px; left: 35px;
-            width: 50px; height: 50px; background: rgba(56, 189, 248, 0.8);
-            border-radius: 50%; pointer-events: none; transition: transform 0.05s linear;
-        }
+/* Joystick di động */
+#joystick-base {
+position: absolute; bottom: 100px; left: 100px;
+width: 120px; height: 120px; background: rgba(255,255,255,0.1);
+border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;
+touch-action: none; z-index: 10; display: block;
+}
+#joystick-stick {
+position: absolute; top: 35px; left: 35px;
+width: 50px; height: 50px; background: rgba(250, 204, 21, 0.8);
+border-radius: 50%; pointer-events: none;
+}
 
-        /* Nút Tấn công Sét */
-        .action-btn {
-            position: absolute; bottom: 50px; right: 50px;
-            width: 85px; height: 85px; background: linear-gradient(135deg, #0284c7, #38bdf8);
-            border: 3px solid rgba(255, 255, 255, 0.8); border-radius: 50%;
-            color: #fff; font-weight: bold; font-size: 13px;
-            display: flex; align-items: center; justify-content: center;
-            touch-action: none; z-index: 10; cursor: pointer; text-align: center;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.8); animation: glow 1s infinite alternate;
-        }
-        @keyframes glow {
-            from { box-shadow: 0 0 10px rgba(56, 189, 248, 0.6); }
-            to { box-shadow: 0 0 25px rgba(250, 204, 21, 0.9); }
-        }
-        .action-btn:active { transform: scale(0.92); }
-    </style>
-    <!-- Thư viện Three.js CDN chuẩn -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+/* Nút Bắn Sét */
+#btn-lightning {
+position: absolute; bottom: 100px; right: 100px;
+width: 80px; height: 80px; background: rgba(14, 165, 233, 0.85);
+border: 2px solid #38bdf8; border-radius: 50%;
+color: #fff; font-weight: bold; font-size: 12px;
+display: flex; align-items: center; justify-content: center;
+text-align: center; cursor: pointer; user-select: none;
+box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 10;
+}
+#btn-lightning:active { transform: scale(0.92); background: rgba(2, 132, 199, 0.95); }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <div id="portal-msg">⚡ ĐẠT > 90% MÁU & > 180 CÔNG LỰC! MỞ CỔNG VỀ THÔN... ⚡</div>
-
-    <div id="hud">
-        ⚡ <b>QUẢ CẦU SÉT & ÂM THANH API</b><br>
-        ❤️ Máu: <span id="hp-val">100</span>% 
-        <div class="hp-bar-container"><div id="hp-bar-fill"></div></div><br>
-        ⚡ Công lực: <span id="score-val">0</span> / 180<br>
-        - Điều kiện qua cửa: Máu > 90% & Công lực > 180!
-    </div>
-
-    <div class="joystick-base" id="joystick">
-        <div class="joystick-thumb" id="joystick-thumb"></div>
-    </div>
-    
-    <div class="action-btn" id="btn-attack">QUẢ SÉT</div>
-
-    <div id="canvas-container"></div>
-
-    <script>
-        // ==========================================
-        // 1. HỆ THỐNG WEB AUDIO API (TẠO ÂM THANH TRỰC TIẾP)
-        // ==========================================
-        let audioCtx = null;
-
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
-
-        // Âm thanh khi tung chiêu Quả Cầu Sét (Tiếng hú điện năng vút cao)
-        function playThunderSound() {
-            initAudio();
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
-
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.3);
-        }
-
-        // Âm thanh khi sét đánh trúng quái (Tiếng nổ rẹt rẹt / sấm sét)
-        function playHitSound() {
-            initAudio();
-            if (!audioCtx) return;
-            const bufferSize = audioCtx.sampleRate * 0.25;
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = Math.random() * 2 - 1; // Tạo tiếng ồn trắng (white noise)
-            }
-
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer;
-
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'bandpass';
-            filter.frequency.value = 800;
-
-            const gain = audioCtx.createGain();
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-
-            noise.connect(filter);
-            filter.connect(gain);
-            gain.connect(audioCtx.destination);
-            noise.start();
-        }
-
-        window.addEventListener('pointerdown', initAudio, { once: true });
-        window.addEventListener('keydown', initAudio, { once: true });
-
-        // Hàm cắt sprite pixel chuẩn từ ảnh gốc
-        function createSpriteTextureFromPixel(img, x, y, width, height) {
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(img, x, y, width, height, 0, 0, width, height);
-            
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.magFilter = THREE.NearestFilter;
-            texture.minFilter = THREE.NearestFilter;
-            return texture;
-        }
-
-        // 2. SCENE, CAMERA, RENDERER
-        const container = document.getElementById('canvas-container');
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0f172a);
-        scene.fog = new THREE.FogExp2(0x0f172a, 0.004);
-
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        container.appendChild(renderer.domElement);
-
-        scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-        const dirLight = new THREE.DirectionalLight(0xe0f2fe, 1.2);
-        dirLight.position.set(100, 200, 100);
-        dirLight.castShadow = true;
-        scene.add(dirLight);
-
-        // Mặt đất & Lưới
-        const floor = new THREE.Mesh(
-            new THREE.PlaneGeometry(500, 500),
-            new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 })
-        );
-        floor.rotation.x = -Math.PI / 2;
-        floor.receiveShadow = true;
-        scene.add(floor);
-
-        const gridHelper = new THREE.GridHelper(500, 100, 0x38bdf8, 0x334155);
-        gridHelper.position.y = 0.01;
-        scene.add(gridHelper);
-
-        // 3. TẠO CỔNG QUA MẢN (PORTAL) ở tọa độ (0, 0, -60)
-        const portalGeo = new THREE.CylinderGeometry(3.5, 3.5, 0.2, 32);
-        const portalMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true });
-        const portalMesh = new THREE.Mesh(portalGeo, portalMat);
-        portalMesh.position.set(0, 0.1, -60);
-        scene.add(portalMesh);
-
-        const portalLight = new THREE.PointLight(0x38bdf8, 4, 15);
-        portalLight.position.set(0, 2, -60);
-        scene.add(portalLight);
-
-        // 4. TẠO BÃI CONTAINER KHỔNG LỒ (4-5 TẦNG, 12 CỘT, CHỈ DÙNG 5 LOẠI ĐÃ CẮT)
-        const CONT_W = 2.4, CONT_H = 3.2, CONT_L = 12.2;
-        const boxGeometry = new THREE.BoxGeometry(CONT_W, CONT_H, CONT_L);
-        const containerBoxes = [];
-
-        const imgCont = new Image();
-        imgCont.crossOrigin = "anonymous";
-        imgCont.src = 'https://tranh-ba-game-gw3q.vercel.app/gapcont.png';
-
-        let contMaterials = [];
-        imgCont.onload = () => {
-            for(let i = 0; i < 5; i++) {
-                const tex = createSpriteTextureFromPixel(imgCont, i * 200, 0, 200, 100);
-                contMaterials.push(new THREE.MeshStandardMaterial({ map: tex, roughness: 0.4 }));
-            }
-            buildContainerYard();
-        };
-
-        function buildContainerYard() {
-            const NUM_CLUSTERS_X = 5;
-            const NUM_CLUSTERS_Z = 5;
-            const ROAD_WIDTH = 16;
-
-            for (let cx = 0; cx < NUM_CLUSTERS_X; cx++) {
-                for (let cz = 0; cz < NUM_CLUSTERS_Z; cz++) {
-                    const clusterX = (cx - NUM_CLUSTERS_X / 2) * (6 * CONT_W + ROAD_WIDTH);
-                    const clusterZ = (cz - NUM_CLUSTERS_Z / 2) * (CONT_L + ROAD_WIDTH);
-
-                    if (Math.abs(clusterX) < 12 && Math.abs(clusterZ + 60) < 12) continue;
-
-                    for (let c = 0; c < 12; c++) {
-                        const colX = clusterX + (c % 4) * CONT_W;
-                        const colZ = clusterZ + Math.floor(c / 4) * (CONT_L + 1);
-                        const stackHeight = Math.floor(Math.random() * 2) + 4; // 4-5 tầng
-
-                        containerBoxes.push({
-                            minX: colX - 0.5, maxX: colX + CONT_W + 0.5,
-                            minZ: colZ - CONT_L / 2 - 0.5, maxZ: colZ + CONT_L / 2 + 0.5
-                        });
-
-                        for (let h = 0; h < stackHeight; h++) {
-                            const matIndex = Math.floor(Math.random() * contMaterials.length);
-                            const mesh = new THREE.Mesh(boxGeometry, contMaterials[matIndex]);
-                            mesh.position.set(colX, h * CONT_H + CONT_H / 2, colZ);
-                            mesh.castShadow = true; mesh.receiveShadow = true;
-                            scene.add(mesh);
-                        }
-                    }
-                }
-            }
-        }
-
-        function isValidPosition(x, z) {
-            for (let box of containerBoxes) {
-                if (x >= box.minX && x <= box.maxX && z >= box.minZ && z <= box.maxZ) return false;
-            }
-            return true;
-        }
-
-        // 5. NHÂN VẬT & CÔN TRÙNG TỪ anh.png
-        let gameState = { posX: 0, posZ: 30, angle: 0, hp: 100, score: 0, isTransitioning: false };
-
-        const charGeo = new THREE.PlaneGeometry(2, 2);
-        const charMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
-        const characterMesh = new THREE.Mesh(charGeo, charMat);
-        characterMesh.position.set(gameState.posX, 1, gameState.posZ);
-        scene.add(characterMesh);
-
-        let walkFrames = [], attackFrames = [];
-        let enemyFrames1 = [], enemyFrames2 = [], enemyHitFrames1 = [], enemyHitFrames2 = [];
-        const imgChar = new Image();
-        imgChar.crossOrigin = "anonymous";
-        imgChar.src = 'https://tranh-ba-game-gw3q.vercel.app/anh.png';
-        imgChar.onload = () => {
-            walkFrames = [
-                createSpriteTextureFromPixel(imgChar, 0, 0, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 40, 0, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 80, 0, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 120, 0, 40, 40)
-            ];
-            attackFrames = [
-                createSpriteTextureFromPixel(imgChar, 160, 0, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 200, 0, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 240, 0, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 280, 0, 40, 40)
-            ];
-            charMat.map = walkFrames[0];
-
-            enemyFrames1 = [
-                createSpriteTextureFromPixel(imgChar, 0, 40, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 40, 40, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 80, 40, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 120, 40, 40, 40)
-            ];
-            enemyHitFrames1 = [
-                createSpriteTextureFromPixel(imgChar, 160, 40, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 200, 40, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 240, 40, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 280, 40, 40, 40)
-            ];
-
-            enemyFrames2 = [
-                createSpriteTextureFromPixel(imgChar, 0, 80, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 40, 80, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 80, 80, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 120, 80, 40, 40)
-            ];
-            enemyHitFrames2 = [
-                createSpriteTextureFromPixel(imgChar, 160, 80, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 200, 80, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 240, 80, 40, 40),
-                createSpriteTextureFromPixel(imgChar, 280, 80, 40, 40)
-            ];
-        };
-
-        const enemies = [];
-        const items = [];
-
-        // Sinh quái dần dần, luôn dưới 5 con, không đè trong container
-        function spawnEnemyIfNeeded() {
-            if (enemies.filter(e => e.alive).length < 5 && imgChar.complete && contMaterials.length > 0) {
-                const enemyMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
-                const enemyMesh = new THREE.Mesh(charGeo, enemyMat);
-                
-                const type = Math.random() > 0.5 ? 1 : 2;
-                const frames = type === 1 ? enemyFrames1 : enemyFrames2;
-                enemyMat.map = frames[0];
-
-                let ex, ez, valid = false;
-                while (!valid) {
-                    ex = (Math.random() - 0.5) * 120;
-                    ez = (Math.random() - 0.5) * 120;
-                    valid = isValidPosition(ex, ez) && Math.abs(ez + 60) > 10;
-                }
-
-                enemyMesh.position.set(ex, 1, ez);
-                scene.add(enemyMesh);
-                enemies.push({ 
-                    mesh: enemyMesh, 
-                    type: type, 
-                    frames: frames, 
-                    hitFrames: type === 1 ? enemyHitFrames1 : enemyHitFrames2,
-                    frameIndex: 0, 
-                    timer: 0, 
-                    alive: true, 
-                    hitCount: 0, 
-                    speed: type === 1 ? 1.4 : 1.0 
-                });
-            }
-        }
-        setInterval(spawnEnemyIfNeeded, 2000);
-
-        // 6. QUẢ CẦU SÉT & RUNG CAMERA
-        const lightningBalls = [];
-        let shakeTime = 0;
-
-        function triggerScreenShake(duration = 0.3) {
-            shakeTime = duration;
-        }
-
-        function createLightningBall() {
-            playThunderSound(); // Phát âm thanh API sấm sét khi ném
-
-            const ballGroup = new THREE.Group();
-
-            const coreGeo = new THREE.SphereGeometry(0.35, 16, 16);
-            const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-            ballGroup.add(new THREE.Mesh(coreGeo, coreMat));
-
-            const innerGeo = new THREE.SphereGeometry(0.6, 16, 16);
-            const innerMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 });
-            ballGroup.add(new THREE.Mesh(innerGeo, innerMat));
-
-            const outerGeo = new THREE.SphereGeometry(1.0, 16, 16);
-            const outerMat = new THREE.MeshBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
-            ballGroup.add(new THREE.Mesh(outerGeo, outerMat));
-
-            const lightningLines = [];
-            for (let i = 0; i < 4; i++) {
-                const points = [];
-                let curr = new THREE.Vector3(0, 0, 0);
-                points.push(curr.clone());
-                for (let p = 0; p < 4; p++) {
-                    curr.add(new THREE.Vector3((Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 1.2));
-                    points.push(curr.clone());
-                }
-                const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-                const lineMat = new THREE.LineBasicMaterial({ color: 0xe0f2fe, linewidth: 2 });
-                const line = new THREE.Line(lineGeo, lineMat);
-                ballGroup.add(line);
-                lightningLines.push(line);
-            }
-
-            ballGroup.position.copy(characterMesh.position);
-            scene.add(ballGroup);
-
-            const dirX = Math.sin(gameState.angle);
-            const dirZ = Math.cos(gameState.angle);
-
-            lightningBalls.push({
-                group: ballGroup,
-                lines: lightningLines,
-                dirX: dirX,
-                dirZ: dirZ,
-                speed: 18.0,
-                life: 1.5
-            });
-        }
-
-        // 7. ĐIỀU KHIỂN & NÚT CHIÊU SÉT
-        const keys = { w: false, s: false, a: false, d: false };
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'w' || e.key === 'W') keys.w = true;
-            if (e.key === 's' || e.key === 'S') keys.s = true;
-            if (e.key === 'a' || e.key === 'A') keys.a = true;
-            if (e.key === 'd' || e.key === 'D') keys.d = true;
-        });
-        window.addEventListener('keyup', (e) => {
-            if (e.key === 'w' || e.key === 'W') keys.w = false;
-            if (e.key === 's' || e.key === 'S') keys.s = false;
-            if (e.key === 'a' || e.key === 'A') keys.a = false;
-            if (e.key === 'd' || e.key === 'D') keys.d = false;
-        });
-
-        let joystickInput = { forward: 0, turn: 0 };
-        const joystick = document.getElementById('joystick');
-        const thumb = document.getElementById('joystick-thumb');
-        let joystickActive = false, touchId = null;
-
-        joystick.addEventListener('pointerdown', (e) => {
-            joystickActive = true; touchId = e.pointerId; joystick.setPointerCapture(touchId);
-        });
-        joystick.addEventListener('pointermove', (e) => {
-            if (!joystickActive || e.pointerId !== touchId) return;
-            const rect = joystick.getBoundingClientRect();
-            let dx = e.clientX - (rect.left + rect.width / 2);
-            let dy = e.clientY - (rect.top + rect.height / 2);
-            const dist = Math.sqrt(dx*dx + dy*dy), maxDist = 40;
-            if (dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
-            thumb.style.transform = `translate(${dx}px, ${dy}px)`;
-            joystickInput.forward = -dy / maxDist; joystickInput.turn = dx / maxDist;
-        });
-        function resetJoystick() {
-            joystickActive = false; thumb.style.transform = `translate(0px, 0px)`;
-            joystickInput.forward = 0; joystickInput.turn = 0;
-        }
-        joystick.addEventListener('pointerup', resetJoystick);
-        joystick.addEventListener('pointercancel', resetJoystick);
-
-        let isAttacking = false;
-        document.getElementById('btn-attack').addEventListener('click', () => {
-            if (isAttacking) return;
-            isAttacking = true;
-            createLightningBall();
-
-            let attIndex = 0;
-            const attInterval = setInterval(() => {
-                if (attIndex < attackFrames.length && attackFrames.length > 0) {
-                    charMat.map = attackFrames[attIndex];
-                    charMat.needsUpdate = true;
-                    attIndex++;
-                } else {
-                    clearInterval(attInterval);
-                    isAttacking = false;
-                }
-            }, 80);
-        });
-
-        // 8. VÒNG LẶP GAME & XỬ LÝ HIỆU ỨNG
-        let lastTime = 0, animTimer = 0, frameIndex = 0;
-
-        function animate(time) {
-            requestAnimationFrame(animate);
-            const delta = (time - lastTime) / 1000;
-            lastTime = time;
-
-            if (gameState.isTransitioning) return;
-
-            let moveVal = (keys.w ? 1 : 0) - (keys.s ? 1 : 0) + joystickInput.forward;
-            moveVal = Math.max(-1, Math.min(1, moveVal));
-            let turnVal = (keys.d ? 1 : 0) - (keys.a ? 1 : 0) + joystickInput.turn;
-            turnVal = Math.max(-1, Math.min(1, turnVal));
-
-            gameState.angle -= turnVal * 3.0 * delta;
-            const moveSpeed = 6.0;
-            const nextX = gameState.posX + Math.sin(gameState.angle) * moveVal * moveSpeed * delta;
-            const nextZ = gameState.posZ + Math.cos(gameState.angle) * moveVal * moveSpeed * delta;
-
-            if (isValidPosition(nextX, nextZ)) {
-                gameState.posX = nextX;
-                gameState.posZ = nextZ;
-            }
-            characterMesh.position.set(gameState.posX, 1, gameState.posZ);
-
-            // Kiểm tra cổng qua màn (0, -60) với điều kiện Máu > 90% và Công lực > 180
-            const distToPortal = characterMesh.position.distanceTo(portalMesh.position);
-            if (distToPortal < 3) {
-                if (gameState.hp > 90 && gameState.score > 180) {
-                    gameState.isTransitioning = true;
-                    document.getElementById('portal-msg').style.display = 'block';
-                    setTimeout(() => {
-                        window.location.href = 'rungcontrung2.html';
-                    }, 1500);
-                } else {
-                    document.getElementById('portal-msg').innerText = "⚠️ CẦN ĐẠT > 90% MÁU & > 180 CÔNG LỰC ĐỂ QUA CỬA!";
-                    document.getElementById('portal-msg').style.display = 'block';
-                    setTimeout(() => {
-                        document.getElementById('portal-msg').style.display = 'none';
-                        document.getElementById('portal-msg').innerText = "⚡ ĐẠT > 90% MÁU & > 180 CÔNG LỰC! MỞ CỔNG VỀ THÔN... ⚡";
-                    }, 2000);
-                }
-            }
-
-            if (!isAttacking && Math.abs(moveVal) > 0.1 && walkFrames.length > 0) {
-                animTimer += delta;
-                if (animTimer > 0.12) {
-                    animTimer = 0;
-                    frameIndex = (frameIndex + 1) % walkFrames.length;
-                    charMat.map = walkFrames[frameIndex];
-                    charMat.needsUpdate = true;
-                }
-            }
-
-            // Cập nhật Quả Cầu Sét bay và va chạm
-            for (let i = lightningBalls.length - 1; i >= 0; i--) {
-                const lb = lightningBalls[i];
-                lb.life -= delta;
-                lb.group.position.x += lb.dirX * lb.speed * delta;
-                lb.group.position.z += lb.dirZ * lb.speed * delta;
-
-                lb.lines.forEach(line => {
-                    const positions = line.geometry.attributes.position.array;
-                    for (let p = 3; p < positions.length; p += 3) {
-                        positions[p] += (Math.random() - 0.5) * 0.4;
-                        positions[p+1] += (Math.random() - 0.5) * 0.4;
-                        positions[p+2] += (Math.random() - 0.5) * 0.4;
-                    }
-                    line.geometry.attributes.position.needsUpdate = true;
-                });
-
-                for (let j = 0; j < enemies.length; j++) {
-                    const enemy = enemies[j];
-                    if (!enemy.alive) continue;
-
-                    const dist = lb.group.position.distanceTo(enemy.mesh.position);
-                    if (dist < 2.0) {
-                        scene.remove(lb.group);
-                        lightningBalls.splice(i, 1);
-
-                        playHitSound(); // Phát âm thanh API trúng quái
-
-                        enemy.hitCount++;
-                        enemy.mesh.material.map = enemy.hitFrames[Math.min(enemy.hitCount - 1, 3)];
-                        enemy.mesh.material.needsUpdate = true;
-
-                        triggerScreenShake(0.35); // Rung camera khi trúng
-
-                        if (enemy.hitCount >= 5) {
-                            enemy.alive = false;
-                            enemy.mesh.material.color.set(0x111111); // Cháy đen
-                            
-                            setTimeout(() => {
-                                scene.remove(enemy.mesh);
-                            }, 400);
-
-                            gameState.score += 20;
-                            document.getElementById('score-val').innerText = gameState.score;
-                            spawnDropItem(enemy.mesh.position.x, enemy.mesh.position.z);
-                        }
-                        break;
-                    }
-                }
-
-                if (lb.life <= 0) {
-                    scene.remove(lb.group);
-                    lightningBalls.splice(i, 1);
-                }
-            }
-
-            // AI Côn trùng đuổi theo
-            enemies.forEach(enemy => {
-                if (!enemy.alive) return;
-                const dirX = gameState.posX - enemy.mesh.position.x;
-                const dirZ = gameState.posZ - enemy.mesh.position.z;
-                const dist = Math.sqrt(dirX*dirX + dirZ*dirZ);
-
-                if (dist > 1.2) {
-                    const step = enemy.speed * delta;
-                    const nex = enemy.mesh.position.x + (dirX / dist) * step;
-                    const nez = enemy.mesh.position.z + (dirZ / dist) * step;
-                    if (isValidPosition(nex, nez)) enemy.mesh.position.set(nex, 1, nez);
-                } else {
-                    gameState.hp = Math.max(0, gameState.hp - 2.0 * delta);
-                    document.getElementById('hp-val').innerText = Math.floor(gameState.hp);
-                    document.getElementById('hp-bar-fill').style.width = gameState.hp + '%';
-                }
-
-                if (enemy.hitCount === 0) {
-                    enemy.timer += delta;
-                    if (enemy.timer > 0.15) {
-                        enemy.timer = 0;
-                        enemy.frameIndex = (enemy.frameIndex + 1) % enemy.frames.length;
-                        enemy.mesh.material.map = enemy.frames[enemy.frameIndex];
-                        enemy.mesh.material.needsUpdate = true;
-                    }
-                }
-                enemy.mesh.quaternion.copy(camera.quaternion);
-            });
-
-            // Nhặt vật phẩm
-            items.forEach((item) => {
-                if (!item.active) return;
-                if (characterMesh.position.distanceTo(item.mesh.position) < 2.0) {
-                    item.active = false;
-                    scene.remove(item.mesh);
-                    if (item.type === 'hp') {
-                        gameState.hp = Math.min(100, gameState.hp + 20);
-                        document.getElementById('hp-val').innerText = Math.floor(gameState.hp);
-                        document.getElementById('hp-bar-fill').style.width = gameState.hp + '%';
-                    } else {
-                        gameState.score += 30;
-                        document.getElementById('score-val').innerText = gameState.score;
-                    }
-                }
-            });
-
-            const camDist = 9, camHeight = 4.5;
-            let targetCamX = gameState.posX - Math.sin(gameState.angle) * camDist;
-            let targetCamZ = gameState.posZ - Math.cos(gameState.angle) * camDist;
-
-            if (shakeTime > 0) {
-                shakeTime -= delta;
-                targetCamX += (Math.random() - 0.5) * 0.8;
-                targetCamZ += (Math.random() - 0.5) * 0.8;
-            }
-
-            camera.position.x += (targetCamX - camera.position.x) * 0.1;
-            camera.position.z += (targetCamZ - camera.position.z) * 0.1;
-            camera.position.y = camHeight;
-            camera.lookAt(gameState.posX, 1, gameState.posZ);
-
-            characterMesh.quaternion.copy(camera.quaternion);
-            renderer.render(scene, camera);
-        }
-        requestAnimationFrame(animate);
-
-        function spawnDropItem(x, z) {
-            const isHp = Math.random() > 0.5;
-            const geo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-            const mat = new THREE.MeshBasicMaterial({ color: isHp ? 0x22c55e : 0xa855f7 });
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.position.set(x, 0.5, z);
-            scene.add(mesh);
-            items.push({ mesh: mesh, type: isHp ? 'hp' : 'power', active: true });
-        }
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
+<div id="hud">
+<h3>⚡ CHIẾN BINH CHÍNH</h3>
+• <span id="hp-text">❤️ Máu: 50%</span><div class="health-bar"><div id="hp-fill" class="health-fill" style="width:50%"></div></div><br>
+• ⚡ Công pháp nhặt: <span id="book-val">0</span> cuốn<br>
+• 🎯 Tầm ném: <span id="range-val">25</span>m / 90m<br>
+• 👾 Tiêu diệt: <span id="kill-val">0</span> / 90<br>
+</div>
+
+<div id="npc-hud">
+<h3>🤖 ĐỒNG HÀNH NPC</h3>
+• <span id="npc-hp-text">❤️ Máu: 50%</span><div class="health-bar"><div id="npc-hp-fill" class="npc-health-fill" style="width:50%"></div></div><br>
+• ⚡ Công pháp: <span id="npc-book-val">0</span> cuốn<br>
+• 🎯 Tầm ném: <span id="npc-range-val">25</span>m<br>
+• 👾 Tiêu diệt: <span id="npc-kill-val">0</span><br>
+</div>
+
+<div id="joystick-base"><div id="joystick-stick"></div></div>
+<div id="btn-lightning">BẮN SÉT</div>
+
+<div id="canvas-container"></div>
+
+<script>
+// 1. NHẠC MP3 NGẪU NHIÊN 1 ĐẾN 9
+let bgAudio = new Audio();
+function playRandomAudio() {
+const randTrack = Math.floor(Math.random() * 9) + 1;
+bgAudio.src = `${randTrack}.mp3`;
+bgAudio.play().catch(() => {});
+bgAudio.onended = () => { playRandomAudio(); };
+}
+window.addEventListener('pointerdown', () => {
+if (bgAudio.paused && bgAudio.currentTime === 0) playRandomAudio();
+}, { once: true });
+
+// 2. CẢNH 3D
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0f172a);
+scene.fog = new THREE.FogExp2(0x0f172a, 0.008);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+container.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+const dirLight = new THREE.DirectionalLight(0xfff7ed, 1.2);
+dirLight.position.set(100, 150, 50);
+dirLight.castShadow = true;
+scene.add(dirLight);
+
+const floor = new THREE.Mesh(
+new THREE.PlaneGeometry(500, 500),
+new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 })
+);
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+// 3. BÃI CONTAINER & ĐỘ CAO NÓC
+const CONT_W = 2.4, CONT_H = 3.2, CONT_L = 12.4;
+const boxGeometry = new THREE.BoxGeometry(CONT_W, CONT_H, CONT_L);
+let containerMaterialsList = [];
+let containerBoxes = [];
+let containerTops = [];
+
+const textureLoader = new THREE.TextureLoader();
+textureLoader.load('https://tranh-ba-game-gw3q.vercel.app/gapcont.png', (masterTexture) => {
+const img = masterTexture.image;
+for (let i = 0; i < 5; i++) {
+const canvas = document.createElement('canvas');
+canvas.width = 175; canvas.height = 100;
+canvas.getContext('2d').drawImage(img, i * 200 + 25, 0, 175, 100, 0, 0, 175, 100);
+const mat = new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas), roughness: 0.4 });
+containerMaterialsList.push(Array(6).fill(mat));
+}
+buildContainerYard();
+}, undefined, () => {
+const fallbackMats = Array(6).fill(new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
+containerMaterialsList = Array(5).fill(fallbackMats);
+buildContainerYard();
+});
+
+let highestContainerTopY = 1.6;
+let spawnReadyPos = { x: 0, z: 0 };
+
+function buildContainerYard() {
+const NUM_BLOCKS_X = 4, NUM_BLOCKS_Z = 3, CONT_PER_ROW = 6;
+const ROAD_W_X = 14, ROAD_W_Z = 20;
+
+for (let bx = 0; bx < NUM_BLOCKS_X; bx++) {
+for (let bz = 0; bz < NUM_BLOCKS_Z; bz++) {
+const blockStartX = (bx - (NUM_BLOCKS_X - 1) / 2) * (CONT_PER_ROW * CONT_W + ROAD_W_X);
+const blockStartZ = (bz - (NUM_BLOCKS_Z - 1) / 2) * (CONT_L + ROAD_W_Z);
+
+for (let r = 0; r < CONT_PER_ROW; r++) {
+const posX = blockStartX + r * (CONT_W + 0.1);
+const posZ = blockStartZ;
+const stackHeight = Math.floor(Math.random() * 3) + 1;
+
+for (let h = 0; h < stackHeight; h++) {
+const posY = h * CONT_H + CONT_H / 2;
+const topY = posY + CONT_H / 2;
+const typeIndex = Math.floor(Math.random() * containerMaterialsList.length);
+const mesh = new THREE.Mesh(boxGeometry, containerMaterialsList[typeIndex] || containerMaterialsList[0]);
+mesh.position.set(posX, posY, posZ);
+mesh.castShadow = true;
+mesh.receiveShadow = true;
+scene.add(mesh);
+
+containerBoxes.push(new THREE.Box3().setFromObject(mesh));
+containerTops.push({ minX: posX - CONT_W/2, maxX: posX + CONT_W/2, minZ: posZ - CONT_L/2, maxZ: posZ + CONT_L/2, topY: topY });
+
+if (h === 2 && topY > highestContainerTopY) {
+highestContainerTopY = topY;
+spawnReadyPos = { x: posX, z: posZ };
+}
+}
+}
+}
+}
+if (player) {
+playerPos.x = spawnReadyPos.x;
+playerPos.z = spawnReadyPos.z;
+player.position.set(playerPos.x, highestContainerTopY + 0.8, playerPos.z);
+}
+if (npc) {
+npcPos.x = spawnReadyPos.x + 3;
+npcPos.z = spawnReadyPos.z + 3;
+npc.position.set(npcPos.x, highestContainerTopY + 0.8, npcPos.z);
+}
+}
+
+// 4. LOAD SPRITE SHEET (anh.png)
+let spriteImage = new Image();
+spriteImage.crossOrigin = "anonymous";
+spriteImage.src = 'https://tranh-ba-game-gw3q.vercel.app/anh.png';
+
+function getSpriteTexture(row, col) {
+const canvas = document.createElement('canvas');
+canvas.width = 40; canvas.height = 40;
+const ctx = canvas.getContext('2d');
+if (spriteImage.complete && spriteImage.naturalWidth !== 0) {
+ctx.drawImage(spriteImage, col * 40, row * 40, 40, 40, 0, 0, 40, 40);
+}
+const tex = new THREE.CanvasTexture(canvas);
+tex.magFilter = THREE.NearestFilter;
+return tex;
+}
+
+function createLightningOrbTexture() {
+const canvas = document.createElement('canvas');
+canvas.width = 128; canvas.height = 128;
+const ctx = canvas.getContext('2d');
+const grad = ctx.createRadialGradient(64, 64, 5, 64, 64, 60);
+grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+grad.addColorStop(0.3, 'rgba(56, 189, 248, 0.9)');
+grad.addColorStop(0.7, 'rgba(14, 165, 233, 0.4)');
+grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+ctx.fillStyle = grad;
+ctx.beginPath(); ctx.arc(64, 64, 60, 0, Math.PI * 2); ctx.fill();
+
+ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+ctx.beginPath();
+ctx.moveTo(64, 20); ctx.lineTo(50, 60); ctx.lineTo(75, 80); ctx.lineTo(64, 110);
+ctx.stroke();
+return new THREE.CanvasTexture(canvas);
+}
+
+// Nhân vật chính
+let player, playerPos = { x: 0, z: 5 }, playerAngle = 0;
+let playerHp = 50, bookCount = 0, killCount = 0;
+function getAttackRange() { return Math.min(90, 25 + Math.floor(bookCount / 2)); }
+let playerState = 'idle', frameIndex = 0, frameTimer = 0, breathTimer = 0;
+let playerMat = new THREE.MeshBasicMaterial({ map: getSpriteTexture(0, 0), transparent: true });
+
+function createPlayer() {
+const geo = new THREE.PlaneGeometry(1.2, 1.6);
+player = new THREE.Mesh(geo, playerMat);
+player.position.set(spawnReadyPos.x || 0, highestContainerTopY + 0.8, spawnReadyPos.z || 5);
+scene.add(player);
+}
+
+// NPC Đồng hành (Load hàng 5: ô 1-4 đi lùi, ô 5-8 bắn sét ra sau)
+let npc, npcPos = { x: 3, z: 8 }, npcAngle = 0;
+let npcHp = 50, npcBookCount = 0, npcKillCount = 0;
+function getNpcAttackRange() { return Math.min(90, 25 + Math.floor(npcBookCount / 2)); }
+let npcState = 'idle', npcFrameIndex = 0;
+let npcMat = new THREE.MeshBasicMaterial({ map: getSpriteTexture(5, 0), transparent: true });
+
+function createNpc() {
+const geo = new THREE.PlaneGeometry(1.2, 1.6);
+npc = new THREE.Mesh(geo, npcMat);
+npc.position.set(spawnReadyPos.x + 3 || 3, highestContainerTopY + 0.8, spawnReadyPos.z + 3 || 8);
+scene.add(npc);
+}
+
+spriteImage.onload = () => { createPlayer(); createNpc(); };
+setTimeout(() => { 
+if (!player && spriteImage.complete) createPlayer(); 
+if (!npc && spriteImage.complete) createNpc();
+}, 500);
+
+// 5. HỆ THỐNG CÔN TRÙNG
+let insects = [];
+function spawnInsectAtDistance(dist) {
+const angle = Math.random() * Math.PI * 2;
+const spawnX = playerPos.x + Math.sin(angle) * dist;
+const spawnZ = playerPos.z + Math.cos(angle) * dist;
+const insectType = Math.random() > 0.5 ? 1 : 2;
+const geo = new THREE.PlaneGeometry(1.4, 1.4);
+const mat = new THREE.MeshBasicMaterial({ map: getSpriteTexture(insectType, 0), transparent: true });
+const mesh = new THREE.Mesh(geo, mat);
+mesh.position.set(spawnX, 0.7, spawnZ);
+scene.add(mesh);
+insects.push({ mesh: mesh, type: insectType, hits: 0, state: 'walk', speed: 0.03 + Math.random() * 0.03 });
+}
+
+function initInsects() { for (let i = 0; i < 6; i++) spawnInsectAtDistance(100); }
+setTimeout(initInsects, 1000);
+
+// 6. ĐIỀU KHIỂN
+const keys = {};
+window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
+window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+const joystickBase = document.getElementById('joystick-base');
+const joystickStick = document.getElementById('joystick-stick');
+let joyVector = { x: 0, y: 0 }, isDraggingJoy = false;
+
+joystickBase.addEventListener('pointerdown', (e) => { isDraggingJoy = true; updateJoystick(e); });
+window.addEventListener('pointermove', (e) => { if (isDraggingJoy) updateJoystick(e); });
+window.addEventListener('pointerup', () => {
+isDraggingJoy = false; joyVector = { x: 0, y: 0 };
+joystickStick.style.transform = `translate(0px, 0px)`;
+});
+
+function updateJoystick(e) {
+const rect = joystickBase.getBoundingClientRect();
+const dx = e.clientX - (rect.left + rect.width / 2);
+const dy = e.clientY - (rect.top + rect.height / 2);
+const dist = Math.min(50, Math.sqrt(dx*dx + dy*dy));
+const angle = Math.atan2(dy, dx);
+joyVector.x = (dist / 50) * Math.cos(angle);
+joyVector.y = (dist / 50) * Math.sin(angle);
+joystickStick.style.transform = `translate(${joyVector.x * 50}px, ${joyVector.y * 50}px)`;
+}
+
+// Bắn sét Người chơi
+document.getElementById('btn-lightning').addEventListener('click', () => {
+if (!player) return;
+playerState = 'attack';
+setTimeout(() => { playerState = 'idle'; }, 500);
+
+const orbMat = new THREE.SpriteMaterial({ map: createLightningOrbTexture(), transparent: true, blending: THREE.AdditiveBlending });
+const orb = new THREE.Sprite(orbMat);
+orb.scale.set(2, 2, 2);
+orb.position.copy(player.position);
+scene.add(orb);
+
+const maxDist = getAttackRange();
+const travelDir = new THREE.Vector3(-Math.sin(playerAngle), 0, -Math.cos(playerAngle)).normalize();
+
+let travelDist = 0;
+const orbInterval = setInterval(() => {
+travelDist += 2.5;
+orb.position.addScaledVector(travelDir, 2.5);
+
+insects.forEach((ins, index) => {
+const toIns = new THREE.Vector3().subVectors(ins.mesh.position, player.position).normalize();
+const angleDiff = travelDir.angleTo(toIns);
+
+if (travelDist <= maxDist && orb.position.distanceTo(ins.mesh.position) < 1.8 && angleDiff < 0.087) {
+ins.hits++;
+ins.state = 'hit';
+ins.mesh.material.map = getSpriteTexture(ins.type, 4 + (ins.hits % 4));
+ins.mesh.material.needsUpdate = true;
+setTimeout(() => { ins.state = 'walk'; }, 400);
+
+if (ins.hits >= 5) {
+scene.remove(ins.mesh);
+insects.splice(index, 1);
+killCount++;
+document.getElementById('kill-val').innerText = `${killCount} / 90`;
+
+if (playerHp > 90 && killCount > 90) {
+window.location.href = 'rungcontrung.html';
+return;
+}
+dropItem(ins.mesh.position, Math.random() > 0.4 ? 'book' : 'blood', 'player');
+}
+}
+});
+
+if (travelDist >= maxDist) { clearInterval(orbInterval); scene.remove(orb); }
+}, 30);
+});
+
+let items = [];
+function dropItem(pos, type, owner) {
+const geo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+const mat = new THREE.MeshStandardMaterial({ color: type === 'blood' ? 0xef4444 : 0xfacc15 });
+const item = new THREE.Mesh(geo, mat);
+item.position.copy(pos);
+scene.add(item);
+items.push({ mesh: item, type: type, owner: owner });
+}
+
+function getTargetGroundY(x, z) {
+let groundY = 0;
+for (let top of containerTops) {
+if (x >= top.minX && x <= top.maxX && z >= top.minZ && z <= top.maxZ) {
+if (top.topY > groundY) groundY = top.topY;
+}
+}
+return groundY;
+}
+
+let lastTime = Date.now();
+
+// 7. VÒNG LẶP GAME
+function animate() {
+requestAnimationFrame(animate);
+
+const now = Date.now();
+const delta = (now - lastTime) / 1000;
+lastTime = now;
+
+const rotSpeed = 0.025;
+const moveSpeed = 0.16;
+
+if (keys['a'] || keys['arrowleft']) playerAngle += rotSpeed;
+if (keys['d'] || keys['arrowright']) playerAngle -= rotSpeed;
+
+let isMoving = false;
+if (keys['w'] || keys['arrowup']) isMoving = true;
+if (joyVector.y < -0.35) isMoving = true;
+if (joyVector.x < -0.35) playerAngle += rotSpeed * Math.abs(joyVector.x);
+if (joyVector.x > 0.35) playerAngle -= rotSpeed * Math.abs(joyVector.x);
+
+if (player) {
+frameTimer++;
+if (frameTimer > 8) { frameIndex = (frameIndex + 1) % 4; frameTimer = 0; }
+
+if (isMoving) {
+playerPos.x -= Math.sin(playerAngle) * moveSpeed;
+playerPos.z -= Math.cos(playerAngle) * moveSpeed;
+const targetY = getTargetGroundY(playerPos.x, playerPos.z);
+player.position.set(playerPos.x, targetY + 0.8, playerPos.z);
+
+playerState = 'walk';
+player.scale.set(1, 1, 1);
+player.material.map = getSpriteTexture(0, frameIndex);
+player.material.needsUpdate = true;
+} else if (playerState === 'attack') {
+player.scale.set(1, 1, 1);
+player.material.map = getSpriteTexture(0, 4 + (frameIndex % 4));
+player.material.needsUpdate = true;
+} else {
+playerState = 'idle';
+player.material.map = getSpriteTexture(0, 0);
+player.material.needsUpdate = true;
+breathTimer += 0.08;
+const scale = 1 + Math.sin(breathTimer) * 0.06;
+player.scale.set(scale, scale, scale);
+}
+player.rotation.y = playerAngle;
+player.quaternion.copy(camera.quaternion);
+}
+
+// Camera bám sau lưng người chơi
+if (player) {
+const cameraDistance = 8, cameraHeight = 3.5;
+const targetCameraX = playerPos.x + Math.sin(playerAngle) * cameraDistance;
+const targetCameraZ = playerPos.z + Math.cos(playerAngle) * cameraDistance;
+camera.position.x += (targetCameraX - camera.position.x) * 0.1;
+camera.position.y += ((player.position.y + cameraHeight) - camera.position.y) * 0.1;
+camera.position.z += (targetCameraZ - camera.position.z) * 0.1;
+camera.lookAt(playerPos.x, player.position.y + 0.8, playerPos.z);
+}
+
+// LOGIC AI CHO NPC (Săn côn trùng, nhặt đồ, tự động bắn sét)
+if (npc && insects.length > 0) {
+// Tìm côn trùng gần NPC nhất
+let nearestIns = insects[0];
+let minDst = npc.position.distanceTo(nearestIns.mesh.position);
+insects.forEach(ins => {
+const d = npc.position.distanceTo(ins.mesh.position);
+if (d < minDst) { minDst = d; nearestIns = ins; }
+});
+
+// NPC di chuyển lại gần côn trùng để săn
+const dirToIns = new THREE.Vector3().subVectors(nearestIns.mesh.position, npc.position);
+const targetAngle = Math.atan2(-dirToIns.x, -dirToIns.z);
+npcAngle = targetAngle;
+npc.rotation.y = npcAngle;
+npc.quaternion.copy(camera.quaternion);
+
+if (minDst > 6) {
+npcPos.x -= Math.sin(npcAngle) * (moveSpeed * 0.9);
+npcPos.z -= Math.cos(npcAngle) * (moveSpeed * 0.9);
+const npcGroundY = getTargetGroundY(npcPos.x, npcPos.z);
+npc.position.set(npcPos.x, npcGroundY + 0.8, npcPos.z);
+
+npcFrameIndex = (npcFrameIndex + 1) % 4;
+npc.material.map = getSpriteTexture(5, npcFrameIndex); // Hàng 5: Ô đi lùi 1-4
+npc.material.needsUpdate = true;
+} else {
+// Đứng trong tầm ngắm thì NPC bắn sét ngược ra sau (ô 5-8 hàng 5)
+npc.material.map = getSpriteTexture(5, 4 + (Math.floor(Date.now() / 150) % 4));
+npc.material.needsUpdate = true;
+
+if (Math.random() < 0.04) { // Tần suất bắn của NPC
+nearestIns.hits++;
+nearestIns.state = 'hit';
+nearestIns.mesh.material.map = getSpriteTexture(nearestIns.type, 4 + (nearestIns.hits % 4));
+nearestIns.mesh.material.needsUpdate = true;
+setTimeout(() => { nearestIns.state = 'walk'; }, 400);
+
+if (nearestIns.hits >= 5) {
+const insIndex = insects.indexOf(nearestIns);
+if (insIndex > -1) {
+scene.remove(nearestIns.mesh);
+insects.splice(insIndex, 1);
+npcKillCount++;
+document.getElementById('npc-kill-val').innerText = npcKillCount;
+dropItem(nearestIns.mesh.position, Math.random() > 0.4 ? 'book' : 'blood', 'npc');
+}
+}
+}
+}
+}
+
+// Côn trùng rượt đuổi người chơi & NPC
+insects.forEach(ins => {
+const targetPos = ins.mesh.position.distanceTo(player.position) < ins.mesh.position.distanceTo(npc.position) ? player.position : npc.position;
+const dir = new THREE.Vector3().subVectors(targetPos, ins.mesh.position).normalize();
+ins.mesh.position.addScaledVector(dir, ins.speed);
+ins.mesh.quaternion.copy(camera.quaternion);
+
+if (ins.state === 'walk') {
+const animCol = Math.floor(Date.now() / 200) % 4;
+ins.mesh.material.map = getSpriteTexture(ins.type, animCol);
+ins.mesh.material.needsUpdate = true;
+}
+
+if (ins.mesh.position.distanceTo(player.position) < 1.5) {
+playerHp = Math.max(0, playerHp - delta * 1);
+document.getElementById('hp-fill').style.width = playerHp + '%';
+document.getElementById('hp-text').innerText = `❤️ Máu: ${Math.round(playerHp)}%`;
+}
+if (npc && ins.mesh.position.distanceTo(npc.position) < 1.5) {
+npcHp = Math.max(0, npcHp - delta * 1);
+document.getElementById('npc-hp-fill').style.width = npcHp + '%';
+document.getElementById('npc-hp-text').innerText = `❤️ Máu: ${Math.round(npcHp)}%`;
+}
+});
+
+while (insects.length < 6) { spawnInsectAtDistance(100); }
+
+// Hút vật phẩm về người chơi hoặc NPC tương ứng
+items = items.filter(it => {
+const targetOwnerPos = it.owner === 'player' ? player.position : (npc ? npc.position : player.position);
+it.mesh.position.lerp(targetOwnerPos, 0.1);
+
+if (it.mesh.position.distanceTo(targetOwnerPos) < 1.0) {
+if (it.owner === 'player') {
+if (it.type === 'blood') {
+playerHp = Math.min(100, playerHp + 1);
+document.getElementById('hp-fill').style.width = playerHp + '%';
+document.getElementById('hp-text').innerText = `❤️ Máu: ${Math.round(playerHp)}%`;
+} else {
+bookCount++;
+document.getElementById('book-val').innerText = bookCount;
+document.getElementById('range-val').innerText = getAttackRange();
+}
+} else {
+if (it.type === 'blood') {
+npcHp = Math.min(100, npcHp + 1);
+document.getElementById('npc-hp-fill').style.width = npcHp + '%';
+document.getElementById('npc-hp-text').innerText = `❤️ Máu: ${Math.round(npcHp)}%`;
+} else {
+npcBookCount++;
+document.getElementById('npc-book-val').innerText = npcBookCount;
+document.getElementById('npc-range-val').innerText = getNpcAttackRange();
+}
+}
+scene.remove(it.mesh);
+return false;
+}
+return true;
+});
+
+renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+camera.aspect = window.innerWidth / window.innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
 </body>
 </html>
