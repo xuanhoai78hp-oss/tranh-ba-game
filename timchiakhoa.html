@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Truy Tìm Kho Báu - Thử Thách Hình Học Đỉnh Cao</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+body, html {
+    width: 100vw; height: 100vh; overflow: hidden;
+    background: #050811; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #fff; display: flex; justify-content: center; align-items: center;
+    position: relative;
+}
+
+/* Hiệu ứng ánh sáng nền mờ ảo (Modern Glow & Scanlines) */
+.bg-glow {
+    position: absolute; width: 100vw; height: 100vh; overflow: hidden; z-index: 0; pointer-events: none;
+}
+.glow-orb {
+    position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.45;
+    animation: floatOrb 12s infinite alternate ease-in-out;
+}
+.orb-1 { width: 450px; height: 450px; background: #3b82f6; top: -150px; left: -150px; }
+.orb-2 { width: 500px; height: 500px; background: #8b5cf6; bottom: -180px; right: -180px; animation-delay: -4s; }
+.orb-3 { width: 350px; height: 350px; background: #06b6d4; top: 40%; left: 60%; animation-delay: -8s; opacity: 0.3; }
+
+@keyframes floatOrb {
+    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    50% { transform: translate(60px, 80px) scale(1.2) rotate(45deg); }
+    100% { transform: translate(-50px, 40px) scale(0.9) rotate(90deg); }
+}
+
+body::after {
+    content: ""; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+    animation: lightSweep 8s infinite linear; pointer-events: none; z-index: 1;
+}
+@keyframes lightSweep {
+    0% { left: -100%; }
+    100% { left: 200%; }
+}
+
+#game-box {
+    position: relative; z-index: 2;
+    width: 95vw; max-width: 650px; height: 92vh; max-height: 900px;
+    background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 22px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 20px; box-shadow: 0 25px 60px rgba(0,0,0,0.7), inset 0 0 20px rgba(59,130,246,0.1);
+}
+
+.header { text-align: center; }
+.header h3 { color: #facc15; font-size: 18px; margin-bottom: 8px; text-shadow: 0 0 12px rgba(250,204,21,0.6); }
+
+.key-slots {
+    display: flex; justify-content: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;
+}
+.key-slot {
+    width: 32px; height: 40px; background: rgba(15, 23, 42, 0.9);
+    border: 2px dashed #475569; border-radius: 8px; display: flex;
+    align-items: center; justify-content: center; font-size: 18px;
+    transition: all 0.3s;
+}
+.key-slot.filled {
+    background: rgba(250, 204, 21, 0.25); border: 2px solid #facc15;
+    box-shadow: 0 0 15px rgba(250, 204, 21, 0.7);
+    animation: bounceIn 0.3s ease;
+}
+
+.status-bar {
+    display: flex; justify-content: space-between; font-size: 13px; color: #94a3b8;
+    background: rgba(0,0,0,0.4); padding: 6px 12px; border-radius: 8px;
+}
+
+.question-card {
+    background: rgba(15, 23, 42, 0.6); border-radius: 14px; padding: 15px;
+    border: 1px solid rgba(255,255,255,0.08); text-align: center; position: relative;
+    display: flex; flex-direction: column; flex-grow: 1; justify-content: center;
+}
+.canvas-wrapper {
+    width: 100%; flex-grow: 1; min-height: 220px; background: #060913; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #334155; margin-bottom: 12px; position: relative; overflow: hidden;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+}
+canvas { display: block; max-width: 100%; max-height: 100%; }
+
+.time-progress {
+    width: 100%; height: 8px; background: #334155; border-radius: 4px; overflow: hidden; margin-bottom: 12px;
+}
+.time-bar { width: 100%; height: 100%; background: #22c55e; transition: width 0.1s linear; }
+
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.option-btn {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; padding: 12px; border-radius: 10px;
+    color: #fff; font-size: 16px; font-weight: bold; cursor: pointer;
+    transition: all 0.2s; box-shadow: 0 4px 15px rgba(59,130,246,0.4);
+}
+.option-btn:hover { filter: brightness(1.15); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59,130,246,0.6); }
+.option-btn:active { transform: scale(0.96); }
+
+#feedback { text-align: center; font-size: 14px; min-height: 22px; font-weight: bold; margin-top: 8px; }
+
+.next-btn {
+    background: linear-gradient(90deg, #f59e0b, #d97706); border: none;
+    padding: 14px; border-radius: 10px; color: #fff; font-size: 16px;
+    font-weight: bold; cursor: pointer; width: 100%; text-align: center;
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.6); display: none; margin-top: 10px;
+    transition: transform 0.2s;
+}
+.next-btn:hover { transform: scale(1.01); filter: brightness(1.1); }
+
+@keyframes bounceIn {
+    0% { transform: scale(0); }
+    70% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-glow">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+</div>
+
+<div id="game-box">
+    <div class="header">
+        <h3>🔑 HÀNH TRÌNH TÌM 10 CHÌA KHÓA KHO BÁU - MASTER MATH</h3>
+        <div class="key-slots" id="keySlots">
+            <div class="key-slot"></div><div class="key-slot"></div><div class="key-slot"></div>
+            <div class="key-slot"></div><div class="key-slot"></div><div class="key-slot"></div>
+            <div class="key-slot"></div><div class="key-slot"></div><div class="key-slot"></div>
+            <div class="key-slot"></div>
+        </div>
+        <div class="status-bar">
+            <span>Độ khó hiện tại: <b id="txtLevel" style="color: #facc15;">Cấp 3</b></span>
+            <span>Thời gian thưởng: <b id="txtTimeLimit" style="color: #38bdf8;">15s</b></span>
+        </div>
+    </div>
+
+    <div class="question-card">
+        <div class="canvas-wrapper">
+            <canvas id="geomCanvas" width="460" height="230"></canvas>
+        </div>
+
+        <div class="time-progress"><div class="time-bar" id="timeBar"></div></div>
+
+        <div id="questionTitle" style="font-size: 14px; color: #38bdf8; font-weight: bold; margin-bottom: 10px;">
+            Tìm độ dài đoạn thẳng $x$ / Find $x$
+        </div>
+
+        <div class="options-grid" id="optionsBox"></div>
+        <div id="feedback"></div>
+    </div>
+
+    <button class="next-btn" id="btnNext" onclick="loadNewQuestion()">Bắt đầu câu tiếp theo ➔</button>
+</div>
+
+<script>
+// ==========================================
+//  WEB AUDIO API SOUNDS
+// ==========================================
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function initAudio() {
+    if (!audioCtx) audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playSound(type) {
+    initAudio();
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+
+    if (type === 'tick') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.type = 'sine'; osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
+        gain.gain.setValueAtTime(0.08, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.04);
+        osc.start(now); osc.stop(now + 0.04);
+    } else if (type === 'success') {
+        let notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((freq, idx) => {
+            let o = audioCtx.createOscillator();
+            let g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.frequency.setValueAtTime(freq, now + idx * 0.08);
+            g.gain.setValueAtTime(0.2, now + idx * 0.08);
+            g.gain.linearRampToValueAtTime(0.01, now + idx * 0.08 + 0.15);
+            o.start(now + idx * 0.08); o.stop(now + idx * 0.08 + 0.15);
+        });
+    } else if (type === 'fail') {
+        let notes = [300, 270, 240, 200];
+        notes.forEach((freq, idx) => {
+            let o = audioCtx.createOscillator();
+            let g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.frequency.setValueAtTime(freq, now + idx * 0.15);
+            g.gain.setValueAtTime(0.25, now + idx * 0.15);
+            g.gain.linearRampToValueAtTime(0.01, now + idx * 0.15 + 0.2);
+            o.start(now + idx * 0.15); o.stop(now + idx * 0.15 + 0.2);
+        });
+    }
+}
+
+// ==========================================
+//  KHO CÂU HỎI MỚI KHỔNG LỒ (CẤP 3 ĐẾN 30 - ĐA DẠNG HÓA SIÊU CAO)
+// ==========================================
+const questionPool = {
+    3: [
+        { type: 'triangle', p: { base: 10, height: 6 }, ans: 30, title: 'Tính Diện Tích Tam Giác ($S = ?$)' },
+        { type: 'triangle', p: { base: 12, height: 8 }, ans: 48, title: 'Tính Diện Tích Tam Giác ($S = ?$)' },
+        { type: 'triangle', p: { base: 14, height: 5 }, ans: 35, title: 'Tính Diện Tích Tam Giác ($S = ?$)' }
+    ],
+    4: [
+        { type: 'circles_touch', p: [4, 9], ans: 12, title: 'Tìm khoảng cách x giữa 2 tiếp điểm của đường tròn' },
+        { type: 'triangle', p: { base: 16, height: 12 }, ans: 96, title: 'Tính Diện Tích Tam Giác ($S = ?$)' },
+        { type: 'parallelogram', p: { base: 12, height: 6 }, ans: 72, title: 'Tính Diện Tích Hình Bình Hành ($S = ?$)' }
+    ],
+    5: [
+        { type: 'parallelogram', p: { base: 15, height: 8 }, ans: 120, title: 'Tính Diện Tích Hình Bình Hành ($S = ?$)' },
+        { type: 'trapezoid', p: { a: 8, b: 14, h: 6 }, ans: 66, title: 'Tính Diện Tích Hình Thang ($S = ?$)' },
+        { type: 'triangle', p: { base: 20, height: 11 }, ans: 110, title: 'Tính Diện Tích Tam Giác ($S = ?$)' }
+    ],
+    6: [
+        { type: 'circles_touch', p: [3, 12], ans: 12, title: 'Tìm đoạn tiếp tuyến chung x giữa 2 đường tròn' },
+        { type: 'trapezoid', p: { a: 10, b: 16, h: 7 }, ans: 91, title: 'Tính Diện Tích Hình Thang ($S = ?$)' },
+        { type: 'parallelogram', p: { base: 18, height: 10 }, ans: 180, title: 'Tính Diện Tích Hình Bình Hành ($S = ?$)' }
+    ],
+    7: [
+        { type: 'triangle', p: { base: 45, height: 22 }, ans: 495, title: 'Tính Diện Tích Tam Giác ($S = ?$)' },
+        { type: 'trapezoid', p: { a: 12, b: 20, height: 9 }, ans: 144, title: 'Tính Diện Tích Hình Thang ($S = ?$)' }
+    ],
+    8: [
+        { type: 'mountain', p: [10, 4, 6, 8], ans: 20, title: 'Tìm độ dài đáy x (Định lý Pytago chuỗi tam giác vuông)' },
+        { type: 'parallelogram', p: { base: 22, height: 12 }, ans: 264, title: 'Tính Diện Tích Hình Bình Hành ($S = ?$)' }
+    ],
+    9: [
+        { type: 'triangle', p: { base: 70, height: 32 }, ans: 1120, title: 'Tính Diện Tích Tam Giác ($S = ?$)' },
+        { type: 'circles_touch', p: [6, 24], ans: 24, title: 'Tìm đoạn tiếp tuyến chung x' },
+        { type: 'trapezoid', p: { a: 15, b: 25, height: 10 }, ans: 200, title: 'Tính Diện Tích Hình Thang ($S = ?$)' }
+    ],
+    10:[
+        { type: 'mountain', p: [15, 8, 12, 9], ans: 32, title: 'Tìm độ dài đáy x (Chuỗi tam giác vuông)' },
+        { type: 'parallelogram', p: { base: 25, height: 14 }, ans: 350, title: 'Tính Diện Tích Hình Bình Hành ($S = ?$)' },
+        { type: 'inscribed_circle', p: { a: 10, b: 10, c: 12, r: 3 }, ans: 48, title: 'Hình tròn nội tiếp tam giác: Tính Diện Tích' }
+    ],
+    11:[
+        { type: 'circles_touch', p: [9, 16], ans: 24, title: 'Tìm khoảng cách x qua tiếp điểm đường tròn' },
+        { type: 'trapezoid', p: { a: 18, b: 26, height: 12 }, ans: 264, title: 'Tính Diện Tích Hình Thang ($S = ?$)' }
+    ],
+    12:[
+        { type: 'mountain', p: [24, 7, 15, 20], ans: 44, title: 'Tìm độ dài đáy x' },
+        { type: 'parallelogram', p: { base: 30, height: 16 }, ans: 480, title: 'Tính Diện Tích Hình Bình Hành ($S = ?$)' }
+    ],
+    13:[
+        { type: 'mountain', p: [30, 40, 24, 32], ans: 68, title: 'Tìm độ dài đáy x (Thử thách siêu khó)' },
+        { type: 'circles_touch', p: [8, 18], ans: 24, title: 'Tìm khoảng cách tiếp tuyến x' }
+    ],
+    14:[
+        { type: 'inscribed_circle', p: { a: 13, b: 14, c: 15, r: 4 }, ans: 84, title: 'Hình tròn nội tiếp tam giác: Tính Diện Tích Tam Giác' },
+        { type: 'trapezoid', p: { a: 20, b: 32, height: 14 }, ans: 364, title: 'Tính Diện Tích Hình Thang ($S = ?$)' }
+    ],
+    15:[
+        { type: 'parallelogram', p: { base: 36, height: 18 }, ans: 648, title: 'Tính Diện Tích Hình Bình Hành Nâng Cao ($S = ?$)' },
+        { type: 'mountain', p: [16, 12, 9, 40], ans: 36, title: 'Tìm độ dài đáy x' }
+    ],
+    16:[
+        { type: 'trapezoid', p: { a: 24, b: 36, height: 15 }, ans: 450, title: 'Tính Diện Tích Hình Thang Nâng Cao ($S = ?$)' },
+        { type: 'circles_touch', p: [5, 20], ans: 20, title: 'Tìm đoạn tiếp tuyến chung x' }
+    ],
+    17:[
+        { type: 'inscribed_circle', p: { a: 20, b: 20, c: 24, r: 6 }, ans: 192, title: 'Thử thách hình tròn nội tiếp tam giác cân ($S = ?$)' }
+    ],
+    18:[
+        { type: 'mountain', p: [20, 21, 20, 21], ans: 58, title: 'Đại chiến Hình học Cực đỉnh: Tìm độ dài x' },
+        { type: 'parallelogram', p: { base: 40, height: 22 }, ans: 880, title: 'Tính Diện Tích Hình Bình Hành Siêu Cấp ($S = ?$)' }
+    ],
+    19:[
+        { type: 'circles_touch', p: [12, 27], ans: 36, title: 'Thử thách tiếp tuyến đường tròn cực khó' }
+    ],
+    20:[
+        { type: 'inscribed_circle', p: { a: 30, b: 26, c: 26, r: 8 }, ans: 336, title: 'Siêu thử thách Hình tròn nội tiếp tam giác' },
+        { type: 'trapezoid', p: { a: 28, b: 42, height: 18 }, ans: 630, title: 'Đại chiến Hình thang Cực khó' }
+    ],
+    21:[
+        { type: 'trapezoid', p: { a: 32, b: 48, height: 20 }, ans: 800, title: 'Bậc thầy Hình thang nâng cao ($S = ?$)' }
+    ],
+    22:[
+        { type: 'mountain', p: [33, 56, 39, 80], ans: 100, title: 'Thử thách Pytago chuỗi đỉnh cao' }
+    ],
+    23:[
+        { type: 'inscribed_circle', p: { a: 35, b: 35, c: 42, r: 10 }, ans: 560, title: 'Đỉnh cao Hình học Kho báu cuối cùng' }
+    ]
+};
+
+let currentLevel = 3;
+let collectedKeys = 0;
+let startTime = 0;
+let timeLimit = 15;
+let timerInterval = null;
+let currentQuestion = null;
+let totalGameStartTime = Date.now();
+let lastSecondChecked = 0;
+let isTimeoutExpired = false;
+
+function loadNewQuestion() {
+    initAudio();
+    document.getElementById('btnNext').style.display = 'none';
+    document.getElementById('feedback').innerText = '';
+    isTimeoutExpired = false;
+
+    let availableLevels = Object.keys(questionPool).map(Number);
+    let validLevel = availableLevels.includes(currentLevel) ? currentLevel : Math.max(...availableLevels.filter(l => l <= currentLevel));
+    if(!questionPool[validLevel]) validLevel = 3;
+
+    const levelQuestions = questionPool[validLevel];
+    const qData = levelQuestions[Math.floor(Math.random() * levelQuestions.length)];
+    currentQuestion = qData;
+
+    timeLimit = Math.max(10, 20 - Math.floor(currentLevel / 2));
+    document.getElementById('txtLevel').innerText = `Cấp ${currentLevel}`;
+    document.getElementById('txtTimeLimit').innerText = `${timeLimit}s`;
+    document.getElementById('questionTitle').innerHTML = qData.title;
+
+    renderCanvas(qData);
+    generateOptions(qData.ans);
+    startTimer();
+}
+
+function renderCanvas(q) {
+    const canvas = document.getElementById('geomCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (q.type === 'triangle') {
+        drawTriangle(ctx, q.p.base, q.p.height);
+    } else if (q.type === 'mountain') {
+        drawMountain(ctx, q.p);
+    } else if (q.type === 'circles_touch') {
+        drawCirclesTouch(ctx, q.p[0], q.p[1]);
+    } else if (q.type === 'parallelogram') {
+        drawParallelogram(ctx, q.p.base, q.p.height);
+    } else if (q.type === 'trapezoid') {
+        drawTrapezoid(ctx, q.p.a, q.p.b, q.p.height);
+    } else if (q.type === 'inscribed_circle') {
+        drawInscribedCircle(ctx, q.p.r);
+    }
+}
+
+// Vẽ tam giác
+function drawTriangle(ctx, base, height) {
+    const A = { x: 230, y: 25 };
+    const B = { x: 110, y: 205 };
+    const C = { x: 350, y: 205 };
+    const H = { x: 230, y: 205 };
+
+    ctx.beginPath();
+    ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.18)'; ctx.fill();
+    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.5; ctx.stroke();
+
+    ctx.beginPath(); ctx.setLineDash([4, 4]);
+    ctx.moveTo(A.x, A.y); ctx.lineTo(H.x, H.y);
+    ctx.strokeStyle = 'rgba(250, 204, 21, 0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = '#facc15'; ctx.strokeRect(H.x - 7, H.y - 7, 7, 7);
+
+    const dimX = 75;
+    drawArrow(ctx, dimX, A.y, dimX, H.y, '#facc15');
+    ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = '#facc15'; ctx.textAlign = 'right';
+    ctx.fillText(`${height}`, dimX - 10, (A.y + H.y) / 2 + 5);
+
+    ctx.textAlign = 'center'; ctx.fillStyle = '#38bdf8';
+    ctx.fillText(`a = ${base}`, (B.x + C.x) / 2, 224);
+}
+
+// Vẽ hình bình hành
+function drawParallelogram(ctx, base, height) {
+    const A = { x: 120, y: 70 };
+    const B = { x: 340, y: 70 };
+    const C = { x: 260, y: 195 };
+    const D = { x: 40, y: 195 };
+
+    ctx.beginPath();
+    ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y); ctx.lineTo(D.x, D.y);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(236, 72, 153, 0.15)'; ctx.fill();
+    ctx.strokeStyle = '#ec4899'; ctx.lineWidth = 2.5; ctx.stroke();
+
+    ctx.beginPath(); ctx.setLineDash([4, 4]);
+    ctx.moveTo(A.x, A.y); ctx.lineTo(A.x, C.y);
+    ctx.strokeStyle = '#facc15'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeRect(A.x, C.y - 10, 10, 10);
+
+    drawArrow(ctx, 20, A.y, 20, C.y, '#facc15');
+    ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = '#facc15'; ctx.textAlign = 'right';
+    ctx.fillText(`h = ${height}`, 12, (A.y + C.y) / 2 + 5);
+
+    ctx.textAlign = 'center'; ctx.fillStyle = '#38bdf8';
+    ctx.fillText(`a = ${base}`, (D.x + C.x) / 2, 218);
+}
+
+// Vẽ hình thang
+function drawTrapezoid(ctx, a, b, height) {
+    const A = { x: 170, y: 65 };
+    const B = { x: 290, y: 65 };
+    const C = { x: 370, y: 190 };
+    const D = { x: 90, y: 190 };
+
+    ctx.beginPath();
+    ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y); ctx.lineTo(D.x, D.y);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.15)'; ctx.fill();
+    ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 2.5; ctx.stroke();
+
+    ctx.beginPath(); ctx.setLineDash([4, 4]);
+    ctx.moveTo(A.x, A.y); ctx.lineTo(A.x, C.y);
+    ctx.strokeStyle = '#facc15'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeRect(A.x, C.y - 10, 10, 10);
+
+    drawArrow(ctx, 60, A.y, 60, C.y, '#facc15');
+    ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = '#facc15'; ctx.textAlign = 'right';
+    ctx.fillText(`h = ${height}`, 52, (A.y + C.y) / 2 + 5);
+
+    ctx.textAlign = 'center'; ctx.fillStyle = '#38bdf8';
+    ctx.fillText(`Đáy nhỏ a = ${a}`, (A.x + B.x) / 2, 52);
+    ctx.fillText(`Đáy lớn b = ${b}`, (D.x + C.x) / 2, 212);
+}
+
+// Vẽ hình tròn nội tiếp tam giác
+function drawInscribedCircle(ctx, r) {
+    const A = { x: 230, y: 35 };
+    const B = { x: 100, y: 195 };
+    const C = { x: 360, y: 195 };
+
+    ctx.beginPath();
+    ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(34, 197, 94, 0.12)'; ctx.fill();
+    ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 2.5; ctx.stroke();
+
+    const cx = 230, cy = 135, rad = 45;
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(250, 204, 21, 0.15)'; ctx.fill();
+    ctx.strokeStyle = '#facc15'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.fillRect(cx - 3, cy - 3, 6, 6);
+
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + rad);
+    ctx.strokeStyle = '#facc15'; ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
+
+    ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = '#facc15'; ctx.textAlign = 'left';
+    ctx.fillText(`r = ${r}`, cx + 8, cy + 25);
+    ctx.textAlign = 'center'; ctx.fillStyle = '#38bdf8';
+    ctx.fillText(`Đường tròn nội tiếp (Inscribed Circle)`, 230, 222);
+}
+
+// Vẽ dãy tam giác vuông
+function drawMountain(ctx, p) {
+    ctx.strokeStyle = '#38bdf8'; ctx.fillStyle = 'rgba(56, 189, 248, 0.15)'; ctx.lineWidth = 2.5;
+    
+    const startX = 60; const bottomY = 180;
+    const peak1X = 180; const peak1Y = 70;
+    const valleyX = 260; const valleyY = 130;
+    const peak2X = 350; const peak2Y = 50;
+    const endX = 400;
+
+    ctx.beginPath();
+    ctx.moveTo(startX, bottomY);
+    ctx.lineTo(peak1X, peak1Y);
+    ctx.lineTo(valleyX, valleyY);
+    ctx.lineTo(peak2X, peak2Y);
+    ctx.lineTo(endX, bottomY);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+    drawRightAngleMarker(ctx, peak1X, peak1Y, startX, bottomY, peak1X, peak1Y, valleyX, valleyY, 14);
+    drawRightAngleMarker(ctx, valleyX, valleyY, peak1X, peak1Y, valleyX, valleyY, peak2X, peak2Y, 14);
+    drawRightAngleMarker(ctx, peak2X, peak2Y, valleyX, valleyY, peak2X, peak2Y, endX, bottomY, 14);
+
+    ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = '#ef4444';
+    ctx.fillText(p[0], 100, 115);
+    ctx.fillText(p[1], 208, 105);
+    ctx.fillText(p[2], 295, 85);
+    ctx.fillText(p[3], 385, 105);
+
+    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(startX, bottomY + 12); ctx.lineTo(endX, bottomY + 12); ctx.stroke();
+    drawArrow(ctx, startX, bottomY + 12, endX, bottomY + 12, '#38bdf8');
+    ctx.fillStyle = '#facc15'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('x', (startX + endX) / 2, bottomY + 32);
+}
+
+function drawRightAngleMarker(ctx, vx, vy, x1, y1, x2, y2, x3, y3, size) {
+    const v1x = x1 - vx, v1y = y1 - vy;
+    const len1 = Math.hypot(v1x, v1y);
+    const u1x = v1x / len1, u1y = v1y / len1;
+
+    const v2x = x3 - vx, v2y = y3 - vy;
+    const len2 = Math.hypot(v2x, v2y);
+    const u2x = v2x / len2, u2y = v2y / len2;
+
+    const p1x = vx + u1x * size;
+    const p1y = vy + u1y * size;
+    const p2x = vx + u2x * size;
+    const p2y = vy + u2y * size;
+    const cornerX = p1x + (p2x - vx);
+    const cornerY = p1y + (p2y - vy);
+
+    ctx.beginPath();
+    ctx.moveTo(p1x, p1y);
+    ctx.lineTo(cornerX, cornerY);
+    ctx.lineTo(p2x, p2y);
+    ctx.strokeStyle = '#facc15';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+}
+
+// Vẽ 2 đường tròn tiếp xúc
+function drawCirclesTouch(ctx, r1, r2) {
+    const scale = Math.min(4.2, 160 / Math.max(r1, r2));
+    const rad1 = r1 * scale;
+    const rad2 = r2 * scale;
+    
+    const floorY = 185;
+    const c1y = floorY - rad1;
+    const c2y = floorY - rad2;
+    
+    const distCenters = rad1 + rad2;
+    const c1x = 230 - distCenters / 2;
+    const c2x = 230 + distCenters / 2;
+
+    ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(40, floorY); ctx.lineTo(420, floorY); ctx.stroke();
+
+    ctx.beginPath(); ctx.arc(c1x, c1y, rad1, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(139, 92, 246, 0.15)'; ctx.fill();
+    ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.fillRect(c1x - 3, c1y - 3, 6, 6);
+
+    ctx.beginPath(); ctx.moveTo(c1x, c1y); ctx.lineTo(c1x - rad1 * 0.6, c1y - rad1 * 0.6);
+    ctx.strokeStyle = '#facc15'; ctx.stroke();
+    ctx.fillStyle = '#facc15'; ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(`${r1} cm`, c1x - rad1 * 0.4 - 12, c1y - rad1 * 0.4);
+
+    ctx.beginPath(); ctx.arc(c2x, c2y, rad2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.15)'; ctx.fill();
+    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.fillRect(c2x - 3, c2y - 3, 6, 6);
+
+    ctx.beginPath(); ctx.moveTo(c2x, c2y); ctx.lineTo(c2x + rad2 * 0.6, c2y - rad2 * 0.6);
+    ctx.strokeStyle = '#facc15'; ctx.stroke();
+    ctx.fillText(`${r2} cm`, c2x + rad2 * 0.4 + 5, c2y - rad2 * 0.4);
+
+    ctx.fillStyle = '#facc15';
+    ctx.fillRect(c1x - 3, floorY - 3, 6, 6);
+    ctx.fillRect(c2x - 3, floorY - 3, 6, 6);
+
+    drawArrow(ctx, c1x, floorY + 18, c2x, floorY + 18, '#38bdf8');
+    ctx.fillStyle = '#facc15'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('x', (c1x + c2x) / 2, floorY + 36);
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color) {
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    ctx.beginPath(); ctx.moveTo(x1, y1);
+    ctx.lineTo(x1 + 8 * Math.cos(angle + Math.PI / 6), y1 + 8 * Math.sin(angle + Math.PI / 6));
+    ctx.lineTo(x1 + 8 * Math.cos(angle - Math.PI / 6), y1 + 8 * Math.sin(angle - Math.PI / 6));
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - 8 * Math.cos(angle + Math.PI / 6), y2 - 8 * Math.sin(angle + Math.PI / 6));
+    ctx.lineTo(x2 - 8 * Math.cos(angle - Math.PI / 6), y2 - 8 * Math.sin(angle - Math.PI / 6));
+    ctx.closePath(); ctx.fill();
+}
+
+function generateOptions(correct) {
+    const optionsBox = document.getElementById('optionsBox');
+    optionsBox.innerHTML = '';
+
+    let options = [correct];
+    while(options.length < 4) {
+        let offset = (Math.floor(Math.random() * 6) + 1) * (Math.random() < 0.5 ? 4 : -4);
+        let fake = correct + offset;
+        if(fake > 0 && !options.includes(fake)) options.push(fake);
+    }
+    options.sort(() => Math.random() - 0.5);
+
+    options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerText = opt;
+        btn.onclick = () => selectAnswer(opt, correct);
+        optionsBox.appendChild(btn);
+    });
+}
+
+function startTimer() {
+    clearInterval(timerInterval);
+    startTime = Date.now();
+    lastSecondChecked = timeLimit;
+    const timeBar = document.getElementById('timeBar');
+    timeBar.style.background = '#22c55e';
+
+    timerInterval = setInterval(() => {
+        let elapsed = (Date.now() - startTime) / 1000;
+        let leftTime = Math.max(0, timeLimit - elapsed);
+        let leftPercent = (leftTime / timeLimit) * 100;
+        timeBar.style.width = `${leftPercent}%`;
+
+        let currentSec = Math.ceil(leftTime);
+        if (currentSec !== lastSecondChecked && currentSec > 0) {
+            lastSecondChecked = currentSec;
+            playSound('tick');
+        }
+
+        if(leftTime <= 0 && !isTimeoutExpired) {
+            isTimeoutExpired = true;
+            clearInterval(timerInterval);
+            timeBar.style.background = '#ef4444';
+            document.getElementById('feedback').style.color = '#f87171';
+            document.getElementById('feedback').innerText = '⏰ Đã hết thời gian thưởng! Hãy chọn đáp án để tiếp tục...';
+        }
+    }, 100);
+}
+
+function selectAnswer(selected, correct) {
+    clearInterval(timerInterval);
+    let elapsed = (Date.now() - startTime) / 1000;
+    const isCorrect = (selected === correct);
+    handleAnswerResult(isCorrect, isTimeoutExpired, elapsed);
+}
+
+function handleAnswerResult(isCorrect, isLate, elapsed = 0) {
+    const buttons = document.querySelectorAll('.option-btn');
+    const feedback = document.getElementById('feedback');
+    const btnNext = document.getElementById('btnNext');
+
+    buttons.forEach(btn => btn.style.pointerEvents = 'none');
+
+    if (isCorrect) {
+        playSound('success');
+        if (!isLate) {
+            feedback.style.color = '#4ade80';
+            feedback.innerHTML = `🎉 Chính xác trong ${elapsed.toFixed(1)}s! ➔ Nhận 1 Chìa Khóa 🔑`;
+            if (collectedKeys < 10) { collectedKeys++; updateKeySlots(); }
+            
+            if (collectedKeys === 3) currentLevel = 8;
+            else if (collectedKeys === 6) currentLevel = 13;
+            else if (collectedKeys === 8) currentLevel = 18;
+            else if (collectedKeys === 9) currentLevel = 23;
+            else if (elapsed <= timeLimit * 0.75 && currentLevel < 28) { currentLevel++; }
+        } else {
+            feedback.style.color = '#facc15';
+            feedback.innerHTML = `👍 Chọn đúng! Nhưng quá giờ ➔ Không được chìa khóa & hạ 1 cấp độ.`;
+            if (currentLevel > 3) { currentLevel--; }
+        }
+    } else {
+        playSound('fail');
+        feedback.style.color = '#f87171';
+        feedback.innerHTML = `❌ Sai rồi! ➔ Trừ 1 chìa khóa & hạ 1 cấp độ.`;
+        if (collectedKeys > 0) { collectedKeys--; updateKeySlots(); }
+        if (currentLevel > 3) { currentLevel--; }
+    }
+
+    if (collectedKeys >= 10) {
+        let totalTime = ((Date.now() - totalGameStartTime) / 1000).toFixed(1);
+        setTimeout(() => {
+            alert(`🏆 CHÚC MỪNG BẠN ĐÃ PHÁ ĐẢO KHO BÁU ĐỈNH CAO!\nTổng thời gian hoàn thành: ${totalTime} giây.`);
+            location.reload();
+        }, 500);
+        return;
+    }
+
+    btnNext.style.display = 'block';
+}
+
+function updateKeySlots() {
+    const slots = document.querySelectorAll('.key-slot');
+    slots.forEach((slot, index) => {
+        if(index < collectedKeys) {
+            slot.classList.add('filled');
+            slot.innerHTML = '🔑';
+        } else {
+            slot.classList.remove('filled');
+            slot.innerHTML = '';
+        }
+    });
+}
+
+loadNewQuestion();
+</script>
+
+</body>
+</html>
