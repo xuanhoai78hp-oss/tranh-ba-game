@@ -8,21 +8,21 @@
 * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
 body, html {
     width: 100vw; height: 100vh; overflow: hidden;
-    background: #050811; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #fff; display: flex; justify-content: center; align-items: center;
+    background: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #1e293b; display: flex; justify-content: center; align-items: center;
     position: relative;
 }
 
-/* Hiệu ứng ánh sáng nền */
+/* Hiệu ứng ánh sáng nền sáng sủa, hiện đại */
 .bg-glow {
     position: absolute; width: 100vw; height: 100vh; overflow: hidden; z-index: 0; pointer-events: none;
 }
 .glow-orb {
-    position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.45;
+    position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.35;
     animation: floatOrb 12s infinite alternate ease-in-out;
 }
-.orb-1 { width: 400px; height: 400px; background: #3b82f6; top: -120px; left: -120px; }
-.orb-2 { width: 450px; height: 450px; background: #8b5cf6; bottom: -150px; right: -150px; animation-delay: -4s; }
+.orb-1 { width: 450px; height: 450px; background: #60a5fa; top: -150px; left: -150px; }
+.orb-2 { width: 500px; height: 500px; background: #c084fc; bottom: -180px; right: -180px; animation-delay: -4s; }
 
 @keyframes floatOrb {
     0% { transform: translate(0, 0) scale(1); }
@@ -32,63 +32,63 @@ body, html {
 #game-box {
     position: relative; z-index: 2;
     width: 96vw; max-width: 520px; height: 96vh; max-height: 850px;
-    background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 18px;
+    background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 20px;
     display: flex; flex-direction: column; justify-content: space-between;
-    padding: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+    padding: 12px; box-shadow: 0 25px 50px rgba(0,0,0,0.25);
 }
 
 .header { text-align: center; flex-shrink: 0; }
-.header h3 { color: #facc15; font-size: 14px; margin-bottom: 4px; text-shadow: 0 0 10px rgba(250,204,21,0.5); }
+.header h3 { color: #d97706; font-size: 15px; margin-bottom: 4px; text-shadow: 0 1px 2px rgba(0,0,0,0.1); font-weight: 800; }
 
-/* Gom 10 chìa khóa thành 1 hàng duy nhất siêu gọn cho mobile */
+/* Gom 10 chìa khóa thành 1 hàng duy nhất gọn gàng */
 .key-slots {
     display: flex; justify-content: center; gap: 4px; margin-bottom: 6px; flex-wrap: nowrap;
 }
 .key-slot {
-    width: 26px; height: 32px; background: rgba(15, 23, 42, 0.95);
-    border: 1.5px dashed #475569; border-radius: 6px; display: flex;
+    width: 26px; height: 32px; background: #f1f5f9;
+    border: 1.5px dashed #cbd5e1; border-radius: 6px; display: flex;
     align-items: center; justify-content: center; font-size: 14px;
     transition: all 0.3s;
 }
 .key-slot.filled {
-    background: rgba(250, 204, 21, 0.3); border: 1.5px solid #facc15;
-    box-shadow: 0 0 10px rgba(250, 204, 21, 0.7);
+    background: #fef08a; border: 1.5px solid #eab308;
+    box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
     animation: bounceIn 0.3s ease;
 }
 
 .status-bar {
-    display: flex; justify-content: space-between; font-size: 12px; color: #cbd5e1;
-    background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 6px; margin-bottom: 6px;
+    display: flex; justify-content: space-between; font-size: 12px; color: #475569;
+    background: #f8fafc; padding: 5px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid #e2e8f0;
 }
 
 .question-card {
-    background: rgba(15, 23, 42, 0.75); border-radius: 12px; padding: 10px;
-    border: 1px solid rgba(255,255,255,0.1); text-align: center;
+    background: #f8fafc; border-radius: 14px; padding: 10px;
+    border: 1px solid #e2e8f0; text-align: center;
     display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between;
-    overflow: hidden;
+    overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
 }
 
 .canvas-wrapper {
-    width: 100%; height: 180px; background: #030712; border-radius: 8px;
+    width: 100%; height: 180px; background: #ffffff; border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    border: 1px solid #334155; position: relative; margin-bottom: 8px;
-    box-shadow: inset 0 0 12px rgba(0,0,0,0.9);
+    border: 1px solid #cbd5e1; position: relative; margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 canvas { display: block; max-width: 100%; max-height: 100%; }
 
 .time-progress {
-    width: 100%; height: 6px; background: #334155; border-radius: 3px; overflow: hidden; margin-bottom: 8px;
+    width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 8px;
 }
 .time-bar { width: 100%; height: 100%; background: #22c55e; transition: width 0.1s linear; }
 
 .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
 .option-btn {
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; padding: 10px; border-radius: 8px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; padding: 11px; border-radius: 8px;
     color: #fff; font-size: 15px; font-weight: bold; cursor: pointer;
-    transition: all 0.2s; box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+    transition: all 0.2s; box-shadow: 0 4px 12px rgba(59,130,246,0.3);
 }
-.option-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+.option-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
 .option-btn:active { transform: scale(0.96); }
 
 #feedback { text-align: center; font-size: 13px; min-height: 20px; font-weight: bold; margin-top: 2px; }
@@ -97,10 +97,10 @@ canvas { display: block; max-width: 100%; max-height: 100%; }
     background: linear-gradient(90deg, #f59e0b, #d97706); border: none;
     padding: 11px; border-radius: 8px; color: #fff; font-size: 15px;
     font-weight: bold; cursor: pointer; width: 100%; text-align: center;
-    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.6); display: none; margin-top: 6px;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); display: none; margin-top: 6px;
     flex-shrink: 0;
 }
-.next-btn:hover { filter: brightness(1.1); }
+.next-btn:hover { filter: brightness(1.05); }
 
 @keyframes bounceIn {
     0% { transform: scale(0); }
@@ -126,8 +126,8 @@ canvas { display: block; max-width: 100%; max-height: 100%; }
             <div class="key-slot"></div>
         </div>
         <div class="status-bar">
-            <span>Cấp độ: <b id="txtLevel" style="color: #facc15;">Cấp 3</b></span>
-            <span>Thời gian: <b id="txtTimeLimit" style="color: #38bdf8;">15s</b></span>
+            <span>Cấp độ: <b id="txtLevel" style="color: #d97706;">Cấp 3</b></span>
+            <span>Thời gian: <b id="txtTimeLimit" style="color: #0284c7;">15s</b></span>
         </div>
     </div>
 
@@ -138,7 +138,7 @@ canvas { display: block; max-width: 100%; max-height: 100%; }
 
         <div class="time-progress"><div class="time-bar" id="timeBar"></div></div>
 
-        <div id="questionTitle" style="font-size: 13px; color: #38bdf8; font-weight: bold; margin-bottom: 6px;">
+        <div id="questionTitle" style="font-size: 13px; color: #0284c7; font-weight: bold; margin-bottom: 6px;">
             Tìm độ dài đoạn thẳng $x$
         </div>
 
@@ -196,62 +196,66 @@ function playSound(type) {
     }
 }
 
-// Kho câu hỏi phong phú
+// ==========================================
+//  KHO CÂU HỎI TRẢI DÀI, PHÂN HÓA ĐỘ KHÓ TỪ CẤP 3 ĐẾN 18
+// ==========================================
 const questionPool = {
     3: [
         { type: 'triangle', p: { base: 10, height: 6 }, ans: 30, title: 'Tính Diện Tích Tam Giác ($S = ?$)' },
         { type: 'triangle', p: { base: 12, height: 8 }, ans: 48, title: 'Tính Diện Tích Tam Giác ($S = ?$)' }
     ],
     4: [
-        { type: 'circles_touch', p: [4, 9], ans: 12, title: 'Tìm khoảng cách x giữa 2 tiếp điểm' },
-        { type: 'triangle', p: { base: 16, height: 12 }, ans: 96, title: 'Tính Diện Tích Tam Giác ($S = ?$)' }
+        { type: 'triangle', p: { base: 18, height: 14 }, ans: 126, title: 'Tính Diện Tích Tam Giác ($S = ?$)' },
+        { type: 'parallelogram', p: { base: 12, height: 6 }, ans: 72, title: 'Tính Diện Tích Hình Bình Hành ($S = ?$)' }
     ],
     5: [
         { type: 'parallelogram', p: { base: 15, height: 8 }, ans: 120, title: 'Tính Diện Tích Hình Bình Hành ($S = ?$)' },
         { type: 'trapezoid', p: { a: 8, b: 14, h: 6 }, ans: 66, title: 'Tính Diện Tích Hình Thang ($S = ?$)' }
     ],
     6: [
-        { type: 'circles_touch', p: [3, 12], ans: 12, title: 'Tìm đoạn tiếp tuyến chung x' },
+        { type: 'parallelogram_find_h', p: { base: 16, area: 96 }, ans: 6, title: 'Hình Bình Hành: Biết S = 96, Đáy a = 16. Tìm chiều cao h ($h = ?$)' },
         { type: 'trapezoid', p: { a: 10, b: 16, h: 7 }, ans: 91, title: 'Tính Diện Tích Hình Thang ($S = ?$)' }
     ],
     7: [
-        { type: 'triangle', p: { base: 45, height: 22 }, ans: 495, title: 'Tính Diện Tích Tam Giác ($S = ?$)' }
+        { type: 'triangle', p: { base: 32, height: 25 }, ans: 400, title: 'Tính Diện Tích Tam Giác Nâng Cao ($S = ?$)' },
+        { type: 'trapezoid', p: { a: 12, b: 20, height: 9 }, ans: 144, title: 'Tính Diện Tích Hình Thang ($S = ?$)' }
     ],
     8: [
-        { type: 'mountain', p: [10, 4, 6, 8], ans: 20, title: 'Tìm độ dài đáy x (Chuỗi tam giác vuông)' }
+        { type: 'mountain', p: [10, 4, 6, 8], ans: 20, title: 'Tìm độ dài đáy x (Chuỗi tam giác vuông cơ bản)' },
+        { type: 'parallelogram_find_h', p: { base: 24, area: 216 }, ans: 9, title: 'Hình Bình Hành: Biết S = 216, Đáy a = 24. Tìm chiều cao h ($h = ?$)' }
     ],
     9: [
-        { type: 'triangle', p: { base: 70, height: 32 }, ans: 1120, title: 'Tính Diện Tích Tam Giác ($S = ?$)' },
-        { type: 'circles_touch', p: [6, 24], ans: 24, title: 'Tìm đoạn tiếp tuyến chung x' }
+        { type: 'triangle', p: { base: 50, height: 36 }, ans: 900, title: 'Tính Diện Tích Tam Giác Lớn ($S = ?$)' },
+        { type: 'trapezoid_find_h', p: { a: 14, b: 22, area: 180 }, ans: 10, title: 'Hình Thang: Biết S = 180, Đáy a=14, b=22. Tìm chiều cao h ($h = ?$)' }
     ],
     10:[
         { type: 'mountain', p: [15, 8, 12, 9], ans: 32, title: 'Tìm độ dài đáy x (Chuỗi tam giác vuông)' },
-        { type: 'parallelogram', p: { base: 25, height: 14 }, ans: 350, title: 'Tính Diện Tích Hình Bình Hành ($S = ?$)' }
+        { type: 'parallelogram', p: { base: 28, height: 15 }, ans: 420, title: 'Tính Diện Tích Hình Bình Hành ($S = ?$)' }
     ],
     11:[
-        { type: 'circles_touch', p: [9, 16], ans: 24, title: 'Tìm khoảng cách x qua tiếp điểm' },
-        { type: 'trapezoid', p: { a: 18, b: 26, height: 12 }, ans: 264, title: 'Tính Diện Tích Hình Thang ($S = ?$)' }
+        { type: 'trapezoid', p: { a: 18, b: 26, height: 12 }, ans: 264, title: 'Tính Diện Tích Hình Thang Nâng Cao ($S = ?$)' },
+        { type: 'parallelogram_find_h', p: { base: 35, area: 420 }, ans: 12, title: 'Hình Bình Hành: Biết S = 420, Đáy a = 35. Tìm chiều cao h ($h = ?$)' }
     ],
     12:[
-        { type: 'mountain', p: [24, 7, 15, 20], ans: 44, title: 'Tìm độ dài đáy x' }
+        { type: 'mountain', p: [24, 7, 15, 20], ans: 44, title: 'Tìm độ dài đáy x (Pytago chuỗi trung bình)' }
     ],
     13:[
         { type: 'mountain', p: [30, 40, 24, 32], ans: 68, title: 'Tìm độ dài đáy x (Thử thách siêu khó)' }
     ],
     14:[
-        { type: 'inscribed_circle', p: { a: 13, b: 14, c: 15, r: 4 }, ans: 84, title: 'Hình tròn nội tiếp tam giác: Tính Diện Tích' }
+        { type: 'trapezoid_find_h', p: { a: 20, b: 30, area: 350 }, ans: 14, title: 'Hình Thang Khó: Biết S = 350, a=20, b=30. Tìm chiều cao h ($h = ?$)' }
     ],
     15:[
-        { type: 'parallelogram', p: { base: 36, height: 18 }, ans: 648, title: 'Tính Diện Tích Hình Bình Hành Nâng Cao' }
+        { type: 'parallelogram', p: { base: 45, height: 24 }, ans: 1080, title: 'Tính Diện Tích Hình Bình Hành Cực Lớn ($S = ?$)' }
     ],
     16:[
-        { type: 'trapezoid', p: { a: 24, b: 36, height: 15 }, ans: 450, title: 'Tính Diện Tích Hình Thang Nâng Cao' }
+        { type: 'trapezoid', p: { a: 24, b: 36, height: 15 }, ans: 450, title: 'Tính Diện Tích Hình Thang Cực Khó ($S = ?$)' }
     ],
     17:[
-        { type: 'inscribed_circle', p: { a: 20, b: 20, c: 24, r: 6 }, ans: 192, title: 'Hình tròn nội tiếp tam giác cân ($S = ?$)' }
+        { type: 'trapezoid_find_h', p: { a: 25, b: 35, area: 540 }, ans: 18, title: 'Hình Thang Siêu Khó: Biết S = 540, a=25, b=35. Tìm chiều cao h ($h = ?$)' }
     ],
     18:[
-        { type: 'mountain', p: [20, 21, 20, 21], ans: 58, title: 'Đại chiến Hình học Cực đỉnh: Tìm x' }
+        { type: 'mountain', p: [12, 16, 20, 15], ans: 45, title: 'Đại chiến Hình học Đỉnh cao: Tìm x' }
     ]
 };
 
@@ -279,7 +283,7 @@ function loadNewQuestion() {
     const qData = levelQuestions[Math.floor(Math.random() * levelQuestions.length)];
     currentQuestion = qData;
 
-    timeLimit = Math.max(10, 20 - Math.floor(currentLevel / 2));
+    timeLimit = Math.max(10, 22 - Math.floor(currentLevel / 2));
     document.getElementById('txtLevel').innerText = `Cấp ${currentLevel}`;
     document.getElementById('txtTimeLimit').innerText = `${timeLimit}s`;
     document.getElementById('questionTitle').innerHTML = qData.title;
@@ -298,18 +302,18 @@ function renderCanvas(q) {
         drawTriangle(ctx, q.p.base, q.p.height);
     } else if (q.type === 'mountain') {
         drawMountain(ctx, q.p);
-    } else if (q.type === 'circles_touch') {
-        drawCirclesTouch(ctx, q.p[0], q.p[1]);
     } else if (q.type === 'parallelogram') {
         drawParallelogram(ctx, q.p.base, q.p.height);
+    } else if (q.type === 'parallelogram_find_h') {
+        drawParallelogramFindH(ctx, q.p.base, q.ans, q.p.area);
     } else if (q.type === 'trapezoid') {
-        drawTrapezoid(ctx, q.p.a, q.p.b, q.p.height);
-    } else if (q.type === 'inscribed_circle') {
-        drawInscribedCircle(ctx, q.p.r);
+        drawTrapezoid(ctx, q.p.a, q.p.b, q.p.h);
+    } else if (q.type === 'trapezoid_find_h') {
+        drawTrapezoidFindH(ctx, q.p.a, q.p.b, q.ans, q.p.area);
     }
 }
 
-// Hàm vẽ được canh chỉnh an toàn không lo khuất số
+// Vẽ tam giác
 function drawTriangle(ctx, base, height) {
     const A = { x: 210, y: 22 };
     const B = { x: 100, y: 165 };
@@ -319,24 +323,25 @@ function drawTriangle(ctx, base, height) {
     ctx.beginPath();
     ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.2)'; ctx.fill();
-    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.15)'; ctx.fill();
+    ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 2.5; ctx.stroke();
 
     ctx.beginPath(); ctx.setLineDash([3, 3]);
     ctx.moveTo(A.x, A.y); ctx.lineTo(H.x, H.y);
-    ctx.strokeStyle = 'rgba(250, 204, 21, 0.7)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.strokeStyle = '#eab308'; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.setLineDash([]);
-    ctx.strokeStyle = '#facc15'; ctx.strokeRect(H.x - 6, H.y - 6, 6, 6);
+    ctx.strokeStyle = '#ca8a04'; ctx.strokeRect(H.x - 6, H.y - 6, 6, 6);
 
     const dimX = 55;
-    drawArrow(ctx, dimX, A.y, dimX, H.y, '#facc15');
-    ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = '#facc15'; ctx.textAlign = 'right';
+    drawArrow(ctx, dimX, A.y, dimX, H.y, '#ca8a04');
+    ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = '#ca8a04'; ctx.textAlign = 'right';
     ctx.fillText(`${height}`, dimX - 8, (A.y + H.y) / 2 + 4);
 
-    ctx.textAlign = 'center'; ctx.fillStyle = '#38bdf8';
+    ctx.textAlign = 'center'; ctx.fillStyle = '#0284c7';
     ctx.fillText(`a = ${base}`, (B.x + C.x) / 2, 182);
 }
 
+// Vẽ hình bình hành tính S
 function drawParallelogram(ctx, base, height) {
     const A = { x: 120, y: 55 };
     const B = { x: 310, y: 55 };
@@ -346,23 +351,51 @@ function drawParallelogram(ctx, base, height) {
     ctx.beginPath();
     ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y); ctx.lineTo(D.x, D.y);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(236, 72, 153, 0.18)'; ctx.fill();
-    ctx.strokeStyle = '#ec4899'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = 'rgba(236, 72, 153, 0.12)'; ctx.fill();
+    ctx.strokeStyle = '#db2777'; ctx.lineWidth = 2.5; ctx.stroke();
 
     ctx.beginPath(); ctx.setLineDash([3, 3]);
     ctx.moveTo(A.x, A.y); ctx.lineTo(A.x, C.y);
-    ctx.strokeStyle = '#facc15'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.strokeStyle = '#ca8a04'; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.setLineDash([]);
     ctx.strokeRect(A.x, C.y - 8, 8, 8);
 
-    drawArrow(ctx, 30, A.y, 30, C.y, '#facc15');
-    ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = '#facc15'; ctx.textAlign = 'right';
+    drawArrow(ctx, 30, A.y, 30, C.y, '#ca8a04');
+    ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = '#ca8a04'; ctx.textAlign = 'right';
     ctx.fillText(`h=${height}`, 25, (A.y + C.y) / 2 + 4);
 
-    ctx.textAlign = 'center'; ctx.fillStyle = '#38bdf8';
+    ctx.textAlign = 'center'; ctx.fillStyle = '#0284c7';
     ctx.fillText(`a = ${base}`, (D.x + C.x) / 2, 178);
 }
 
+// Vẽ hình bình hành tìm h ngược lại
+function drawParallelogramFindH(ctx, base, height, area) {
+    const A = { x: 120, y: 55 };
+    const B = { x: 310, y: 55 };
+    const C = { x: 240, y: 160 };
+    const D = { x: 50, y: 160 };
+
+    ctx.beginPath();
+    ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y); ctx.lineTo(D.x, D.y);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(236, 72, 153, 0.12)'; ctx.fill();
+    ctx.strokeStyle = '#db2777'; ctx.lineWidth = 2.5; ctx.stroke();
+
+    ctx.beginPath(); ctx.setLineDash([3, 3]);
+    ctx.moveTo(A.x, A.y); ctx.lineTo(A.x, C.y);
+    ctx.strokeStyle = '#ca8a04'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeRect(A.x, C.y - 8, 8, 8);
+
+    drawArrow(ctx, 30, A.y, 30, C.y, '#ca8a04');
+    ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = '#ca8a04'; ctx.textAlign = 'right';
+    ctx.fillText(`h = ?`, 25, (A.y + C.y) / 2 + 4);
+
+    ctx.textAlign = 'center'; ctx.fillStyle = '#0284c7';
+    ctx.fillText(`a = ${base} | S = ${area}`, (D.x + C.x) / 2, 178);
+}
+
+// Vẽ hình thang tính S
 function drawTrapezoid(ctx, a, b, height) {
     const A = { x: 160, y: 50 };
     const B = { x: 260, y: 50 };
@@ -372,52 +405,55 @@ function drawTrapezoid(ctx, a, b, height) {
     ctx.beginPath();
     ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y); ctx.lineTo(D.x, D.y);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(168, 85, 247, 0.18)'; ctx.fill();
-    ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.12)'; ctx.fill();
+    ctx.strokeStyle = '#9333ea'; ctx.lineWidth = 2.5; ctx.stroke();
 
     ctx.beginPath(); ctx.setLineDash([3, 3]);
     ctx.moveTo(A.x, A.y); ctx.lineTo(A.x, C.y);
-    ctx.strokeStyle = '#facc15'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.strokeStyle = '#ca8a04'; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.setLineDash([]);
     ctx.strokeRect(A.x, C.y - 8, 8, 8);
 
-    drawArrow(ctx, 50, A.y, 50, C.y, '#facc15');
-    ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = '#facc15'; ctx.textAlign = 'right';
+    drawArrow(ctx, 50, A.y, 50, C.y, '#ca8a04');
+    ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = '#ca8a04'; ctx.textAlign = 'right';
     ctx.fillText(`h=${height}`, 45, (A.y + C.y) / 2 + 4);
 
-    ctx.textAlign = 'center'; ctx.fillStyle = '#38bdf8';
-    ctx.fillText(`a = ${a}`, (A.x + B.x) / 2, 40);
+    ctx.textAlign = 'center'; ctx.fillStyle = '#0284c7';
+    ctx.fillText(`a = ${a}`, (A.x + B.x) / 2, 38);
     ctx.fillText(`b = ${b}`, (D.x + C.x) / 2, 175);
 }
 
-function drawInscribedCircle(ctx, r) {
-    const A = { x: 210, y: 25 };
-    const B = { x: 100, y: 160 };
-    const C = { x: 320, y: 160 };
+// Vẽ hình thang tìm h ngược lại
+function drawTrapezoidFindH(ctx, a, b, height, area) {
+    const A = { x: 160, y: 50 };
+    const B = { x: 260, y: 50 };
+    const C = { x: 330, y: 155 };
+    const D = { x: 90, y: 155 };
 
     ctx.beginPath();
-    ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y);
+    ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y); ctx.lineTo(D.x, D.y);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(34, 197, 94, 0.15)'; ctx.fill();
-    ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.12)'; ctx.fill();
+    ctx.strokeStyle = '#9333ea'; ctx.lineWidth = 2.5; ctx.stroke();
 
-    const cx = 210, cy = 110, rad = 36;
-    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(250, 204, 21, 0.2)'; ctx.fill();
-    ctx.strokeStyle = '#facc15'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.fillRect(cx - 2, cy - 2, 4, 4);
+    ctx.beginPath(); ctx.setLineDash([3, 3]);
+    ctx.moveTo(A.x, A.y); ctx.lineTo(A.x, C.y);
+    ctx.strokeStyle = '#ca8a04'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeRect(A.x, C.y - 8, 8, 8);
 
-    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + rad);
-    ctx.strokeStyle = '#facc15'; ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
+    drawArrow(ctx, 50, A.y, 50, C.y, '#ca8a04');
+    ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = '#ca8a04'; ctx.textAlign = 'right';
+    ctx.fillText(`h = ?`, 45, (A.y + C.y) / 2 + 4);
 
-    ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = '#facc15'; ctx.textAlign = 'left';
-    ctx.fillText(`r = ${r}`, cx + 6, cy + 20);
-    ctx.textAlign = 'center'; ctx.fillStyle = '#38bdf8';
-    ctx.fillText(`Đường tròn nội tiếp`, 210, 180);
+    ctx.textAlign = 'center'; ctx.fillStyle = '#0284c7';
+    ctx.fillText(`a = ${a}`, (A.x + B.x) / 2, 38);
+    ctx.fillText(`b = ${b} | S = ${area}`, (D.x + C.x) / 2, 175);
 }
 
+// Vẽ dãy tam giác vuông
 function drawMountain(ctx, p) {
-    ctx.strokeStyle = '#38bdf8'; ctx.fillStyle = 'rgba(56, 189, 248, 0.15)'; ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#0284c7'; ctx.fillStyle = 'rgba(56, 189, 248, 0.12)'; ctx.lineWidth = 2.5;
     
     const startX = 50; const bottomY = 150;
     const peak1X = 160; const peak1Y = 55;
@@ -438,16 +474,16 @@ function drawMountain(ctx, p) {
     drawRightAngleMarker(ctx, valleyX, valleyY, peak1X, peak1Y, valleyX, valleyY, peak2X, peak2Y, 12);
     drawRightAngleMarker(ctx, peak2X, peak2Y, valleyX, valleyY, peak2X, peak2Y, endX, bottomY, 12);
 
-    ctx.font = 'bold 12px sans-serif'; ctx.fillStyle = '#f87171';
+    ctx.font = 'bold 12px sans-serif'; ctx.fillStyle = '#dc2626';
     ctx.fillText(p[0], 95, 95);
     ctx.fillText(p[1], 185, 85);
     ctx.fillText(p[2], 265, 75);
     ctx.fillText(p[3], 340, 95);
 
-    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+    ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(startX, bottomY + 10); ctx.lineTo(endX, bottomY + 10); ctx.stroke();
-    drawArrow(ctx, startX, bottomY + 10, endX, bottomY + 10, '#38bdf8');
-    ctx.fillStyle = '#facc15'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
+    drawArrow(ctx, startX, bottomY + 10, endX, bottomY + 10, '#0284c7');
+    ctx.fillStyle = '#ca8a04'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('x', (startX + endX) / 2, bottomY + 28);
 }
 
@@ -471,53 +507,9 @@ function drawRightAngleMarker(ctx, vx, vy, x1, y1, x2, y2, x3, y3, size) {
     ctx.moveTo(p1x, p1y);
     ctx.lineTo(cornerX, cornerY);
     ctx.lineTo(p2x, p2y);
-    ctx.strokeStyle = '#facc15';
+    ctx.strokeStyle = '#ca8a04';
     ctx.lineWidth = 1.5;
     ctx.stroke();
-}
-
-function drawCirclesTouch(ctx, r1, r2) {
-    const scale = Math.min(3.8, 140 / Math.max(r1, r2));
-    const rad1 = r1 * scale;
-    const rad2 = r2 * scale;
-    
-    const floorY = 155;
-    const c1y = floorY - rad1;
-    const c2y = floorY - rad2;
-    
-    const distCenters = rad1 + rad2;
-    const c1x = 210 - distCenters / 2;
-    const c2x = 210 + distCenters / 2;
-
-    ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(40, floorY); ctx.lineTo(380, floorY); ctx.stroke();
-
-    ctx.beginPath(); ctx.arc(c1x, c1y, rad1, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(139, 92, 246, 0.2)'; ctx.fill();
-    ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 2.5; ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.fillRect(c1x - 2, c1y - 2, 4, 4);
-
-    ctx.beginPath(); ctx.moveTo(c1x, c1y); ctx.lineTo(c1x - rad1 * 0.6, c1y - rad1 * 0.6);
-    ctx.strokeStyle = '#facc15'; ctx.stroke();
-    ctx.fillStyle = '#facc15'; ctx.font = 'bold 12px sans-serif';
-    ctx.fillText(`${r1}cm`, c1x - rad1 * 0.4 - 10, c1y - rad1 * 0.4);
-
-    ctx.beginPath(); ctx.arc(c2x, c2y, rad2, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.2)'; ctx.fill();
-    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.5; ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.fillRect(c2x - 2, c2y - 2, 4, 4);
-
-    ctx.beginPath(); ctx.moveTo(c2x, c2y); ctx.lineTo(c2x + rad2 * 0.6, c2y - rad2 * 0.6);
-    ctx.strokeStyle = '#facc15'; ctx.stroke();
-    ctx.fillText(`${r2}cm`, c2x + rad2 * 0.4 + 4, c2y - rad2 * 0.4);
-
-    ctx.fillStyle = '#facc15';
-    ctx.fillRect(c1x - 2, floorY - 2, 4, 4);
-    ctx.fillRect(c2x - 2, floorY - 2, 4, 4);
-
-    drawArrow(ctx, c1x, floorY + 14, c2x, floorY + 14, '#38bdf8');
-    ctx.fillStyle = '#facc15'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('x', (c1x + c2x) / 2, floorY + 30);
 }
 
 function drawArrow(ctx, x1, y1, x2, y2, color) {
@@ -578,7 +570,7 @@ function startTimer() {
             isTimeoutExpired = true;
             clearInterval(timerInterval);
             timeBar.style.background = '#ef4444';
-            document.getElementById('feedback').style.color = '#f87171';
+            document.getElementById('feedback').style.color = '#ef4444';
             document.getElementById('feedback').innerText = '⏰ Đã hết giờ! Hãy chọn đáp án để tiếp tục...';
         }
     }, 100);
@@ -601,23 +593,23 @@ function handleAnswerResult(isCorrect, isLate, elapsed = 0) {
     if (isCorrect) {
         playSound('success');
         if (!isLate) {
-            feedback.style.color = '#4ade80';
+            feedback.style.color = '#16a34a';
             feedback.innerHTML = `🎉 Chính xác (${elapsed.toFixed(1)}s)! +1 Chìa Khóa 🔑`;
             if (collectedKeys < 10) { collectedKeys++; updateKeySlots(); }
             
             if (collectedKeys === 3) currentLevel = 8;
-            else if (collectedKeys === 6) currentLevel = 13;
-            else if (collectedKeys === 8) currentLevel = 18;
-            else if (collectedKeys === 9) currentLevel = 23;
-            else if (elapsed <= timeLimit * 0.75 && currentLevel < 28) { currentLevel++; }
+            else if (collectedKeys === 6) currentLevel = 12;
+            else if (collectedKeys === 8) currentLevel = 15;
+            else if (collectedKeys === 9) currentLevel = 17;
+            else if (elapsed <= timeLimit * 0.75 && currentLevel < 18) { currentLevel++; }
         } else {
-            feedback.style.color = '#facc15';
+            feedback.style.color = '#ca8a04';
             feedback.innerHTML = `👍 Đúng nhưng quá giờ ➔ Không được chìa khóa & hạ cấp.`;
             if (currentLevel > 3) { currentLevel--; }
         }
     } else {
         playSound('fail');
-        feedback.style.color = '#f87171';
+        feedback.style.color = '#dc2626';
         feedback.innerHTML = `❌ Sai rồi! ➔ Trừ 1 chìa khóa & hạ cấp.`;
         if (collectedKeys > 0) { collectedKeys--; updateKeySlots(); }
         if (currentLevel > 3) { currentLevel--; }
