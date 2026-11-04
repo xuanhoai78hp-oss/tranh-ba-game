@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Game 3D - Bắn Cung & Quả Cầu Sét</title>
+<title>Game 3D - Bắn Cung & Sương Độc</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
@@ -11,76 +11,34 @@ body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font
 
 /* HUD Người chơi (Góc trái) */
 #hud {
-position: absolute; top: 15px; left: 15px;
-color: #fff; background: rgba(15, 23, 42, 0.85);
-padding: 12px 18px; border-radius: 10px;
-border: 1px solid rgba(255, 255, 255, 0.2);
-backdrop-filter: blur(5px); pointer-events: none;
-line-height: 1.5; font-size: 13px; z-index: 10;
+    position: absolute; top: 15px; left: 15px; color: #fff;
+    background: rgba(15, 23, 42, 0.85); padding: 12px 18px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(5px);
+    pointer-events: none; line-height: 1.5; font-size: 13px; z-index: 10;
 }
 #hud h3 { color: #facc15; font-size: 15px; margin-bottom: 4px; }
-
-/* HUD NPC (Góc phải) */
-#npc-hud {
-position: absolute; top: 15px; right: 15px;
-color: #fff; background: rgba(30, 41, 59, 0.85);
-padding: 12px 18px; border-radius: 10px;
-border: 1px solid rgba(56, 189, 248, 0.3);
-backdrop-filter: blur(5px); pointer-events: none;
-line-height: 1.5; font-size: 13px; z-index: 10; text-align: right;
-}
-#npc-hud h3 { color: #38bdf8; font-size: 15px; margin-bottom: 4px; }
-
-.health-bar {
-width: 150px; height: 10px; background: rgba(255,255,255,0.2);
-border-radius: 5px; overflow: hidden; display: inline-block;
-vertical-align: middle; margin-left: 5px;
-}
+.health-bar { width: 150px; height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden; display: inline-block; vertical-align: middle; margin-left: 5px; }
 .health-fill { width: 50%; height: 100%; background: #22c55e; transition: width 0.3s; }
-.npc-health-fill { width: 50%; height: 100%; background: #38bdf8; transition: width 0.3s; }
 
 /* Joystick di động */
-#joystick-base {
-position: absolute; bottom: 40px; left: 40px;
-width: 120px; height: 120px; background: rgba(255,255,255,0.1);
-border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;
-touch-action: none; z-index: 1000; display: block;
-}
-#joystick-stick {
-position: absolute; top: 35px; left: 35px;
-width: 50px; height: 50px; background: rgba(250, 204, 21, 0.8);
-border-radius: 50%; pointer-events: none;
-}
+#joystick-base { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; touch-action: none; z-index: 1000; display: block; }
+#joystick-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(250, 204, 21, 0.8); border-radius: 50%; pointer-events: none; }
 
 /* Nút Bắn Tên */
 #btn-lightning {
-position: absolute; bottom: 40px; right: 40px;
-width: 80px; height: 80px; background: rgba(14, 165, 233, 0.85);
-border: 2px solid #38bdf8; border-radius: 50%;
-color: #fff; font-weight: bold; font-size: 12px;
-display: flex; align-items: center; justify-content: center;
-text-align: center; cursor: pointer; user-select: none;
-box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1000;
+    position: absolute; bottom: 40px; right: 40px; width: 80px; height: 80px;
+    background: rgba(14, 165, 233, 0.85); border: 2px solid #38bdf8; border-radius: 50%;
+    color: #fff; font-weight: bold; font-size: 12px; display: flex; align-items: center;
+    justify-content: center; text-align: center; cursor: pointer; user-select: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1000;
 }
 #btn-lightning:active { transform: scale(0.92); background: rgba(2, 132, 199, 0.95); }
 
-/* VŨ KHÍ CUNG Ở DƯỚI (ĐƯA LÊN LỚP TRÊN CÙNG z-index: 100) */
+/* VŨ KHÍ CUNG Ở DƯỚI */
 #weapon-overlay {
-position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-width: 300px; height: 700px; pointer-events: none; z-index: 100;
-background-repeat: no-repeat; background-position: bottom center;
-background-size: contain;
-}
-
-/* TÂM NGẮM CHÍNH GIỮA MÀN HÌNH */
-#crosshair {
-position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-width: 30px; height: 30px; pointer-events: none; z-index: 101;
-border: 2px solid rgba(250, 204, 21, 0.8); border-radius: 50%;
-}
-#crosshair::after {
-content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-width: 6px; height: 6px; background: #ef4444; border-radius: 50%;
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 300px; height: 700px; pointer-events: none; z-index: 100;
+    background-repeat: no-repeat; background-position: bottom center; background-size: contain;
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -88,40 +46,29 @@ width: 6px; height: 6px; background: #ef4444; border-radius: 50%;
 <body>
 
 <div id="hud">
-<h3> CHIẾN BINH CUNG THỦ</h3>
-• Máu: <span id="hp-text">50%</span><div class="health-bar"><div id="hp-fill" class="health-fill" style="width:50%"></div></div><br>
-• Sách nhặt: <span id="book-val">0</span> cuốn<br>
-• Tầm bắn: <span id="range-val">25</span>m / 90m<br>
-• Tiêu diệt: <span id="kill-val">0</span> / 90<br>
+    <h3>CHIẾN BINH CUNG THỦ</h3>
+    • Máu: <span id="hp-text">50%</span><div class="health-bar"><div id="hp-fill" class="health-fill" style="width:50%"></div></div><br>
+    • Sách nhặt: <span id="book-val">0</span> cuốn<br>
+    • Tầm bắn: <span id="range-val">25</span>m / 90m <br>
+    • Tiêu diệt: <span id="kill-val">0</span> / 90<br>
 </div>
 
-<div id="npc-hud">
-<h3> ĐỒNG HÀNH NPC</h3>
-• Máu: <span id="npc-hp-text">50%</span><div class="health-bar"><div id="npc-hp-fill" class="npc-health-fill" style="width:50%"></div></div><br>
-• Sách: <span id="npc-book-val">0</span> cuốn<br>
-• Tầm bắn: <span id="npc-range-val">25</span>m<br>
-• Tiêu diệt: <span id="npc-kill-val">0</span><br>
-</div>
-
-<div id="crosshair"></div>
 <div id="weapon-overlay"></div>
-
 <div id="joystick-base"><div id="joystick-stick"></div></div>
 <div id="btn-lightning">BẮN TÊN</div>
-
 <div id="canvas-container"></div>
 
 <script>
 // 1. NHẠC MP3 NGẪU NHIÊN 1 ĐẾN 9
 let bgAudio = new Audio();
 function playRandomAudio() {
-const randTrack = Math.floor(Math.random() * 9) + 1;
-bgAudio.src = `${randTrack}.mp3`;
-bgAudio.play().catch(() => {});
-bgAudio.onended = () => { playRandomAudio(); };
+    const randTrack = Math.floor(Math.random() * 9) + 1;
+    bgAudio.src = `${randTrack}.mp3`;
+    bgAudio.play().catch(() => {});
+    bgAudio.onended = () => { playRandomAudio(); };
 }
 window.addEventListener('pointerdown', () => {
-if (bgAudio.paused && bgAudio.currentTime === 0) playRandomAudio();
+    if (bgAudio.paused && bgAudio.currentTime === 0) playRandomAudio();
 }, { once: true });
 
 // 2. CẢNH 3D & CAMERA GÓC NHÌN THỨ NHẤT (FPS)
@@ -144,8 +91,8 @@ dirLight.castShadow = true;
 scene.add(dirLight);
 
 const floor = new THREE.Mesh(
-new THREE.PlaneGeometry(500, 500),
-new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 })
+    new THREE.PlaneGeometry(500, 500),
+    new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 })
 );
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
@@ -160,99 +107,95 @@ let containerTops = [];
 
 const textureLoader = new THREE.TextureLoader();
 textureLoader.load('https://tranh-ba-game-gw3q.vercel.app/gapcont.png', (masterTexture) => {
-const img = masterTexture.image;
-for (let i = 0; i < 5; i++) {
-const canvas = document.createElement('canvas');
-canvas.width = 175; canvas.height = 100;
-canvas.getContext('2d').drawImage(img, i * 200 + 25, 0, 175, 100, 0, 0, 175, 100);
-const mat = new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas), roughness: 0.4 });
-containerMaterialsList.push(Array(6).fill(mat));
-}
-buildContainerYard();
+    const img = masterTexture.image;
+    for (let i = 0; i < 5; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 175; canvas.height = 100;
+        canvas.getContext('2d').drawImage(img, i * 200 + 25, 0, 175, 100, 0, 0, 175, 100);
+        const mat = new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas), roughness: 0.4 });
+        containerMaterialsList.push(Array(6).fill(mat));
+    }
+    buildContainerYard();
 }, undefined, () => {
-const fallbackMats = Array(6).fill(new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
-containerMaterialsList = Array(5).fill(fallbackMats);
-buildContainerYard();
+    const fallbackMats = Array(6).fill(new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
+    containerMaterialsList = Array(5).fill(fallbackMats);
+    buildContainerYard();
 });
 
 let highestContainerTopY = 1.6;
 let spawnReadyPos = { x: 0, z: 5 };
 
 function buildContainerYard() {
-const NUM_BLOCKS_X = 4, NUM_BLOCKS_Z = 3, CONT_PER_ROW = 6;
-const ROAD_W_X = 14, ROAD_W_Z = 20;
-
-for (let bx = 0; bx < NUM_BLOCKS_X; bx++) {
-for (let bz = 0; bz < NUM_BLOCKS_Z; bz++) {
-const blockStartX = (bx - (NUM_BLOCKS_X - 1) / 2) * (CONT_PER_ROW * CONT_W + ROAD_W_X);
-const blockStartZ = (bz - (NUM_BLOCKS_Z - 1) / 2) * (CONT_L + ROAD_W_Z);
-
-for (let r = 0; r < CONT_PER_ROW; r++) {
-const posX = blockStartX + r * (CONT_W + 0.1);
-const posZ = blockStartZ;
-const stackHeight = Math.floor(Math.random() * 3) + 1;
-
-for (let h = 0; h < stackHeight; h++) {
-const posY = h * CONT_H + CONT_H / 2;
-const topY = posY + CONT_H / 2;
-const typeIndex = Math.floor(Math.random() * containerMaterialsList.length);
-const mesh = new THREE.Mesh(boxGeometry, containerMaterialsList[typeIndex] || containerMaterialsList[0]);
-mesh.position.set(posX, posY, posZ);
-mesh.castShadow = true;
-mesh.receiveShadow = true;
-scene.add(mesh);
-
-containerBoxes.push(new THREE.Box3().setFromObject(mesh));
-containerTops.push({ minX: posX - CONT_W/2, maxX: posX + CONT_W/2, minZ: posZ - CONT_L/2, maxZ: posZ + CONT_L/2, topY: topY });
-
-if (h === 2 && topY > highestContainerTopY) {
-highestContainerTopY = topY;
-spawnReadyPos = { x: posX, z: posZ };
-}
-}
-}
-}
-}
-playerPos.x = spawnReadyPos.x;
-playerPos.z = spawnReadyPos.z;
-camera.position.set(playerPos.x, highestContainerTopY + 2.2, playerPos.z);
-if (npc) npc.position.set(spawnReadyPos.x + 3, highestContainerTopY + 0.8, spawnReadyPos.z + 3);
+    const NUM_BLOCKS_X = 4, NUM_BLOCKS_Z = 3, CONT_PER_ROW = 6;
+    const ROAD_W_X = 14, ROAD_W_Z = 20;
+    for (let bx = 0; bx < NUM_BLOCKS_X; bx++) {
+        for (let bz = 0; bz < NUM_BLOCKS_Z; bz++) {
+            const blockStartX = (bx - (NUM_BLOCKS_X - 1) / 2) * (CONT_PER_ROW * CONT_W + ROAD_W_X);
+            const blockStartZ = (bz - (NUM_BLOCKS_Z - 1) / 2) * (CONT_L + ROAD_W_Z);
+            for (let r = 0; r < CONT_PER_ROW; r++) {
+                const posX = blockStartX + r * (CONT_W + 0.1);
+                const posZ = blockStartZ;
+                const stackHeight = Math.floor(Math.random() * 3) + 1;
+                for (let h = 0; h < stackHeight; h++) {
+                    const posY = h * CONT_H + CONT_H / 2;
+                    const topY = posY + CONT_H / 2;
+                    const typeIndex = Math.floor(Math.random() * containerMaterialsList.length);
+                    const mesh = new THREE.Mesh(boxGeometry, containerMaterialsList[typeIndex] || containerMaterialsList[0]);
+                    mesh.position.set(posX, posY, posZ);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    scene.add(mesh);
+                    containerBoxes.push(new THREE.Box3().setFromObject(mesh));
+                    containerTops.push({ minX: posX - CONT_W/2, maxX: posX + CONT_W/2, minZ: posZ - CONT_L/2, maxZ: posZ + CONT_L/2, topY: topY });
+                    if (h === 2 && topY > highestContainerTopY) {
+                        highestContainerTopY = topY;
+                        spawnReadyPos = { x: posX, z: posZ };
+                    }
+                }
+            }
+        }
+    }
+    playerPos.x = spawnReadyPos.x;
+    playerPos.z = spawnReadyPos.z;
+    camera.position.set(playerPos.x, highestContainerTopY + 2.2, playerPos.z);
 }
 
-// 4. LOAD SPRITE SHEET (anh.png) CHO CÔN TRÙNG & NPC
+// 4. LOAD SPRITE SHEET (anh.png) CHO CÔN TRÙNG
 let spriteImage = new Image();
 spriteImage.crossOrigin = "anonymous";
 spriteImage.src = 'https://tranh-ba-game-gw3q.vercel.app/anh.png';
 
 function getSpriteTexture(row, col) {
-const canvas = document.createElement('canvas');
-canvas.width = 40; canvas.height = 40;
-const ctx = canvas.getContext('2d');
-if (spriteImage.complete && spriteImage.naturalWidth !== 0) {
-ctx.drawImage(spriteImage, col * 40, row * 40, 40, 40, 0, 0, 40, 40);
-}
-const tex = new THREE.CanvasTexture(canvas);
-tex.magFilter = THREE.NearestFilter;
-return tex;
+    const canvas = document.createElement('canvas');
+    canvas.width = 40; canvas.height = 40;
+    const ctx = canvas.getContext('2d');
+    if (spriteImage.complete && spriteImage.naturalWidth !== 0) {
+        ctx.drawImage(spriteImage, col * 40, row * 40, 40, 40, 0, 0, 40, 40);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.magFilter = THREE.NearestFilter;
+    return tex;
 }
 
 function createLightningOrbTexture() {
-const canvas = document.createElement('canvas');
-canvas.width = 128; canvas.height = 128;
-const ctx = canvas.getContext('2d');
-const grad = ctx.createRadialGradient(64, 64, 5, 64, 64, 60);
-grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-grad.addColorStop(0.3, 'rgba(56, 189, 248, 0.9)');
-grad.addColorStop(0.7, 'rgba(14, 165, 233, 0.4)');
-grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-ctx.fillStyle = grad;
-ctx.beginPath(); ctx.arc(64, 64, 60, 0, Math.PI * 2); ctx.fill();
-
-ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
-ctx.beginPath();
-ctx.moveTo(64, 20); ctx.lineTo(50, 60); ctx.lineTo(75, 80); ctx.lineTo(64, 110);
-ctx.stroke();
-return new THREE.CanvasTexture(canvas);
+    const canvas = document.createElement('canvas');
+    canvas.width = 128; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createRadialGradient(64, 64, 5, 64, 64, 60);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    grad.addColorStop(0.3, 'rgba(56, 189, 248, 0.9)');
+    grad.addColorStop(0.7, 'rgba(14, 165, 233, 0.4)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(64, 64, 60, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(64, 20); ctx.lineTo(50, 60); ctx.lineTo(75, 80); ctx.lineTo(64, 110);
+    ctx.stroke();
+    return new THREE.CanvasTexture(canvas);
 }
 
 // 5. CẮT VÀ XỬ LÝ ẢNH CUNG (cung.png - 900x700, 3 ô mỗi ô 300x700)
@@ -260,17 +203,16 @@ const bowImg = new Image();
 bowImg.crossOrigin = "anonymous";
 bowImg.src = 'cung.png';
 const weaponOverlay = document.getElementById('weapon-overlay');
-
 let bowCanvas = document.createElement('canvas');
 bowCanvas.width = 300; bowCanvas.height = 700;
 let bowCtx = bowCanvas.getContext('2d');
 
 function updateBowFrame(frameX) {
-if (bowImg.complete && bowImg.naturalWidth !== 0) {
-bowCtx.clearRect(0, 0, 300, 700);
-bowCtx.drawImage(bowImg, frameX, 0, 300, 700, 0, 0, 300, 700);
-weaponOverlay.style.backgroundImage = `url(${bowCanvas.toDataURL()})`;
-}
+    if (bowImg.complete && bowImg.naturalWidth !== 0) {
+        bowCtx.clearRect(0, 0, 300, 700);
+        bowCtx.drawImage(bowImg, frameX, 0, 300, 700, 0, 0, 300, 700);
+        weaponOverlay.style.backgroundImage = `url(${bowCanvas.toDataURL()})`;
+    }
 }
 bowImg.onload = () => { updateBowFrame(0); };
 
@@ -281,35 +223,24 @@ function getAttackRange() { return Math.min(90, 25 + Math.floor(bookCount / 2));
 let isAttacking = false;
 let stepTimer = 0;
 
-// NPC Đồng hành
-let npc, npcPos = { x: 3, z: 8 }, npcAngle = 0;
-let npcHp = 50, npcBookCount = 0, npcKillCount = 0;
-function getNpcAttackRange() { return Math.min(90, 25 + Math.floor(npcBookCount / 2)); }
-let npcMat = new THREE.MeshBasicMaterial({ map: getSpriteTexture(5, 0), transparent: true });
-
-function createNpc() {
-const geo = new THREE.PlaneGeometry(1.2, 1.6);
-npc = new THREE.Mesh(geo, npcMat);
-npc.position.set(spawnReadyPos.x + 3, highestContainerTopY + 0.8, spawnReadyPos.z + 3);
-scene.add(npc);
-}
-setTimeout(createNpc, 500);
-
 // 6. HỆ THỐNG CÔN TRÙNG
 let insects = [];
 function spawnInsectAtDistance(dist) {
-const angle = Math.random() * Math.PI * 2;
-const spawnX = playerPos.x + Math.sin(angle) * dist;
-const spawnZ = playerPos.z + Math.cos(angle) * dist;
-const insectType = Math.random() > 0.5 ? 1 : 2;
-const geo = new THREE.PlaneGeometry(1.4, 1.4);
-const mat = new THREE.MeshBasicMaterial({ map: getSpriteTexture(insectType, 0), transparent: true });
-const mesh = new THREE.Mesh(geo, mat);
-mesh.position.set(spawnX, 0.7, spawnZ);
-scene.add(mesh);
-insects.push({ mesh: mesh, type: insectType, hits: 0, state: 'walk', speed: 0.03 + Math.random() * 0.03 });
+    const angle = Math.random() * Math.PI * 2;
+    const spawnX = playerPos.x + Math.sin(angle) * dist;
+    const spawnZ = playerPos.z + Math.cos(angle) * dist;
+    const insectType = Math.random() > 0.5 ? 1 : 2;
+    const geo = new THREE.PlaneGeometry(1.4, 1.4);
+    const mat = new THREE.MeshBasicMaterial({ map: getSpriteTexture(insectType, 0), transparent: true });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(spawnX, 0.7, spawnZ);
+    scene.add(mesh);
+    insects.push({ mesh: mesh, type: insectType, hits: 0, state: 'walk', speed: 0.03 + Math.random() * 0.03 });
 }
-setTimeout(() => { for (let i = 0; i < 6; i++) spawnInsectAtDistance(100); }, 1000);
+
+setTimeout(() => {
+    for (let i = 0; i < 6; i++) spawnInsectAtDistance(100);
+}, 1000);
 
 // 7. ĐIỀU KHIỂN BÀN PHÍM & JOYSTICK
 const keys = {};
@@ -323,249 +254,184 @@ let joyVector = { x: 0, y: 0 }, isDraggingJoy = false;
 joystickBase.addEventListener('pointerdown', (e) => { isDraggingJoy = true; updateJoystick(e); });
 window.addEventListener('pointermove', (e) => { if (isDraggingJoy) updateJoystick(e); });
 window.addEventListener('pointerup', () => {
-isDraggingJoy = false; joyVector = { x: 0, y: 0 };
-joystickStick.style.transform = `translate(0px, 0px)`;
+    isDraggingJoy = false; joyVector = { x: 0, y: 0 };
+    joystickStick.style.transform = `translate(0px, 0px)`;
 });
 
 function updateJoystick(e) {
-const rect = joystickBase.getBoundingClientRect();
-const dx = e.clientX - (rect.left + rect.width / 2);
-const dy = e.clientY - (rect.top + rect.height / 2);
-const dist = Math.min(50, Math.sqrt(dx*dx + dy*dy));
-const angle = Math.atan2(dy, dx);
-joyVector.x = (dist / 50) * Math.cos(angle);
-joyVector.y = (dist / 50) * Math.sin(angle);
-joystickStick.style.transform = `translate(${joyVector.x * 50}px, ${joyVector.y * 50}px)`;
+    const rect = joystickBase.getBoundingClientRect();
+    const dx = e.clientX - (rect.left + rect.width / 2);
+    const dy = e.clientY - (rect.top + rect.height / 2);
+    const dist = Math.min(50, Math.sqrt(dx*dx + dy*dy));
+    const angle = Math.atan2(dy, dx);
+    joyVector.x = (dist / 50) * Math.cos(angle);
+    joyVector.y = (dist / 50) * Math.sin(angle);
+    joystickStick.style.transform = `translate(${joyVector.x * 50}px, ${joyVector.y * 50}px)`;
 }
 
 // HÀNH ĐỘNG BẮN TÊN (Kéo giữa -> trái -> phải)
 document.getElementById('btn-lightning').addEventListener('click', () => {
-if (isAttacking) return;
-isAttacking = true;
+    if (isAttacking) return;
+    isAttacking = true;
+    updateBowFrame(300);
+    setTimeout(() => {
+        updateBowFrame(600);
+        const orbMat = new THREE.SpriteMaterial({ map: createLightningOrbTexture(), transparent: true, blending: THREE.AdditiveBlending });
+        const orb = new THREE.Sprite(orbMat);
+        orb.scale.set(1.5, 1.5, 1.5);
+        orb.position.copy(camera.position);
+        scene.add(orb);
 
-// Bước 1: Load ô giữa (Kéo dây căng mũi tên)
-updateBowFrame(300);
+        const maxDist = getAttackRange();
+        const travelDir = new THREE.Vector3(-Math.sin(playerAngle), 0, -Math.cos(playerAngle)).normalize();
+        let travelDist = 0;
 
-setTimeout(() => {
-// Bước 2: Load ô phải (Thả tên bắn)
-updateBowFrame(600);
+        const orbInterval = setInterval(() => {
+            travelDist += 3;
+            orb.position.addScaledVector(travelDir, 3);
+            insects.forEach((ins, index) => {
+                const toIns = new THREE.Vector3().subVectors(ins.mesh.position, camera.position).normalize();
+                const angleDiff = travelDir.angleTo(toIns);
+                if (travelDist <= maxDist && orb.position.distanceTo(ins.mesh.position) < 2.0 && angleDiff < 0.25) {
+                    ins.hits++;
+                    ins.state = 'hit';
+                    ins.mesh.material.map = getSpriteTexture(ins.type, 4 + (ins.hits % 4));
+                    ins.mesh.material.needsUpdate = true;
+                    setTimeout(() => { ins.state = 'walk'; }, 400);
+                    if (ins.hits >= 5) {
+                        scene.remove(ins.mesh);
+                        insects.splice(index, 1);
+                        killCount++;
+                        document.getElementById('kill-val').innerText = `${killCount} / 90`;
+                        dropItem(ins.mesh.position, Math.random() > 0.4 ? 'book' : 'blood');
+                    }
+                }
+            });
+            if (travelDist >= maxDist) {
+                clearInterval(orbInterval);
+                scene.remove(orb);
+            }
+        }, 30);
 
-// Hiệu ứng tia sét lao từ tâm màn hình về phía trước
-const orbMat = new THREE.SpriteMaterial({ map: createLightningOrbTexture(), transparent: true, blending: THREE.AdditiveBlending });
-const orb = new THREE.Sprite(orbMat);
-orb.scale.set(1.5, 1.5, 1.5);
-orb.position.copy(camera.position);
-scene.add(orb);
-
-const maxDist = getAttackRange();
-const travelDir = new THREE.Vector3(-Math.sin(playerAngle), 0, -Math.cos(playerAngle)).normalize();
-
-let travelDist = 0;
-const orbInterval = setInterval(() => {
-travelDist += 3;
-orb.position.addScaledVector(travelDir, 3);
-
-insects.forEach((ins, index) => {
-const toIns = new THREE.Vector3().subVectors(ins.mesh.position, camera.position).normalize();
-const angleDiff = travelDir.angleTo(toIns);
-
-if (travelDist <= maxDist && orb.position.distanceTo(ins.mesh.position) < 2.0 && angleDiff < 0.25) {
-ins.hits++;
-ins.state = 'hit';
-ins.mesh.material.map = getSpriteTexture(ins.type, 4 + (ins.hits % 4));
-ins.mesh.material.needsUpdate = true;
-setTimeout(() => { ins.state = 'walk'; }, 400);
-
-if (ins.hits >= 5) {
-scene.remove(ins.mesh);
-insects.splice(index, 1);
-killCount++;
-document.getElementById('kill-val').innerText = `${killCount} / 90`;
-dropItem(ins.mesh.position, Math.random() > 0.4 ? 'book' : 'blood', 'player');
-}
-}
-});
-
-if (travelDist >= maxDist) { clearInterval(orbInterval); scene.remove(orb); }
-}, 30);
-
-// Sau khi bắn xong trả về ô trái (bình thường)
-setTimeout(() => {
-updateBowFrame(0);
-isAttacking = false;
-}, 350);
-}, 250);
+        setTimeout(() => {
+            updateBowFrame(0);
+            isAttacking = false;
+        }, 350);
+    }, 250);
 });
 
 let items = [];
-function dropItem(pos, type, owner) {
-const geo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-const mat = new THREE.MeshStandardMaterial({ color: type === 'blood' ? 0xef4444 : 0xfacc15 });
-const item = new THREE.Mesh(geo, mat);
-item.position.copy(pos);
-scene.add(item);
-items.push({ mesh: item, type: type, owner: owner });
+function dropItem(pos, type) {
+    const geo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    const mat = new THREE.MeshStandardMaterial({ color: type === 'blood' ? 0xef4444 : 0xfacc15 });
+    const item = new THREE.Mesh(geo, mat);
+    item.position.copy(pos);
+    scene.add(item);
+    items.push({ mesh: item, type: type });
 }
 
 function getTargetGroundY(x, z) {
-let groundY = 0;
-for (let top of containerTops) {
-if (x >= top.minX && x <= top.maxX && z >= top.minZ && z <= top.maxZ) {
-if (top.topY > groundY) groundY = top.topY;
-}
-}
-return groundY;
+    let groundY = 0;
+    for (let top of containerTops) {
+        if (x >= top.minX && x <= top.maxX && z >= top.minZ && z <= top.maxZ) {
+            if (top.topY > groundY) groundY = top.topY;
+        }
+    }
+    return groundY;
 }
 
 let lastTime = Date.now();
 
 // 8. VÒNG LẶP GAME CHÍNH
 function animate() {
-requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
+    const now = Date.now();
+    const delta = (now - lastTime) / 1000;
+    lastTime = now;
 
-const now = Date.now();
-const delta = (now - lastTime) / 1000;
-lastTime = now;
+    const rotSpeed = 0.025;
+    const moveSpeed = 0.16;
 
-const rotSpeed = 0.025;
-const moveSpeed = 0.16;
+    if (keys['a'] || keys['arrowleft']) playerAngle += rotSpeed;
+    if (keys['d'] || keys['arrowright']) playerAngle -= rotSpeed;
 
-if (keys['a'] || keys['arrowleft']) playerAngle += rotSpeed;
-if (keys['d'] || keys['arrowright']) playerAngle -= rotSpeed;
+    let isMoving = false;
+    if (keys['w'] || keys['arrowup']) isMoving = true;
+    if (joyVector.y < -0.35) isMoving = true;
+    if (joyVector.x < -0.35) playerAngle += rotSpeed * Math.abs(joyVector.x);
+    if (joyVector.x > 0.35) playerAngle -= rotSpeed * Math.abs(joyVector.x);
 
-let isMoving = false;
-if (keys['w'] || keys['arrowup']) isMoving = true;
-if (joyVector.y < -0.35) isMoving = true;
-if (joyVector.x < -0.35) playerAngle += rotSpeed * Math.abs(joyVector.x);
-if (joyVector.x > 0.35) playerAngle -= rotSpeed * Math.abs(joyVector.x);
+    if (isMoving) {
+        playerPos.x -= Math.sin(playerAngle) * moveSpeed;
+        playerPos.z -= Math.cos(playerAngle) * moveSpeed;
+        const targetY = getTargetGroundY(playerPos.x, playerPos.z);
+        camera.position.set(playerPos.x, targetY + 2.2, playerPos.z);
 
-if (isMoving) {
-playerPos.x -= Math.sin(playerAngle) * moveSpeed;
-playerPos.z -= Math.cos(playerAngle) * moveSpeed;
-const targetY = getTargetGroundY(playerPos.x, playerPos.z);
-camera.position.set(playerPos.x, targetY + 2.2, playerPos.z);
+        stepTimer += 0.15;
+        const bobOffset = Math.sin(stepTimer) * 12;
+        weaponOverlay.style.bottom = `${bobOffset}px`;
+        if (!isAttacking) updateBowFrame(0);
+    } else {
+        weaponOverlay.style.bottom = '0px';
+    }
 
-// Hiệu ứng đung đưa ô trái theo nhịp bước chân
-stepTimer += 0.15;
-const bobOffset = Math.sin(stepTimer) * 12;
-weaponOverlay.style.bottom = `${bobOffset}px`;
+    const dirX = -Math.sin(playerAngle);
+    const dirZ = -Math.cos(playerAngle);
+    camera.lookAt(camera.position.x + dirX, camera.position.y, camera.position.z + dirZ);
 
-if (!isAttacking) updateBowFrame(0);
-} else {
-weaponOverlay.style.bottom = '0px';
-}
+    // Côn trùng rượt đuổi và giữ khoảng cách 10m thả sương độc
+    insects.forEach(ins => {
+        const distToPlayer = ins.mesh.position.distanceTo(camera.position);
+        const dir = new THREE.Vector3().subVectors(camera.position, ins.mesh.position).normalize();
 
-// Cập nhật góc nhìn camera FPS
-const dirX = -Math.sin(playerAngle);
-const dirZ = -Math.cos(playerAngle);
-camera.lookAt(camera.position.x + dirX, camera.position.y, camera.position.z + dirZ);
+        // Nếu khoảng cách lớn hơn 10 mét thì tiếp tục di chuyển đuổi theo
+        if (distToPlayer > 10.0) {
+            ins.mesh.position.addScaledVector(dir, ins.speed);
+        } else {
+            // Khi đã áp sát trong khoảng 10 mét, dừng lại và thả sương độc tụt 1% máu mỗi giây
+            playerHp = Math.max(0, playerHp - delta * 1);
+            document.getElementById('hp-fill').style.width = playerHp + '%';
+            document.getElementById('hp-text').innerText = `${Math.round(playerHp)}%`;
+        }
 
-// LOGIC AI CHO NPC
-if (npc && insects.length > 0) {
-let nearestIns = insects[0];
-let minDst = npc.position.distanceTo(nearestIns.mesh.position);
-insects.forEach(ins => {
-const d = npc.position.distanceTo(ins.mesh.position);
-if (d < minDst) { minDst = d; nearestIns = ins; }
-});
+        if (ins.state === 'walk') {
+            const animCol = Math.floor(Date.now() / 200) % 4;
+            ins.mesh.material.map = getSpriteTexture(ins.type, animCol);
+            ins.mesh.material.needsUpdate = true;
+        }
+    });
 
-const dirToIns = new THREE.Vector3().subVectors(nearestIns.mesh.position, npc.position);
-const targetAngle = Math.atan2(-dirToIns.x, -dirToIns.z);
-npcAngle = targetAngle;
-npc.rotation.y = npcAngle;
+    while (insects.length < 6) {
+        spawnInsectAtDistance(100);
+    }
 
-if (minDst > 6) {
-npcPos.x -= Math.sin(npcAngle) * (moveSpeed * 0.9);
-npcPos.z -= Math.cos(npcAngle) * (moveSpeed * 0.9);
-const npcGroundY = getTargetGroundY(npcPos.x, npcPos.z);
-npc.position.set(npcPos.x, npcGroundY + 0.8, npcPos.z);
-} else {
-if (Math.random() < 0.04) {
-nearestIns.hits++;
-nearestIns.state = 'hit';
-setTimeout(() => { nearestIns.state = 'walk'; }, 400);
+    // Hút vật phẩm
+    items = items.filter(it => {
+        it.mesh.position.lerp(camera.position, 0.1);
+        if (it.mesh.position.distanceTo(camera.position) < 1.0) {
+            if (it.type === 'blood') {
+                playerHp = Math.min(100, playerHp + 1);
+                document.getElementById('hp-fill').style.width = playerHp + '%';
+                document.getElementById('hp-text').innerText = `${Math.round(playerHp)}%`;
+            } else {
+                bookCount++;
+                document.getElementById('book-val').innerText = bookCount;
+                document.getElementById('range-val').innerText = getAttackRange();
+            }
+            scene.remove(it.mesh);
+            return false;
+        }
+        return true;
+    });
 
-if (nearestIns.hits >= 5) {
-const insIndex = insects.indexOf(nearestIns);
-if (insIndex > -1) {
-scene.remove(nearestIns.mesh);
-insects.splice(insIndex, 1);
-npcKillCount++;
-document.getElementById('npc-kill-val').innerText = npcKillCount;
-dropItem(nearestIns.mesh.position, Math.random() > 0.4 ? 'book' : 'blood', 'npc');
-}
-}
-}
-}
-}
-
-// Côn trùng rượt đuổi người chơi & NPC
-insects.forEach(ins => {
-const targetPos = ins.mesh.position.distanceTo(camera.position) < ins.mesh.position.distanceTo(npc.position) ? camera.position : npc.position;
-const dir = new THREE.Vector3().subVectors(targetPos, ins.mesh.position).normalize();
-ins.mesh.position.addScaledVector(dir, ins.speed);
-
-if (ins.state === 'walk') {
-const animCol = Math.floor(Date.now() / 200) % 4;
-ins.mesh.material.map = getSpriteTexture(ins.type, animCol);
-ins.mesh.material.needsUpdate = true;
-}
-
-if (ins.mesh.position.distanceTo(camera.position) < 1.5) {
-playerHp = Math.max(0, playerHp - delta * 1);
-document.getElementById('hp-fill').style.width = playerHp + '%';
-document.getElementById('hp-text').innerText = `${Math.round(playerHp)}%`;
-}
-if (npc && ins.mesh.position.distanceTo(npc.position) < 1.5) {
-npcHp = Math.max(0, npcHp - delta * 1);
-document.getElementById('npc-hp-fill').style.width = npcHp + '%';
-document.getElementById('npc-hp-text').innerText = `${Math.round(npcHp)}%`;
-}
-});
-
-while (insects.length < 6) { spawnInsectAtDistance(100); }
-
-// Hút vật phẩm
-items = items.filter(it => {
-const targetOwnerPos = it.owner === 'player' ? camera.position : (npc ? npc.position : camera.position);
-it.mesh.position.lerp(targetOwnerPos, 0.1);
-
-if (it.mesh.position.distanceTo(targetOwnerPos) < 1.0) {
-if (it.owner === 'player') {
-if (it.type === 'blood') {
-playerHp = Math.min(100, playerHp + 1);
-document.getElementById('hp-fill').style.width = playerHp + '%';
-document.getElementById('hp-text').innerText = `${Math.round(playerHp)}%`;
-} else {
-bookCount++;
-document.getElementById('book-val').innerText = bookCount;
-document.getElementById('range-val').innerText = getAttackRange();
-}
-} else {
-if (it.type === 'blood') {
-npcHp = Math.min(100, npcHp + 1);
-document.getElementById('npc-hp-fill').style.width = npcHp + '%';
-document.getElementById('npc-hp-text').innerText = `${Math.round(npcHp)}%`;
-} else {
-npcBookCount++;
-document.getElementById('npc-book-val').innerText = npcBookCount;
-document.getElementById('npc-range-val').innerText = getNpcAttackRange();
-}
-}
-scene.remove(it.mesh);
-return false;
-}
-return true;
-});
-
-renderer.render(scene, camera);
+    renderer.render(scene, camera);
 }
 animate();
 
 window.addEventListener('resize', () => {
-camera.aspect = window.innerWidth / window.innerHeight;
-camera.updateProjectionMatrix();
-renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
 </script>
 </body>
