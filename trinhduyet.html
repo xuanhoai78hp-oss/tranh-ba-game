@@ -66,7 +66,7 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 6px;
-            max-height: 220px; /* Hiển thị gọn vài hàng, có thể cuộn dọc xem đủ 14 hàng */
+            max-height: 220px; /* Hiển thị gọn vài hàng, có thể cuộn dọc xem hết kho game */
             overflow-y: auto;
             padding: 4px;
             scrollbar-width: thin;
@@ -90,7 +90,6 @@
             font-size: 11px;
             font-weight: 500;
             text-align: center;
-            /* Lấy chuẩn độ dài nút Rừng Côn Trùng 2 */
             width: 100%;
             display: flex;
             align-items: center;
@@ -149,76 +148,84 @@
             <button class="nav-btn" onclick="loadWeb()">🔍</button>
         </div>
 
-        <!-- Lưới danh sách 42 game (3 nút 1 hàng x 14 hàng) -->
+        <!-- Lưới danh sách game (Mới trên - Cũ dưới) -->
         <div id="game-shortcuts">
-            <!-- Hàng 1 -->
+            <!-- Hàng mới nhất (Mới ra lò gần đây) -->
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/thanhpho.html')">Thành Phố</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/trinhduyet.html')">Trình Duyệt</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/cung.html')">Bắn Cung</button>
+            
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/timchiakhoa.html')">Tìm Chìa Khóa</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/gapcont.html')">Gắp Côn Trùng</button>
+            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/360vr.html')">360 VR</button>
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/rungcontrung2.html')">Rừng Côn Trùng 2</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/rungcontrung.html')">Rừng Côn Trùng</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/sanrong.html')">Săn Rồng</button>
-            <!-- Hàng 2 -->
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/sanrong2.html')">Săn Rồng 2</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/sanrong.html.html')">Săn Rồng (Alt)</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/360.html')">360 Game</button>
-            <!-- Hàng 3 -->
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/360tp.html')">360 Thành Phố</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/bandiabay.html')">Bay Đi Bay</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/bandiabay2.html')">Bay Đi Bay 2</button>
-            <!-- Hàng 4 -->
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/luyenkiem.html')">Luyện Kiếm</button>
-            <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/thanhpho.html')">Thành Phố</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tuongzalo.html')">Tướng Zalo</button>
-            <!-- Hàng 5 -->
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tạo trứng.html')">Tạo Trứng</button>
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/3.html')">Game 3</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/4.html')">Game 4</button>
-            <!-- Hàng 6 -->
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/duacano.html')">Đua Ca Nô</button>
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/giaonhanplayer.html')">Giao Nhận Player</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/hungnote.html')">Hứng Note</button>
-            <!-- Hàng 7 -->
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/in3d.html')">In 3D</button>
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/piano36.html')">Piano 36</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/sinhbong.html')">Sinh Bóng</button>
-            <!-- Hàng 8 -->
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/sniper.html')">Sniper</button>
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tutien3.html')">Tu Tiên 3</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/2.html')">Game 2</button>
-            <!-- Hàng 9 -->
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/danbau.html')">Đàn Bầu</button>
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/danhquai.html')">Đánh Quái</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/danhquai310.html')">Đánh Quái 310</button>
-            <!-- Hàng 10 -->
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/hoclamcotruong.html')">Học Làm Cờ Trưởng</button>
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/index.html')">Index</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/laimayxuc.html')">Lái Máy Xúc</button>
-            <!-- Hàng 11 -->
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tank.html')">Tank</button>
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tutienrungtruc.html')">Tu Tiên Rừng Trúc</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/1.html')">Game 1</button>
-            <!-- Hàng 12 -->
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/flycamvantai.html')">Flycam Vận Tải</button>
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/flycamvantai2.html')">Flycam Vận Tải 2</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/forumchat.html')">Forum Chat</button>
-            <!-- Hàng 13 -->
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/giaonhanplayer.HTML')">Giao Nhận (HTML)</button>
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/gioithieu.HTML')">Giới Thiệu</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/helicopter.html')">Helicopter</button>
-            <!-- Hàng 14 -->
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/hungtrung.html')">Hứng Trứng</button>
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/laixenang.html')">Lái Xe Nâng</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/snakeanchu.html')">Snake Ăn Chữ</button>
-            <!-- Hàng bổ sung trọn vẹn 42 game -->
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/snakeanchu3.html')">Snake Ăn Chữ 3</button>
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/snakecodien.html')">Snake Cổ Điển</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tronvuongmeo.html')">Tròn Vuông Mèo</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tronvuongmeo.html.html')">Tròn Vuông Mèo (Alt)</button>
+
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/tutientap.html')">Tu Tiên Tập</button>
             <button class="game-chip" onclick="openGame('https://tranh-ba-game-gw3q.vercel.app/xecontainer.html')">Xe Container</button>
         </div>
     </div>
 
-    <!-- Mặc định load game mới nhất -->
-    <iframe id="web-frame" src="https://tranh-ba-game-gw3q.vercel.app/rungcontrung2.html"></iframe>
+    <!-- Mặc định load game mới nhất (Thành Phố) -->
+    <iframe id="web-frame" src="https://tranh-ba-game-gw3q.vercel.app/thanhpho.html"></iframe>
 
     <script>
         const urlInput = document.getElementById('url-input');
@@ -256,7 +263,7 @@
         }
 
         // Tự động ẩn giao diện khi chạm vào màn hình chơi game cho rộng thoáng
-    window.addEventListener('touchstart', (e) => {
+        window.addEventListener('touchstart', (e) => {
             if (!e.target.closest('#ui-container') && !e.target.closest('#toggle-btn')) {
                 uiContainer.classList.add('hidden');
             }
