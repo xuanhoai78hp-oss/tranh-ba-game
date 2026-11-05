@@ -250,12 +250,10 @@ const boardMat = new THREE.MeshStandardMaterial({
     roughness: 0.15 
 });
 
-// Thân ván ô-val thu nhỏ 50% (rộng 0.6, dài 1.6)
 const boardBody = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.08, 1.6), boardMat);
 boardBody.position.y = 0.2;
 boardGroup.add(boardBody);
 
-// Đầu và đuôi ván thêm nửa hình tròn (bán nguyệt) để tạo dáng ô-val cực mượt
 const capGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.08, 16);
 const frontCap = new THREE.Mesh(capGeo, boardMat);
 frontCap.rotation.z = Math.PI / 2;
@@ -269,25 +267,41 @@ boardGroup.add(backCap);
 
 playerGroup.add(boardGroup);
 
+// === TÍCH HỢP SPRITE SHEET NHÂN VẬT MÚA (sanrong.png) ===
 const skaterGroup = new THREE.Group();
 skaterGroup.position.y = 0.25;
-const bodyMesh = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 16), new THREE.MeshStandardMaterial({ color: 0x38bdf8 }));
-bodyMesh.position.y = 0.6;
-skaterGroup.add(bodyMesh);
 
-const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
-headMesh.position.y = 1.35;
-skaterGroup.add(headMesh);
+const textureLoader = new THREE.TextureLoader();
+let skaterMaterial;
 
-const hatMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.5 });
-const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.03, 24), hatMat);
-hatBrim.position.y = 1.52;
-skaterGroup.add(hatBrim);
-const hatTop = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.25, 16), hatMat);
-hatTop.position.y = 1.68;
-skaterGroup.add(hatTop);
+textureLoader.load('sanrong.png', (texture) => {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    // Chia tỉ lệ 8 khung hình trên hàng ngang
+    texture.repeat.set(1 / 8, 1);
+    texture.offset.set(0, 0);
+    texture.needsUpdate = true;
+    skaterMaterial.map = texture;
+    skaterMaterial.needsUpdate = true;
+});
 
+// Tạo Plane hiển thị nhân vật với tỉ lệ phù hợp (rộng 2.2, cao 3.4)
+const skaterGeo = new THREE.PlaneGeometry(2.2, 3.4);
+skaterMaterial = new THREE.MeshBasicMaterial({ 
+    transparent: true, 
+    side: THREE.DoubleSide,
+    depthWrite: false
+});
+const skaterMesh = new THREE.Mesh(skaterGeo, skaterMaterial);
+skaterMesh.position.y = 1.7;
+skaterGroup.add(skaterMesh);
 playerGroup.add(skaterGroup);
+
+// Quản lý Animation khung hình
+let currentFrame = 0;
+let frameTimer = 0;
+const totalFrames = 8;
+const fps = 10; // Tốc độ đổi frame múa
 
 const particlesGeo = new THREE.BufferGeometry();
 const particleCount = 150;
@@ -353,7 +367,6 @@ respawnNewDragon();
 
 const obstacles = [];
 const mountainMat = new THREE.MeshStandardMaterial({ color: 0x1b4d3e, roughness: 0.8 });
-const textureLoader = new THREE.TextureLoader();
 
 function getRoadHeightAtZ(z) {
     let progress = Math.abs(z) / 2400;
@@ -566,13 +579,23 @@ isGamePaused = false;
 }
 }
 
-function animate() {
+function animate(timestamp) {
 requestAnimationFrame(animate);
 
 if (isGamePaused) return;
 
 gameTime += 0.016;
 runTimeTimer += 0.016;
+
+// Cập nhật hoạt ảnh múa khung hình (Sprite Sheet Animation)
+frameTimer += 0.016;
+if (frameTimer >= 1 / fps) {
+    currentFrame = (currentFrame + 1) % totalFrames;
+    if (skaterMaterial && skaterMaterial.map) {
+        skaterMaterial.map.offset.x = currentFrame / totalFrames;
+    }
+    frameTimer = 0;
+}
 
 if (speedStage === 0) {
     currentSpeedKmh = Math.min(50, (runTimeTimer / 5.0) * 50);

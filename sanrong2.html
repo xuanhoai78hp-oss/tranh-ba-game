@@ -27,7 +27,6 @@ body { margin: 0; overflow: hidden; background: #0b1329; font-family: -apple-sys
 
 #flash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 0, 0, 0); z-index: 99; pointer-events: none; transition: background 0.1s; }
 
-/* NÂNG 2 NÚT LÊN 100px ĐỂ TỐI ƯU THAO TÁC NGÓN CÁI TRÊN MOBILE */
 .controls-area { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: 100px; }
 
 .joystick-base { width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(212, 175, 55, 0.5); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
@@ -234,7 +233,7 @@ const sunLight = new THREE.DirectionalLight(0xff7733, 1.8);
 sunLight.position.set(150, 200, 100);
 scene.add(sunLight);
 
-// Nhân vật Hiệp Nữ
+// Nhân vật Hiệp Nữ lướt Phi Kiếm
 const playerGroup = new THREE.Group();
 scene.add(playerGroup);
 playerGroup.position.set(0, 25, 0);
@@ -246,24 +245,39 @@ blade.position.z = -1.5;
 swordGroup.add(blade);
 playerGroup.add(swordGroup);
 
+// === TÍCH HỢP SPRITE SHEET NHÂN VẬT MÚA (sanrong.png) ===
 const womanGroup = new THREE.Group();
 womanGroup.position.y = 0.5;
-const dress = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 16), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
-dress.position.y = 0.6;
-womanGroup.add(dress);
 
-const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
-head.position.y = 1.35;
-womanGroup.add(head);
+const textureLoader = new THREE.TextureLoader();
+let skaterMaterial;
 
-const hatMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 });
-const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.04, 24), hatMat);
-hatBrim.position.y = 1.55;
-womanGroup.add(hatBrim);
-const hatTop = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.3, 16), hatMat);
-hatTop.position.y = 1.7;
-womanGroup.add(hatTop);
+textureLoader.load('sanrong.png', (texture) => {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1 / 8, 1);
+    texture.offset.set(0, 0);
+    texture.needsUpdate = true;
+    skaterMaterial.map = texture;
+    skaterMaterial.needsUpdate = true;
+});
+
+const skaterGeo = new THREE.PlaneGeometry(2.2, 3.4);
+skaterMaterial = new THREE.MeshBasicMaterial({ 
+    transparent: true, 
+    side: THREE.DoubleSide,
+    depthWrite: false
+});
+const skaterMesh = new THREE.Mesh(skaterGeo, skaterMaterial);
+skaterMesh.position.y = 1.7;
+womanGroup.add(skaterMesh);
 playerGroup.add(womanGroup);
+
+// Quản lý Animation khung hình
+let currentFrame = 0;
+let frameTimer = 0;
+const totalFrames = 8;
+const fps = 10;
 
 const particlesGeo = new THREE.BufferGeometry();
 const particleCount = 150;
@@ -322,12 +336,9 @@ playerGroup.position.z - 120 + (Math.random() - 0.5) * 100
 respawnNewDragon();
 
 const obstacles = [];
-const mountainMat = new THREE.MeshStandardMaterial({ color: 0x1b4d3e, roughness: 0.8 }); // Màu xanh sậm lá cây
-
-const textureLoader = new THREE.TextureLoader();
+const mountainMat = new THREE.MeshStandardMaterial({ color: 0x1b4d3e, roughness: 0.8 });
 
 function createEnvironment() {
-// 1. Hình hộp mỏng làm mặt nước dưới đáy núi
 const waterMesh = new THREE.Mesh(
 new THREE.BoxGeometry(2000, 2, 3000),
 new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.8 })
@@ -335,12 +346,11 @@ new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.1, metalness: 0.8
 waterMesh.position.set(0, -1, -800);
 scene.add(waterMesh);
 
-// 2. Dựng 4 bức tường xung quanh hộp thiên không & load 8 ô hàng trên của anhtp.png
 textureLoader.load('anhtp.png', (texture) => {
 texture.wrapS = THREE.RepeatWrapping;
 texture.wrapT = THREE.RepeatWrapping;
 texture.repeat.set(4, 0.5);
-texture.offset.set(0, 0.0); // 0.0 là hàng trên
+texture.offset.set(0, 0.0);
 texture.needsUpdate = true;
 
 const wallMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide });
@@ -350,13 +360,11 @@ skyBox.position.set(0, 400, -800);
 scene.add(skyBox);
 });
 
-// 3. Load 8 ô hàng dưới của anhtp.png để dán lên các tòa nhà
 textureLoader.load('anhtp.png', (buildingTex) => {
 buildingTex.wrapS = THREE.RepeatWrapping;
 buildingTex.wrapT = THREE.RepeatWrapping;
 const colWidth = 1 / 8;
 
-// Dựng các dãy núi xanh sậm lá cây và cắm 4-6 tòa nhà (chiều cao bằng 50% núi) hướng ra mặt tiền
 for(let i = 0; i < 35; i++) {
 let mHeight = 65 + Math.random() * 55;
 let mRadius = 30 + Math.random() * 35;
@@ -371,7 +379,6 @@ mountain.position.set(mX, mHeight / 2, mZ);
 scene.add(mountain);
 obstacles.push({ type: 'mountain', mesh: mountain, radius: mRadius * 0.8, pos: mountain.position });
 
-// Cắm 4 đến 6 tòa nhà vào sườn núi (chiều cao = 50% núi), hướng các tòa nhà ra phía đường bay trung tâm
 let buildingCount = 4 + Math.floor(Math.random() * 3);
 for (let b = 0; b < buildingCount; b++) {
 let bIndex = Math.floor(Math.random() * 8);
@@ -380,15 +387,14 @@ let matTex = buildingTex.clone();
 matTex.wrapS = THREE.RepeatWrapping;
 matTex.wrapT = THREE.RepeatWrapping;
 matTex.repeat.set(colWidth, 0.5);
-matTex.offset.set(bIndex * colWidth, 0.5); // 0.5 là hàng dưới
+matTex.offset.set(bIndex * colWidth, 0.5);
 matTex.needsUpdate = true;
 
-let bHeight = (mHeight * 0.5); // Chiều cao bằng 50% núi
+let bHeight = (mHeight * 0.5);
 let bGeo = new THREE.BoxGeometry(14, bHeight, 14);
 let bMat = new THREE.MeshStandardMaterial({ map: matTex, roughness: 0.5 });
 let building = new THREE.Mesh(bGeo, bMat);
 
-// Hướng các tòa nhà về phía tâm (trục X=0) để người chơi luôn nhìn thấy mặt tiền
 let sideSign = mX > 0 ? -1 : 1;
 let bX = mX + sideSign * (mRadius * 0.45);
 let bZ = mZ + (b - 2) * 12;
@@ -401,7 +407,6 @@ obstacles.push({ type: 'building', pos: building.position, radius: 10, size: bHe
 }
 });
 
-// 4. Khôi phục các cột đá / cổng đá bắc ngang núi để tạo cảm giác luồn lách cực bốc như code chuẩn
 for(let z = -100; z > -2500; z -= 180) {
 const archGroup = new THREE.Group();
 const pillarGeo = new THREE.CylinderGeometry(6, 10, 70, 8);
@@ -515,6 +520,17 @@ btnHapThu.style.opacity = '1';
 if (isGamePaused) return;
 
 gameTime += 0.016;
+
+// Cập nhật hoạt ảnh múa khung hình (Sprite Sheet Animation)
+frameTimer += 0.016;
+if (frameTimer >= 1 / fps) {
+    currentFrame = (currentFrame + 1) % totalFrames;
+    if (skaterMaterial && skaterMaterial.map) {
+        skaterMaterial.map.offset.x = currentFrame / totalFrames;
+    }
+    frameTimer = 0;
+}
+
 playerGroup.position.z -= playerSpeed;
 
 const oldDragonPos = dragonGroup.position.clone();
