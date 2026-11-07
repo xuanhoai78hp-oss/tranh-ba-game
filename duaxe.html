@@ -80,13 +80,13 @@ border: none; border-radius: 30px; box-shadow: 0 0 25px rgba(250, 204, 21, 0.7);
 <div id="character-sprite">xemay.png</div>
 
 <div id="cockpit">
-<div style="color: #94a3b8; font-size: 11px;">⚙️ Vuốt Trái: Lên/Xuống Số<br>(Buông ga mới lên số)</div>
+<div style="color: #94a3b8; font-size: 11px;"> Vuốt Trái: Lên/Xuống Số<br>(Buông ga mới lên số)</div>
 <div class="dashboard">
 <div class="gauge"><span>RPM</span><span class="gauge-val" id="val-rpm">1000</span></div>
 <div class="gear-box" id="val-gear">N</div>
 <div class="gauge"><span>KM/H</span><span class="gauge-val" id="val-speed">0</span></div>
 </div>
-<div style="color: #94a3b8; font-size: 11px; text-align: right;">✊ Vuốt Phải: Kéo Ga<br>Nghiêng máy để lái</div>
+<div style="color: #94a3b8; font-size: 11px; text-align: right;"> Vuốt Phải: Kéo Ga<br>Nghiêng máy để lái</div>
 </div>
 </div>
 
@@ -145,7 +145,6 @@ oscBass.frequency.setTargetAtTime(baseFreq, audioCtx.currentTime, 0.03);
 oscTreble.frequency.setTargetAtTime(baseFreq * 2, audioCtx.currentTime, 0.03);
 }
 
-// Phát âm thanh va chạm "rắc rắc" khi xe quét trúng banner
 function playCrashSound() {
 if (!audioCtx) return;
 let now = audioCtx.currentTime;
@@ -166,11 +165,10 @@ osc.start(now);
 osc.stop(now + 0.1);
 }
 
-// Khởi tạo Map hình trái bầu siêu dài ~5000m
 function initThree() {
 const canvas = document.getElementById('game-canvas');
 scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x0f172a, 0.006); // Sương mù mỏng hơn cho map dài
+scene.fog = new THREE.FogExp2(0x0f172a, 0.005);
 
 camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
 renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -181,12 +179,10 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
 dirLight.position.set(0, 80, 80);
 scene.add(dirLight);
 
-// Tạo hình dáng đường đua "Hình Trái Bầu" (Gourd shape) dài ~5000m tương đương 120 điểm uốn lượn
 const points = [];
 const numPoints = 120;
 for (let i = 0; i < numPoints; i++) {
 let t = (i / numPoints) * Math.PI * 2;
-// Công thức tạo hình trái bầu: Phình 2 đầu, thắt ở giữa, kết hợp cua gấp & cua nhẹ
 let x = Math.sin(t) * 120;
 let z = (Math.cos(t) + Math.sin(2 * t) * 0.5) * 180;
 let y = Math.sin(3 * t) * 15;
@@ -194,7 +190,6 @@ points.push(new THREE.Vector3(x, y, z));
 }
 pathCurve = new THREE.CatmullRomCurve3(points, true);
 
-// Độ rộng đường: Đoạn thẳng rộng rãi, khúc cua mở rộng tối đa 35m
 const roadGeo = new THREE.TubeGeometry(pathCurve, 600, 10, 6, true);
 const roadMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 });
 roadMesh = new THREE.Mesh(roadGeo, roadMat);
@@ -206,13 +201,14 @@ buildBanners();
 
 function createBannerMaterials() {
 const loader = new THREE.TextureLoader();
-loader.load('cont.png', (texture) => {
+// ĐÃ SỬA: Đổi từ 'cont.png' thành 'gapcont.png' theo đúng yêu cầu
+loader.load('gapcont.png', (texture) => {
 for (let i = 0; i < 5; i++) {
 let tex = texture.clone();
 tex.needsUpdate = true;
 tex.repeat.set(1 / 5, 1);
 tex.offset.set(i / 5, 0);
-bannerMaterials.push(new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+bannerMaterials.push(new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, transparent: true }));
 }
 }, undefined, () => {
 for (let i = 0; i < 5; i++) {
@@ -222,20 +218,23 @@ bannerMaterials.push(new THREE.MeshBasicMaterial({ color: Math.random() * 0xffff
 }
 
 function buildBanners() {
-const bannerGeo = new THREE.PlaneGeometry(12, 2.5);
-const steps = 300; // Trải dài đều khắp 5000m
+const bannerGeo = new THREE.PlaneGeometry(10, 2.2);
+// ĐÃ SỬA: Giảm số lượng steps (từ 300 xuống 120) và tăng khoảng cách giãn cách
+// để các banner 2 bên đường thoáng đãng, không bị dày đặc và hợp lý hơn khi vào cua.
+const steps = 120; 
 for (let i = 0; i < steps; i++) {
 let t = i / steps;
 const point = pathCurve.getPointAt(t);
 const tangent = pathCurve.getTangentAt(t).normalize();
 
-let widthFactor = 10 + Math.abs(Math.sin(t * Math.PI * 6)) * 12;
+let widthFactor = 12 + Math.abs(Math.sin(t * Math.PI * 6)) * 10;
 const sideVec = new THREE.Vector3(-tangent.z, 0, tangent.x);
 
 [-1, 1].forEach(side => {
 const mat = bannerMaterials[Math.floor(Math.random() * 5)] || new THREE.MeshBasicMaterial({color: 0x38bdf8});
 const banner = new THREE.Mesh(bannerGeo, mat);
-banner.position.copy(point).add(sideVec.clone().multiplyScalar(side * (widthFactor + 3)));
+// Nới rộng khoảng cách đặt banner sang hai bên để xe chạy thoáng hơn, tránh va chạm oan
+banner.position.copy(point).add(sideVec.clone().multiplyScalar(side * (widthFactor + 5)));
 banner.position.y = 1.2;
 banner.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tangent);
 scene.add(banner);
@@ -249,13 +248,13 @@ else rightBanners.push(banner);
 function checkCollisions(pos) {
 let collided = false;
 leftBanners.concat(rightBanners).forEach(banner => {
-if (pos.distanceTo(banner.position) < 4.5) {
+if (pos.distanceTo(banner.position) < 4.2) {
 collided = true;
 }
 });
 if (collided) {
-speed *= 0.82; // Giảm mạnh tốc độ khi va chạm
-playCrashSound(); // Kèm âm thanh rắc rắc
+speed *= 0.82;
+playCrashSound();
 }
 }
 
@@ -309,7 +308,6 @@ let startYRight = 0, startYLeft = 0;
 
 rightZone.addEventListener('touchstart', e => { startYRight = e.touches[0].clientY; });
 rightZone.addEventListener('touchmove', e => {
-// Đang đèn đỏ mà cố tình kéo ga lúc xe ĐANG CHẠY (gear > 0 và speed > 2) mới tính phạm luật
 if (countdownActive && gear > 0 && speed > 2) {
 alert("Phạm luật xuất phát sớm! Trò chơi bị khởi động lại.");
 location.reload();
@@ -352,7 +350,7 @@ let accelerationRate = [0, 1.2, 0.8, 0.6, 0.4, 0.3][gear];
 
 if (gear === 0) {
 speed *= 0.95;
-rpm = 1000 + throttle * 7500; // Nẹt pô số N cực nhạy, trầm nhỏ bổng to
+rpm = 1000 + throttle * 7500;
 } else {
 if (throttle > 0) {
 speed += throttle * accelerationRate;
@@ -368,9 +366,8 @@ updateEngineSound();
 document.getElementById('val-speed').innerText = Math.round(speed);
 document.getElementById('val-rpm').innerText = Math.round(rpm);
 
-// Map 5000m dài hơn nên giảm tốc độ dịch chuyển progress tương ứng
 trackProgress += (speed / 35000);
-if (trackProgress > 1) trackProgress = 0;
+if (trackProgress > 1) trackProgress = 1;
 
 if (pathCurve) {
 const currentPos = pathCurve.getPointAt(trackProgress);
