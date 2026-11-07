@@ -170,19 +170,25 @@ playRandomMusic();
 }
 }
 
-// KÍCH HOẠT GYRO & BẢNG XÁC NHẬN TRỰC TIẾP TỪ SỰ KIỆN TOUCH CỦA USER (CHUẨN iOS)
+// KÍCH HOẠT GYRO & BẢNG XÁC NHẬN CHUẨN USER GESTURE (BẮT BUỘC TRÊN iOS)
 function requestGyroPermission() {
-if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-  DeviceOrientationEvent.requestPermission().then(res => {
-    if (res === 'granted') {
-      window.addEventListener('deviceorientation', handleGyro);
-    }
-  }).catch(err => console.log("Gyro permission denied:", err));
-} else {
-  window.addEventListener('deviceorientation', handleGyro);
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    // Ép gọi trực tiếp trong luồng sự kiện chạm/click của người dùng
+    DeviceOrientationEvent.requestPermission().then(response => {
+      if (response === 'granted') {
+        window.addEventListener('deviceorientation', handleGyro);
+        console.log("Gyro đã được cấp quyền!");
+      } else {
+        console.log("Người dùng từ chối quyền Gyro.");
+      }
+    }).catch(error => {
+      console.error("Lỗi khi xin quyền Gyro:", error);
+    });
+  } else {
+    // Các trình duyệt Android hoặc PC không cần xin phép ngầm
+    window.addEventListener('deviceorientation', handleGyro);
+  }
 }
-}
-
 function handleGyro(e) {
 console.log("gamma:", e.gamma); // Debug kiểm tra dữ liệu cảm biến
 let gamma = e.gamma || 0;
