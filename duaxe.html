@@ -27,30 +27,14 @@ body { margin: 0; overflow: hidden; background: #0b1329; font-family: -apple-sys
 
 #flash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 0, 0, 0); z-index: 99; pointer-events: none; transition: background 0.15s; }
 
-/* GÓC NHÌN PHÍA SAU NHÂN VẬT & BÁNH XE TO CHIẾM 1/2 KHUNG HÌNH */
+/* ANIMATION SPRITE 5 KHUNG HÌNH TỪ FILE duaxe.png (200x400px mỗi khung) */
 #character-sprite {
-position: absolute; bottom: 12vh; left: 50%; transform: translateX(-50%); width: 360px; height: 45vh;
-background: none; border: none;
-display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+position: absolute; bottom: 15vh; left: 50%; transform: translateX(-50%);
+width: 200px; height: 35vh; max-height: 380px;
+background: url('duaxe.png') 0 0 / 1000px 100% no-repeat;
 z-index: 5; pointer-events: none; transition: transform 0.05s linear;
 }
-.char-helmet {
-width: 110px; height: 110px; background: radial-gradient(circle at 30% 30%, #475569, #0f172a);
-border-radius: 50%; box-shadow: inset 0 0 15px rgba(255,255,255,0.5), 0 8px 20px rgba(0,0,0,0.8);
-border: 2px solid #94a3b8; margin-bottom: -15px; z-index: 3;
-}
-.char-back {
-width: 140px; height: 120px; background: linear-gradient(180deg, #1e293b, #020617);
-border-radius: 20px 20px 10px 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.9);
-border-top: 3px solid #38bdf8; z-index: 2;
-}
-.bike-rear-wheel {
-width: 280px; height: 110px; background: #020617; border-radius: 50%;
-border: 12px solid #1e293b; box-shadow: 0 15px 35px rgba(0,0,0,0.9), inset 0 0 25px #00f2ff;
-margin-top: -45px; z-index: 1;
-}
 
-/* ĐÃ NÂNG KHU VỰC TAY LÁI (COCKPIT) LÊN THẾ VÀO VỊ TRÍ 2 NÚT CŨ */
 #cockpit {
 position: absolute; bottom: 0; left: 0; width: 100vw; height: 16vh;
 background: linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(15,23,42,0.98) 100%);
@@ -69,7 +53,6 @@ display: flex; flex-direction: column; justify-content: center; align-items: cen
 .gauge-val { font-size: 14px; font-weight: bold; color: #facc15; }
 .gear-box { font-size: 20px; font-weight: bold; color: #ef4444; background: #000; padding: 4px 12px; border-radius: 8px; border: 1px solid #ef4444; }
 
-/* 2 HÌNH Ô VAN PHÓNG TO ĐƯỜNG KÍNH VÀ ĐỘ RỘNG GẤP 3 LẦN */
 .touch-zone { position: absolute; top: 0; width: 50vw; height: 84vh; z-index: 8; pointer-events: auto; }
 #left-zone { left: 0; }
 #right-zone { right: 0; }
@@ -107,12 +90,8 @@ font-size: 18px; font-family: 'Ma Shan Zheng', cursive; font-weight: bold; lette
 <div id="flash-screen"></div>
 <div id="canvas-container"></div>
 
-<!-- NHÂN VẬT GÓC NHÌN SAU & MŨ BẢO HIỂM BÓNG LƯỠNG -->
-<div id="character-sprite">
-  <div class="char-helmet"></div>
-  <div class="char-back"></div>
-  <div class="bike-rear-wheel"></div>
-</div>
+<!-- NHÂN VẬT SPRITE SHEET 5 KHUNG HÌNH -->
+<div id="character-sprite"></div>
 
 <div id="cockpit">
 <div style="color: #94a3b8; font-size: 11px;">⚙️ Vuốt Trái: Lên/Xuống Số<br>(Buông ga mới sang số)</div>
@@ -148,13 +127,16 @@ let targetPage = '';
 
 let currentSpeedKmh = 0;
 let runTimeTimer = 0;
-let speedStage = 0;
-let highSpeedTimer = 0; // Bộ đếm thời gian duy trì > 180 km/h
+let highSpeedTimer = 0;
 
 let throttle = 0;
 let gear = 0; 
 let rpm = 1000;
 let steerAngle = 0; 
+
+// Biến quản lý chuyển đổi 5 khung hình sprite
+let spriteFrameTimer = 0;
+let currentFrame = 0;
 
 let audioCtx = null;
 let oscBass, oscTreble, engineGain;
@@ -190,10 +172,6 @@ function initGyro() {
 const handleGyro = (e) => {
 let gamma = e.gamma || 0;
 steerAngle = Math.max(-1, Math.min(1, gamma / 25));
-const sprite = document.getElementById('character-sprite');
-if (sprite) {
-sprite.style.transform = `translateX(-50%) rotate(${steerAngle * 18}deg) translateX(${steerAngle * 30}px)`;
-}
 };
 if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
 DeviceOrientationEvent.requestPermission().then(res => {
@@ -272,50 +250,38 @@ const sunLight = new THREE.DirectionalLight(0xff7733, 1.8);
 sunLight.position.set(150, 200, 100);
 scene.add(sunLight);
 
+// Dùng ẩn playerGroup tọa độ không gian 3D
 const playerGroup = new THREE.Group();
 scene.add(playerGroup);
 const hoverOffset = 2.4;
 
-// BỤI XANH DƯỚI GẦM XE
-const particlesGeo = new THREE.BufferGeometry();
-const particleCount = 150;
-const posArray = new Float32Array(particleCount * 3);
-for(let i=0; i<particleCount*3; i+=3) {
-posArray[i] = (Math.random() - 0.5) * 0.4;
-posArray[i+1] = (Math.random() - 0.5) * 0.4;
-posArray[i+2] = Math.random() * 6;
-}
-particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-const trailParticles = new THREE.Points(particlesGeo, new THREE.PointsMaterial({ size: 0.12, color: 0x38bdf8, transparent: true, opacity: 0.8 }));
-playerGroup.add(trailParticles);
-
-// TẠO HÌNH TỘI PHẠM XUYÊN THỜI KHÔNG (KHÁC MÀU NÓN & KHÓI BỤI ĐỎ/TÍM PHÍA SAU)
+// ================= TẠO HÌNH KẺ TRỐN XUYÊN KHÔNG GIAN (ĐƠN GIẢN NHƯNG CÓ ĐỘ LỒI LÕM, LỐP CĂNG) =================
 const criminalGroup = new THREE.Group();
-const crimHelmetMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x7f1d1d, roughness: 0.2 });
-const crimHead = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 16), crimHelmetMat);
-crimHead.position.set(0, 1.5, 0);
-criminalGroup.add(crimHead);
 
-const crimBody = new THREE.Mesh(new THREE.ConeGeometry(0.8, 1.8, 16), new THREE.MeshStandardMaterial({ color: 0x991b1b }));
-crimBody.position.set(0, 0.6, 0);
-criminalGroup.add(crimBody);
-
-const crimWheel = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.5, 16), new THREE.MeshStandardMaterial({ color: 0x000 }));
+// Lốp xe căng tròn phía sau
+const crimWheel = new THREE.Mesh(
+  new THREE.CylinderGeometry(1.2, 1.2, 0.6, 24),
+  new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3, metalness: 0.6 })
+);
 crimWheel.rotation.z = Math.PI / 2;
-crimWheel.position.set(0, 0.2, 0.8);
+crimWheel.position.set(0, 1.0, 0.5);
 criminalGroup.add(crimWheel);
 
-// Bụi phía sau xe tội phạm (Màu đỏ tím khác với nhân vật)
-const crimParticlesGeo = new THREE.BufferGeometry();
-const crimPosArray = new Float32Array(90);
-for(let i=0; i<90; i+=3) {
-crimPosArray[i] = (Math.random() - 0.5) * 0.5;
-crimPosArray[i+1] = (Math.random() - 0.5) * 0.5;
-crimPosArray[i+2] = -Math.random() * 5;
-}
-crimParticlesGeo.setAttribute('position', new THREE.BufferAttribute(crimPosArray, 3));
-const crimTrail = new THREE.Points(crimParticlesGeo, new THREE.PointsMaterial({ size: 0.15, color: 0xec4899, transparent: true, opacity: 0.9 }));
-criminalGroup.add(crimTrail);
+// Thân xe lồi lõm khí động học
+const crimBody = new THREE.Mesh(
+  new THREE.ConeGeometry(0.85, 1.6, 16),
+  new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.2, metalness: 0.8 })
+);
+crimBody.position.set(0, 1.6, -0.2);
+criminalGroup.add(crimBody);
+
+// Mũ bảo hiểm bóng đỏ nổi bật
+const crimHelmet = new THREE.Mesh(
+  new THREE.SphereGeometry(0.7, 16, 16),
+  new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.1, metalness: 0.9, emissive: 0x991b1b })
+);
+crimHelmet.position.set(0, 2.6, -0.1);
+criminalGroup.add(crimHelmet);
 
 scene.add(criminalGroup);
 
@@ -326,16 +292,6 @@ criminalGroup.position.set(
 getRoadCurveAtZ(targetZ) + (Math.random() - 0.5) * 30,
 targetRoadY + 3.5,
 targetZ
-);
-}
-let criminalTarget = new THREE.Vector3();
-function newCriminalTarget() {
-let tZ = playerGroup.position.z - 280 + (Math.random() - 0.5) * 100;
-let tRoadY = getRoadHeightAtZ(tZ);
-criminalTarget.set(
-getRoadCurveAtZ(tZ) + (Math.random() - 0.5) * 35,
-tRoadY + 3.5,
-tZ
 );
 }
 respawnCriminal();
@@ -388,7 +344,7 @@ createEnvironment();
 let initialZ = 0;
 playerGroup.position.set(getRoadCurveAtZ(initialZ), getRoadHeightAtZ(initialZ) + hoverOffset, initialZ);
 
-// TƯƠNG TÁC GA VÀ SỐ MÔ TÔ
+// TƯƠNG TÁC GA & SỐ
 const rightZone = document.getElementById('right-zone');
 const leftZone = document.getElementById('left-zone');
 let startYRight = 0, startYLeft = 0;
@@ -462,7 +418,16 @@ document.getElementById('val-speed').innerText = Math.round(currentSpeedKmh);
 document.getElementById('val-rpm').innerText = Math.round(rpm);
 document.getElementById('speed-display').innerText = `Tốc độ: ${Math.floor(currentSpeedKmh)} km/h`;
 
-// CƠ CHẾ BẮT KỊP KHI TỐC ĐỘ DUY TRÌ > 180 KM/H TRONG 10 GIÂY
+// QUẢN LÝ SPRITE ANIMATION 5 KHUNG HÌNH (ĐỔI KHUNG THEO TỐC ĐỘ XE)
+if (currentSpeedKmh > 10) {
+spriteFrameTimer += currentSpeedKmh;
+if (spriteFrameTimer > 250) {
+currentFrame = (currentFrame + 1) % 5;
+spriteFrameTimer = 0;
+document.getElementById('character-sprite').style.backgroundPosition = `-${currentFrame * 200}px 0px`;
+}
+}
+
 let distanceToCriminalZ = Math.abs(playerGroup.position.z - criminalGroup.position.z);
 if (currentSpeedKmh > 180) {
 highSpeedTimer += 0.016;
@@ -470,7 +435,7 @@ if (highSpeedTimer >= 10 || distanceToCriminalZ < 35) {
   triggerCatchCriminal();
 }
 } else {
-highSpeedTimer = Math.max(0, highSpeedTimer - 0.05); // Giảm dần nếu tụt tốc độ
+highSpeedTimer = Math.max(0, highSpeedTimer - 0.05);
 }
 
 let progressPercent = Math.min(100, (highSpeedTimer / 10) * 100);
@@ -488,13 +453,13 @@ currentSpeedKmh = 0;
 let targetRoadY = getRoadHeightAtZ(playerGroup.position.z);
 let targetRoadX = getRoadCurveAtZ(playerGroup.position.z);
 
-criminalGroup.position.z -= playerSpeed * 0.85; // Tội phạm di chuyển phía trước
+criminalGroup.position.z -= playerSpeed * 0.85;
 if (criminalGroup.position.z > playerGroup.position.z - 100) respawnCriminal();
 
 let moveX = 0;
 if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
 if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
-moveX += steerAngle * 1.5;
+moveX += steerAngle * 1.8;
 
 let desiredX = targetRoadX + moveX * 0.6;
 let roadHalfWidth = 21.5;
@@ -505,11 +470,14 @@ desiredX = targetRoadX + Math.sign(desiredX - targetRoadX) * roadHalfWidth;
 
 playerGroup.position.x = desiredX;
 playerGroup.position.y = targetRoadY + hoverOffset;
-playerGroup.rotation.z = THREE.MathUtils.lerp(playerGroup.rotation.z, moveX * -0.25, 0.1);
 
-const targetCamPos = new THREE.Vector3(playerGroup.position.x * 0.4, playerGroup.position.y + 3.5, playerGroup.position.z + 12);
+// HIỆU ỨNG NGHIÊNG SPRITE THEO GYRO
+let spriteRot = moveX * 12;
+document.getElementById('character-sprite').style.transform = `translateX(-50%) rotate(${spriteRot}deg)`;
+
+const targetCamPos = new THREE.Vector3(playerGroup.position.x * 0.4, playerGroup.position.y + 4.5, playerGroup.position.z + 13);
 camera.position.lerp(targetCamPos, 0.1);
-camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z - 12);
+camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1.2, playerGroup.position.z - 12);
 
 renderer.render(scene, camera);
 }
