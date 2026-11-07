@@ -8,7 +8,6 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&display=swap');
 
-/* ĐÃ SỬA: Bỏ touch-action: none để không chặn cảm biến Gyro trên mobile */
 * { 
   box-sizing: border-box; 
   user-select: none; 
@@ -170,6 +169,7 @@ playRandomMusic();
 }
 }
 
+// KHỞI TẠO GYRO CHUẨN XÁC KHI CHẠM
 function activeGyro() {
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission().then(response => {
@@ -181,10 +181,10 @@ function activeGyro() {
         window.addEventListener('deviceorientation', handleGyro);
     }
 }
+
 function handleGyro(e) {
-console.log("gamma:", e.gamma); // Debug kiểm tra dữ liệu cảm biến
-let gamma = e.gamma || 0;
-steerAngle = Math.max(-1, Math.min(1, gamma / 25));
+  let gamma = e.gamma || 0; // Góc nghiêng trái/phải (-90 đến 90)
+  steerAngle = Math.max(-1, Math.min(1, gamma / 25));
 }
 
 function updateEngineSound() {
@@ -242,7 +242,6 @@ osc.start(); osc.stop(audioCtx.currentTime + 0.5);
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x060b19);
-// GIẢM SƯƠNG MÙ ĐỂ KHÔNG NUỐT MẤT TỘI PHẠM Ở XA
 scene.fog = new THREE.FogExp2(0x060b19, 0.0006);
 
 const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 3000);
@@ -260,7 +259,7 @@ const playerGroup = new THREE.Group();
 scene.add(playerGroup);
 const hoverOffset = 2.4;
 
-// TỘI PHẠM XUYÊN KHÔNG GIAN (PHÓNG TO SCALE 4x ĐỂ DỄ NHÌN, SPAWN GẦN -60 ĐẾN -80)
+// TỘI PHẠM XUYÊN KHÔNG GIAN
 const criminalGroup = new THREE.Group();
 const crimWheel = new THREE.Mesh(
   new THREE.CylinderGeometry(1.2, 1.2, 0.6, 24),
@@ -284,11 +283,11 @@ const crimHelmet = new THREE.Mesh(
 crimHelmet.position.set(0, 2.6, -0.1);
 criminalGroup.add(crimHelmet);
 
-criminalGroup.scale.set(4, 4, 4); // Phóng to model
+criminalGroup.scale.set(4, 4, 4);
 scene.add(criminalGroup);
 
 function respawnCriminal() {
-let targetZ = playerGroup.position.z - 70 - Math.random() * 20; // Spawn gần trong tầm mắt
+let targetZ = playerGroup.position.z - 70 - Math.random() * 20;
 let targetRoadY = getRoadHeightAtZ(targetZ);
 criminalGroup.position.set(
 getRoadCurveAtZ(targetZ) + (Math.random() - 0.5) * 15,
@@ -335,14 +334,14 @@ createEnvironment();
 let initialZ = 0;
 playerGroup.position.set(getRoadCurveAtZ(initialZ), getRoadHeightAtZ(initialZ) + hoverOffset, initialZ);
 
-// TƯƠNG TÁC GA & SỐ (GỌI TRỰC TIẾP REQUEST GYRO PERMISSION TỪ SỰ KIỆN TOUCH)
+// TƯƠNG TÁC GA & SỐ (ĐÃ SỔ ĐẦY ĐỦ CẢ LÊN SỐ LẪN XUỐNG SỐ VÀ KÍCH HOẠT GYRO)
 const rightZone = document.getElementById('right-zone');
 const leftZone = document.getElementById('left-zone');
 let startYRight = 0, startYLeft = 0;
 
 rightZone.addEventListener('touchstart', e => { 
   initAudio(); 
-  requestGyroPermission(); 
+  activeGyro(); 
   startYRight = e.touches[0].clientY; 
 });
 rightZone.addEventListener('touchmove', e => {
@@ -353,14 +352,28 @@ rightZone.addEventListener('touchend', () => { throttle = 0; });
 
 leftZone.addEventListener('touchstart', e => { 
   initAudio(); 
-  requestGyroPermission(); 
+  activeGyro(); 
   startYLeft = e.touches[0].clientY; 
 });
 leftZone.addEventListener('touchend', e => {
 let deltaY = e.changedTouches[0].clientY - startYLeft;
+
 if (deltaY > 30) {
-if (throttle < 0.15 && gear < 5) { gear++; playShiftSound(); }
-} else if (deltaY < -30 && gear > 0) { gear--; playShiftSound(); }
+  // Vuốt xuống: Lên số (Buông ga mới được lên số)
+  if (throttle < 0.15 && gear < 5) { 
+    gear++; 
+    playShiftSound(); 
+  } else if (gear < 5) {
+    let sb = document.getElementById('val-gear');
+    sb.style.color = '#38bdf8'; setTimeout(() => sb.style.color = '#ef4444', 300);
+  }
+} else if (deltaY < -30) {
+  // Vuốt lên: Giảm số (Trả số mượt mà, không bị kẹt ở số 5)
+  if (gear > 0) { 
+    gear--; 
+    playShiftSound(); 
+  }
+}
 document.getElementById('val-gear').innerText = gear === 0 ? 'N' : gear;
 });
 
@@ -442,7 +455,6 @@ document.getElementById('distance-bar').style.width = progressPercent + '%';
 let playerSpeed = (currentSpeedKmh / 60) * 1.4;
 playerGroup.position.z -= playerSpeed;
 
-// VÒNG LẶP MAP VÔ TẬN (INFINITE LOOP MAP)
 if (playerGroup.position.z < -2400) {
 playerGroup.position.z += 2400;
 }
@@ -452,14 +464,12 @@ let targetRoadX = getRoadCurveAtZ(playerGroup.position.z);
 
 criminalGroup.position.z -= playerSpeed * 0.85;
 
-// ĐIỀU KIỆN RESPAWN AN TOÀN (KHI KHOẢNG CÁCH QUÁ XA HOẶC BỊ BỎ LẠI PHÍA SAU)
 if (playerGroup.position.z - criminalGroup.position.z > 200 || criminalGroup.position.z > playerGroup.position.z) {
 respawnCriminal();
 }
 
-// ĐIỀU KHIỂN HƯỚNG LÁI KẾT HỢP GYRO & PHÍM A/D
 let moveX = 0;
-if (keys['KeyKeyA'] || keys['ArrowLeft']) moveX -= 1; // Sửa lỗi gõ phím
+if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
 if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
 moveX += steerAngle * 1.8;
 
