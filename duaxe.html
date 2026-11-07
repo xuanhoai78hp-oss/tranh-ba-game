@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Moto GP 3D - Bản Đồ Trái Bầu 5000m</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: Arial, sans-serif; }
+
+#game-canvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
+
+#ui-layer {
+position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 2;
+pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+padding: 20px;
+}
+
+#countdown-box {
+position: absolute; top: 15%; display: flex; gap: 15px; z-index: 10;
+}
+.traffic-light {
+width: 45px; height: 45px; border-radius: 50%; background: #334155;
+border: 3px solid #1e293b; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+transition: all 0.3s;
+}
+.traffic-light.active { background: #ef4444; box-shadow: 0 0 25px #ef4444; }
+.traffic-light.green { background: #22c55e; box-shadow: 0 0 25px #22c55e; }
+
+#character-sprite {
+position: absolute; bottom: 25vh; width: 220px; height: 25vh;
+background: url('xemay.png') center/contain no-repeat;
+background-color: rgba(0, 242, 255, 0.15); border: 2px dashed #00f2ff; border-radius: 12px;
+display: flex; justify-content: center; align-items: center; color: #00f2ff; font-weight: bold; font-size: 14px;
+}
+
+#cockpit {
+position: absolute; bottom: 0; left: 0; width: 100vw; height: 25vh;
+background: linear-gradient(180deg, rgba(15,23,42,0.4) 0%, rgba(15,23,42,0.95) 100%);
+border-top: 3px solid #334155; display: flex; justify-content: space-between; align-items: center; padding: 0 20px;
+pointer-events: auto;
+}
+
+.dashboard {
+display: flex; gap: 15px; align-items: center; background: rgba(0,0,0,0.7);
+padding: 8px 18px; border-radius: 35px; border: 1px solid #475569;
+}
+.gauge {
+width: 65px; height: 65px; border-radius: 50%; border: 3px solid #38bdf8;
+display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; font-size: 9px;
+}
+.gauge-val { font-size: 15px; font-weight: bold; color: #facc15; }
+.gear-box { font-size: 22px; font-weight: bold; color: #ef4444; background: #000; padding: 5px 14px; border-radius: 8px; border: 1px solid #ef4444; }
+
+.touch-zone { position: absolute; top: 0; width: 50vw; height: 100vh; z-index: 5; pointer-events: auto; }
+#left-zone { left: 0; }
+#right-zone { right: 0; }
+
+#btn-start {
+position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20;
+padding: 18px 36px; background: #facc15; color: #000; font-size: 18px; font-weight: bold;
+border: none; border-radius: 30px; box-shadow: 0 0 25px rgba(250, 204, 21, 0.7); cursor: pointer;
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+<button id="btn-start" onclick="startGameFlow()">BẮT ĐẦU ĐUA XE (5000M)</button>
+
+<canvas id="game-canvas"></canvas>
+
+<div id="ui-layer">
+<div id="countdown-box">
+<div class="traffic-light" id="light-1"></div>
+<div class="traffic-light" id="light-2"></div>
+<div class="traffic-light" id="light-3"></div>
+</div>
+
+<div id="character-sprite">xemay.png</div>
+
+<div id="cockpit">
+<div style="color: #94a3b8; font-size: 11px;">⚙️ Vuốt Trái: Lên/Xuống Số<br>(Buông ga mới lên số)</div>
+<div class="dashboard">
+<div class="gauge"><span>RPM</span><span class="gauge-val" id="val-rpm">1000</span></div>
+<div class="gear-box" id="val-gear">N</div>
+<div class="gauge"><span>KM/H</span><span class="gauge-val" id="val-speed">0</span></div>
+</div>
+<div style="color: #94a3b8; font-size: 11px; text-align: right;">✊ Vuốt Phải: Kéo Ga<br>Nghiêng máy để lái</div>
+</div>
+</div>
+
+<div class="touch-zone" id="left-zone"></div>
+<div class="touch-zone" id="right-zone"></div>
+
+<script>
+let scene, camera, renderer;
+let roadMesh, pathCurve;
+let bannerMaterials = [];
+let leftBanners = [], rightBanners = [];
+
+let speed = 0;
+let throttle = 0;
+let gear = 0;
+let rpm = 1000;
+let steerAngle = 0;
+let trackProgress = 0;
+
+let gameStarted = false;
+let countdownActive = false;
+
+// Hệ thống Web Audio API (Pô xe + Âm thanh va chạm rắc rắc)
+let audioCtx, oscBass, oscTreble, engineGain;
+
+function initAudio() {
+audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+oscBass = audioCtx.createOscillator();
+oscTreble = audioCtx.createOscillator();
+engineGain = audioCtx.createGain();
+
+oscBass.type = 'triangle';
+oscTreble.type = 'sawtooth';
+
+oscBass.frequency.setValueAtTime(55, audioCtx.currentTime);
+oscTreble.frequency.setValueAtTime(110, audioCtx.currentTime);
+
+const bassGain = audioCtx.createGain(); bassGain.gain.value = 0.1;
+const trebleGain = audioCtx.createGain(); trebleGain.gain.value = 0.2;
+
+oscBass.connect(bassGain); bassGain.connect(engineGain);
+oscTreble.connect(trebleGain); trebleGain.connect(engineGain);
+engineGain.connect(audioCtx.destination);
+
+engineGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+
+oscBass.start();
+oscTreble.start();
+}
+
+function updateEngineSound() {
+if (!audioCtx) return;
+let baseFreq = 40 + (rpm / 9000) * 450;
+oscBass.frequency.setTargetAtTime(baseFreq, audioCtx.currentTime, 0.03);
+oscTreble.frequency.setTargetAtTime(baseFreq * 2, audioCtx.currentTime, 0.03);
+}
+
+// Phát âm thanh va chạm "rắc rắc" khi xe quét trúng banner
+function playCrashSound() {
+if (!audioCtx) return;
+let now = audioCtx.currentTime;
+let osc = audioCtx.createOscillator();
+let gain = audioCtx.createGain();
+
+osc.type = 'sawtooth';
+osc.frequency.setValueAtTime(120, now);
+osc.frequency.linearRampToValueAtTime(40, now + 0.1);
+
+gain.gain.setValueAtTime(0.3, now);
+gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+
+osc.connect(gain);
+gain.connect(audioCtx.destination);
+
+osc.start(now);
+osc.stop(now + 0.1);
+}
+
+// Khởi tạo Map hình trái bầu siêu dài ~5000m
+function initThree() {
+const canvas = document.getElementById('game-canvas');
+scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0f172a, 0.006); // Sương mù mỏng hơn cho map dài
+
+camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
+renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+dirLight.position.set(0, 80, 80);
+scene.add(dirLight);
+
+// Tạo hình dáng đường đua "Hình Trái Bầu" (Gourd shape) dài ~5000m tương đương 120 điểm uốn lượn
+const points = [];
+const numPoints = 120;
+for (let i = 0; i < numPoints; i++) {
+let t = (i / numPoints) * Math.PI * 2;
+// Công thức tạo hình trái bầu: Phình 2 đầu, thắt ở giữa, kết hợp cua gấp & cua nhẹ
+let x = Math.sin(t) * 120;
+let z = (Math.cos(t) + Math.sin(2 * t) * 0.5) * 180;
+let y = Math.sin(3 * t) * 15;
+points.push(new THREE.Vector3(x, y, z));
+}
+pathCurve = new THREE.CatmullRomCurve3(points, true);
+
+// Độ rộng đường: Đoạn thẳng rộng rãi, khúc cua mở rộng tối đa 35m
+const roadGeo = new THREE.TubeGeometry(pathCurve, 600, 10, 6, true);
+const roadMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 });
+roadMesh = new THREE.Mesh(roadGeo, roadMat);
+scene.add(roadMesh);
+
+createBannerMaterials();
+buildBanners();
+}
+
+function createBannerMaterials() {
+const loader = new THREE.TextureLoader();
+loader.load('cont.png', (texture) => {
+for (let i = 0; i < 5; i++) {
+let tex = texture.clone();
+tex.needsUpdate = true;
+tex.repeat.set(1 / 5, 1);
+tex.offset.set(i / 5, 0);
+bannerMaterials.push(new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+}
+}, undefined, () => {
+for (let i = 0; i < 5; i++) {
+bannerMaterials.push(new THREE.MeshBasicMaterial({ color: Math.random() * 0xffffff, side: THREE.DoubleSide }));
+}
+});
+}
+
+function buildBanners() {
+const bannerGeo = new THREE.PlaneGeometry(12, 2.5);
+const steps = 300; // Trải dài đều khắp 5000m
+for (let i = 0; i < steps; i++) {
+let t = i / steps;
+const point = pathCurve.getPointAt(t);
+const tangent = pathCurve.getTangentAt(t).normalize();
+
+let widthFactor = 10 + Math.abs(Math.sin(t * Math.PI * 6)) * 12;
+const sideVec = new THREE.Vector3(-tangent.z, 0, tangent.x);
+
+[-1, 1].forEach(side => {
+const mat = bannerMaterials[Math.floor(Math.random() * 5)] || new THREE.MeshBasicMaterial({color: 0x38bdf8});
+const banner = new THREE.Mesh(bannerGeo, mat);
+banner.position.copy(point).add(sideVec.clone().multiplyScalar(side * (widthFactor + 3)));
+banner.position.y = 1.2;
+banner.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tangent);
+scene.add(banner);
+
+if (side === -1) leftBanners.push(banner);
+else rightBanners.push(banner);
+});
+}
+}
+
+function checkCollisions(pos) {
+let collided = false;
+leftBanners.concat(rightBanners).forEach(banner => {
+if (pos.distanceTo(banner.position) < 4.5) {
+collided = true;
+}
+});
+if (collided) {
+speed *= 0.82; // Giảm mạnh tốc độ khi va chạm
+playCrashSound(); // Kèm âm thanh rắc rắc
+}
+}
+
+function startGameFlow() {
+document.getElementById('btn-start').style.display = 'none';
+initAudio();
+initThree();
+initControls();
+initGyro();
+
+countdownActive = true;
+let lights = [document.getElementById('light-1'), document.getElementById('light-2'), document.getElementById('light-3')];
+let count = 0;
+
+let timer = setInterval(() => {
+if (count < 3) {
+lights[count].classList.add('active');
+count++;
+} else {
+clearInterval(timer);
+lights.forEach(l => { l.classList.remove('active'); l.classList.add('green'); });
+countdownActive = false;
+gameStarted = true;
+setTimeout(() => document.getElementById('countdown-box').style.display = 'none', 1000);
+animate();
+}
+}, 1000);
+}
+
+function initGyro() {
+const handleOrientation = (e) => {
+let gamma = e.gamma || 0;
+steerAngle = Math.max(-1, Math.min(1, gamma / 25));
+const sprite = document.getElementById('character-sprite');
+sprite.style.transform = `rotate(${steerAngle * 18}deg) translateX(${steerAngle * 25}px)`;
+};
+
+if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+DeviceOrientationEvent.requestPermission().then(res => {
+if (res === 'granted') window.addEventListener('deviceorientation', handleOrientation);
+});
+} else {
+window.addEventListener('deviceorientation', handleOrientation);
+}
+}
+
+function initControls() {
+const rightZone = document.getElementById('right-zone');
+const leftZone = document.getElementById('left-zone');
+let startYRight = 0, startYLeft = 0;
+
+rightZone.addEventListener('touchstart', e => { startYRight = e.touches[0].clientY; });
+rightZone.addEventListener('touchmove', e => {
+// Đang đèn đỏ mà cố tình kéo ga lúc xe ĐANG CHẠY (gear > 0 và speed > 2) mới tính phạm luật
+if (countdownActive && gear > 0 && speed > 2) {
+alert("Phạm luật xuất phát sớm! Trò chơi bị khởi động lại.");
+location.reload();
+return;
+}
+let deltaY = e.touches[0].clientY - startYRight;
+if (deltaY > 10) throttle = Math.min(1, deltaY / 60);
+});
+rightZone.addEventListener('touchend', () => { throttle = 0; });
+
+leftZone.addEventListener('touchstart', e => { startYLeft = e.touches[0].clientY; });
+leftZone.addEventListener('touchend', e => {
+if (countdownActive && gear > 0) {
+alert("Phạm luật xuất phát sớm! Trò chơi bị khởi động lại.");
+location.reload();
+return;
+}
+let deltaY = e.changedTouches[0].clientY - startYLeft;
+
+if (deltaY > 30) {
+if (throttle < 0.15 && gear < 5) {
+gear++;
+} else if (gear < 5) {
+let sb = document.getElementById('val-gear');
+sb.style.color = '#38bdf8'; setTimeout(() => sb.style.color = '#ef4444', 300);
+}
+} else if (deltaY < -30 && gear > 0) {
+gear--;
+}
+document.getElementById('val-gear').innerText = gear === 0 ? 'N' : gear;
+});
+}
+
+function animate() {
+if (!gameStarted) return;
+requestAnimationFrame(animate);
+
+let maxSpeedForGear = [0, 80, 120, 150, 180, 220][gear];
+let accelerationRate = [0, 1.2, 0.8, 0.6, 0.4, 0.3][gear];
+
+if (gear === 0) {
+speed *= 0.95;
+rpm = 1000 + throttle * 7500; // Nẹt pô số N cực nhạy, trầm nhỏ bổng to
+} else {
+if (throttle > 0) {
+speed += throttle * accelerationRate;
+if (speed > maxSpeedForGear) speed = maxSpeedForGear;
+} else {
+speed *= 0.985;
+}
+rpm = 1200 + (speed / (maxSpeedForGear || 1)) * 6800;
+}
+
+updateEngineSound();
+
+document.getElementById('val-speed').innerText = Math.round(speed);
+document.getElementById('val-rpm').innerText = Math.round(rpm);
+
+// Map 5000m dài hơn nên giảm tốc độ dịch chuyển progress tương ứng
+trackProgress += (speed / 35000);
+if (trackProgress > 1) trackProgress = 0;
+
+if (pathCurve) {
+const currentPos = pathCurve.getPointAt(trackProgress);
+const lookPos = pathCurve.getPointAt((trackProgress + 0.02) % 1);
+
+checkCollisions(currentPos);
+
+currentPos.x += steerAngle * 7;
+camera.position.copy(currentPos).add(new THREE.Vector3(0, 2.8, 0));
+camera.lookAt(lookPos);
+}
+
+renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+if (camera && renderer) {
+camera.aspect = window.innerWidth / window.innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(window.innerWidth, window.innerHeight);
+}
+});
+</script>
+</body>
+</html>
