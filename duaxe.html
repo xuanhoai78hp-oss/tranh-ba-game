@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Săn Ngọc Rồng Mô Tô GP - Đầy Đủ Gyro & Mô Tô</title>
+<title>Săn Tội Phạm Xuyên Thời Không - GP</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&display=swap');
@@ -23,56 +23,56 @@ body { margin: 0; overflow: hidden; background: #0b1329; font-family: -apple-sys
 .status-badge { background: rgba(0, 0, 0, 0.75); border: 1px solid #d4af37; color: #facc15; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; font-family: 'ZCOOL KuaiLe', cursive; text-shadow: 0 0 8px rgba(250, 204, 21, 0.6); }
 
 .progress-container { width: 200px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 6px; }
-.progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #d4af37, #f43f5e); transition: width 0.2s; }
+.progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #38bdf8, #ef4444); transition: width 0.2s; }
 
 #flash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 0, 0, 0); z-index: 99; pointer-events: none; transition: background 0.15s; }
 
-/* LAYOUT TAY LÁI & NHÂN VẬT DỰA TRÊN THIẾT KẾ MÔ TÔ */
+/* GÓC NHÌN PHÍA SAU NHÂN VẬT & BÁNH XE TO CHIẾM 1/2 KHUNG HÌNH */
 #character-sprite {
-position: absolute; bottom: 25vh; left: 50%; transform: translateX(-50%); width: 220px; height: 25vh;
-background: url('xemay.png') center/contain no-repeat;
-background-color: rgba(0, 242, 255, 0.15); border: 2px dashed #00f2ff; border-radius: 12px;
-display: flex; justify-content: center; align-items: center; color: #00f2ff; font-weight: bold; font-size: 14px;
+position: absolute; bottom: 12vh; left: 50%; transform: translateX(-50%); width: 360px; height: 45vh;
+background: none; border: none;
+display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
 z-index: 5; pointer-events: none; transition: transform 0.05s linear;
 }
+.char-helmet {
+width: 110px; height: 110px; background: radial-gradient(circle at 30% 30%, #475569, #0f172a);
+border-radius: 50%; box-shadow: inset 0 0 15px rgba(255,255,255,0.5), 0 8px 20px rgba(0,0,0,0.8);
+border: 2px solid #94a3b8; margin-bottom: -15px; z-index: 3;
+}
+.char-back {
+width: 140px; height: 120px; background: linear-gradient(180deg, #1e293b, #020617);
+border-radius: 20px 20px 10px 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.9);
+border-top: 3px solid #38bdf8; z-index: 2;
+}
+.bike-rear-wheel {
+width: 280px; height: 110px; background: #020617; border-radius: 50%;
+border: 12px solid #1e293b; box-shadow: 0 15px 35px rgba(0,0,0,0.9), inset 0 0 25px #00f2ff;
+margin-top: -45px; z-index: 1;
+}
 
+/* ĐÃ NÂNG KHU VỰC TAY LÁI (COCKPIT) LÊN THẾ VÀO VỊ TRÍ 2 NÚT CŨ */
 #cockpit {
-position: absolute; bottom: 0; left: 0; width: 100vw; height: 25vh;
-background: linear-gradient(180deg, rgba(15,23,42,0.4) 0%, rgba(15,23,42,0.95) 100%);
-border-top: 3px solid #334155; display: flex; justify-content: space-between; align-items: center; padding: 0 20px;
+position: absolute; bottom: 0; left: 0; width: 100vw; height: 16vh;
+background: linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(15,23,42,0.98) 100%);
+border-top: 3px solid #334155; display: flex; justify-content: space-between; align-items: center; padding: 0 25px;
 z-index: 6; pointer-events: auto;
 }
 
 .dashboard {
-display: flex; gap: 15px; align-items: center; background: rgba(0,0,0,0.75);
-padding: 8px 18px; border-radius: 35px; border: 1px solid #475569;
+display: flex; gap: 15px; align-items: center; background: rgba(0,0,0,0.85);
+padding: 6px 18px; border-radius: 35px; border: 1px solid #475569;
 }
 .gauge {
-width: 65px; height: 65px; border-radius: 50%; border: 3px solid #38bdf8;
-display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; font-size: 9px;
+width: 60px; height: 60px; border-radius: 50%; border: 3px solid #38bdf8;
+display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; font-size: 8px;
 }
-.gauge-val { font-size: 15px; font-weight: bold; color: #facc15; }
-.gear-box { font-size: 22px; font-weight: bold; color: #ef4444; background: #000; padding: 5px 14px; border-radius: 8px; border: 1px solid #ef4444; }
+.gauge-val { font-size: 14px; font-weight: bold; color: #facc15; }
+.gear-box { font-size: 20px; font-weight: bold; color: #ef4444; background: #000; padding: 4px 12px; border-radius: 8px; border: 1px solid #ef4444; }
 
-.touch-zone { position: absolute; top: 0; width: 50vw; height: 100vh; z-index: 8; pointer-events: auto; }
+/* 2 HÌNH Ô VAN PHÓNG TO ĐƯỜNG KÍNH VÀ ĐỘ RỘNG GẤP 3 LẦN */
+.touch-zone { position: absolute; top: 0; width: 50vw; height: 84vh; z-index: 8; pointer-events: auto; }
 #left-zone { left: 0; }
 #right-zone { right: 0; }
-
-.controls-area { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: 25vh; }
-
-.joystick-base { width: 110px; height: 110px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(212, 175, 55, 0.5); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-.joystick-stick { width: 45px; height: 45px; background: rgba(212, 175, 55, 0.8); border-radius: 50%; position: absolute; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-
-.btn-hapsu {
-width: 90px; height: 90px;
-background: linear-gradient(135deg, rgba(225, 29, 72, 0.85), rgba(159, 18, 57, 0.9));
-border: 3px solid #d4af37; border-radius: 50%; color: #fef08a;
-font-family: 'Ma Shan Zheng', cursive; font-size: 18px; font-weight: bold;
-display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px rgba(225, 29, 72, 0.7);
-cursor: pointer; text-shadow: 0 0 8px rgba(0,0,0,0.5); transform: scale(1); opacity: 1;
-transition: transform 0.1s ease-out, opacity 0.1s ease-out;
-}
-.btn-hapsu.cooldown { opacity: 0.3; transform: scale(0.6); pointer-events: none; }
 
 #dragon-modal {
 position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 8, 15, 0.9);
@@ -96,9 +96,9 @@ font-size: 18px; font-family: 'Ma Shan Zheng', cursive; font-weight: bold; lette
 
 <div id="dragon-modal">
 <div class="modal-content">
-<h2 id="modal-title">🌟 Kỳ Ngộ Viên Ngọc</h2>
-<p id="modal-desc">Thu thập viên ngọc thành công!</p>
-<button class="btn-luyen interactive" id="modal-btn" onclick="closeOrNext()">Tiếp tục hành trình</button>
+<h2 id="modal-title">🚨 Bắt Giữ Tội Phạm Thành Công!</h2>
+<p id="modal-desc">Đã tóm gọn tội phạm xuyên thời không!</p>
+<button class="btn-luyen interactive" id="modal-btn" onclick="closeOrNext()">Tiếp tục tuần tra</button>
 </div>
 </div>
 
@@ -107,8 +107,12 @@ font-size: 18px; font-family: 'Ma Shan Zheng', cursive; font-weight: bold; lette
 <div id="flash-screen"></div>
 <div id="canvas-container"></div>
 
-<!-- NHÂN VẬT & TAY LÁI MÔ TÔ -->
-<div id="character-sprite">xemay.png</div>
+<!-- NHÂN VẬT GÓC NHÌN SAU & MŨ BẢO HIỂM BÓNG LƯỠNG -->
+<div id="character-sprite">
+  <div class="char-helmet"></div>
+  <div class="char-back"></div>
+  <div class="bike-rear-wheel"></div>
+</div>
 
 <div id="cockpit">
 <div style="color: #94a3b8; font-size: 11px;">⚙️ Vuốt Trái: Lên/Xuống Số<br>(Buông ga mới sang số)</div>
@@ -117,7 +121,7 @@ font-size: 18px; font-family: 'Ma Shan Zheng', cursive; font-weight: bold; lette
 <div class="gear-box" id="val-gear">N</div>
 <div class="gauge"><span>KM/H</span><span class="gauge-val" id="val-speed">0</span></div>
 </div>
-<div style="color: #94a3b8; font-size: 11px; text-align: right;">✊ Vuốt Phải: Kéo Ga<br>Nghiêng điện thoại để lái</div>
+<div style="color: #94a3b8; font-size: 11px; text-align: right;">✊ Vuốt Phải: Kéo Ga<br>Nghiêng điện thoại lái</div>
 </div>
 
 <div class="touch-zone" id="left-zone"></div>
@@ -126,54 +130,44 @@ font-size: 18px; font-family: 'Ma Shan Zheng', cursive; font-weight: bold; lette
 <div class="hud-overlay">
 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
 <div class="info-panel">
-<h1>🏍️ Đua Xe Mô Tô Săn Ngọc Rồng</h1>
-<p><span id="speed-display" style="color: #facc15; font-weight: bold;">Tốc độ: 0 km/h</span> | Đạt >100 km/h để bắt!</p>
+<h1>🚨 Săn Tội Phạm Xuyên Thời Không</h1>
+<p><span id="speed-display" style="color: #facc15; font-weight: bold;">Tốc độ: 0 km/h</span> | >180 km/h trong 10s để bắt!</p>
 <div class="progress-container"><div id="distance-bar" class="progress-bar"></div></div>
 </div>
 <div class="status-badge">
-<span id="hunt-count-text">Đã thu: 0/7 viên</span>
+<span id="hunt-count-text">Đã bắt: 0/7 tên</span>
 </div>
 </div>
-<div class="controls-area">
-<div class="joystick-base interactive" id="joystick">
-<div class="joystick-stick" id="stick"></div>
-</div>
-<button class="btn-hapsu interactive" id="btnHapThu">HẤP THU</button>
-</div>
+<div></div>
 </div>
 
 <script>
 let isGamePaused = false;
-let collectedGemCount = 0;
+let collectedCriminalCount = 0;
 let targetPage = '';
 
 let currentSpeedKmh = 0;
 let runTimeTimer = 0;
 let speedStage = 0;
-let fruitTimer = 0;
-let redFruitActive = false;
+let highSpeedTimer = 0; // Bộ đếm thời gian duy trì > 180 km/h
 
-// BIẾN ĐIỀU KHIỂN XE MÔ TÔ & GYRO
 let throttle = 0;
-let gear = 0; // 0: N, 1-5
+let gear = 0; 
 let rpm = 1000;
-let steerAngle = 0; // Cảm biến Gyroscope
+let steerAngle = 0; 
 
-// SYNTHESIZER ÂM THANH MÔ TÔ (WEB AUDIO API)
 let audioCtx = null;
 let oscBass, oscTreble, engineGain;
 
 function initAudio() {
 if (!audioCtx) {
 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
 oscBass = audioCtx.createOscillator();
 oscTreble = audioCtx.createOscillator();
 engineGain = audioCtx.createGain();
 
 oscBass.type = 'triangle';
 oscTreble.type = 'sawtooth';
-
 oscBass.frequency.setValueAtTime(55, audioCtx.currentTime);
 oscTreble.frequency.setValueAtTime(110, audioCtx.currentTime);
 
@@ -183,30 +177,24 @@ const trebleGain = audioCtx.createGain(); trebleGain.gain.value = 0.2;
 oscBass.connect(bassGain); bassGain.connect(engineGain);
 oscTreble.connect(trebleGain); trebleGain.connect(engineGain);
 engineGain.connect(audioCtx.destination);
-
 engineGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
 
 oscBass.start();
 oscTreble.start();
-
 playRandomMusic();
-initGyro(); // Kích hoạt Gyro khi bắt đầu tương tác âm thanh
+initGyro();
 }
 }
 
-// XỬ LÝ CẢM BIẾN GYROSCOPE (NGHIÊNG ĐIỆN THOẠI LÁI XE)
 function initGyro() {
 const handleGyro = (e) => {
-let gamma = e.gamma || 0; // Góc nghiêng trái/phải (-90 đến 90)
+let gamma = e.gamma || 0;
 steerAngle = Math.max(-1, Math.min(1, gamma / 25));
-
-// Nghiêng và dịch chuyển sprite xe theo góc nghiêng điện thoại
 const sprite = document.getElementById('character-sprite');
 if (sprite) {
 sprite.style.transform = `translateX(-50%) rotate(${steerAngle * 18}deg) translateX(${steerAngle * 30}px)`;
 }
 };
-
 if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
 DeviceOrientationEvent.requestPermission().then(res => {
 if (res === 'granted') window.addEventListener('deviceorientation', handleGyro);
@@ -242,7 +230,7 @@ function playRandomMusic() {
 let randomTrack = Math.floor(Math.random() * 9) + 1;
 bgMusic.src = `${randomTrack}.mp3`;
 bgMusic.volume = 0.5;
-bgMusic.play().catch(e => console.log("Audio autoplay waiting for interaction"));
+bgMusic.play().catch(e => console.log("Audio waiting"));
 }
 
 function playSound(type) {
@@ -260,18 +248,11 @@ gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
 osc.start(); osc.stop(audioCtx.currentTime + 0.3);
 } else if (type === 'catch') {
 osc.type = 'sine';
-osc.frequency.setValueAtTime(500, audioCtx.currentTime);
-osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.5);
+osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.5);
 gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
 gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
 osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-} else if (type === 'absorb') {
-osc.type = 'triangle';
-osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.3);
-gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-osc.start(); osc.stop(audioCtx.currentTime + 0.3);
 }
 }
 
@@ -286,63 +267,16 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 container.appendChild(renderer.domElement);
 
-const ambientLight = new THREE.AmbientLight(0xdff0ff, 0.7);
-scene.add(ambientLight);
+scene.add(new THREE.AmbientLight(0xdff0ff, 0.7));
 const sunLight = new THREE.DirectionalLight(0xff7733, 1.8);
 sunLight.position.set(150, 200, 100);
 scene.add(sunLight);
 
 const playerGroup = new THREE.Group();
 scene.add(playerGroup);
-
 const hoverOffset = 2.4;
 
-// THIẾT KẾ VÁN TRƯỢT TÍM
-const boardGroup = new THREE.Group();
-const boardMat = new THREE.MeshStandardMaterial({
-color: 0x8b5cf6,
-emissive: 0x581c87,
-metalness: 0.85,
-roughness: 0.15
-});
-
-const boardBody = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.08, 1.6), boardMat);
-boardBody.position.y = 0.2;
-boardGroup.add(boardBody);
-
-const capGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.08, 16);
-const frontCap = new THREE.Mesh(capGeo, boardMat);
-frontCap.rotation.z = Math.PI / 2;
-frontCap.position.set(0, 0.2, 0.8);
-boardGroup.add(frontCap);
-
-const backCap = new THREE.Mesh(capGeo, boardMat);
-backCap.rotation.z = Math.PI / 2;
-backCap.position.set(0, 0.2, -0.8);
-boardGroup.add(backCap);
-
-playerGroup.add(boardGroup);
-
-const skaterGroup = new THREE.Group();
-skaterGroup.position.y = 0.25;
-const bodyMesh = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 16), new THREE.MeshStandardMaterial({ color: 0x38bdf8 }));
-bodyMesh.position.y = 0.6;
-skaterGroup.add(bodyMesh);
-
-const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
-headMesh.position.y = 1.35;
-skaterGroup.add(headMesh);
-
-const hatMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.5 });
-const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.03, 24), hatMat);
-hatBrim.position.y = 1.52;
-skaterGroup.add(hatBrim);
-const hatTop = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.25, 16), hatMat);
-hatTop.position.y = 1.68;
-skaterGroup.add(hatTop);
-
-playerGroup.add(skaterGroup);
-
+// BỤI XANH DƯỚI GẦM XE
 const particlesGeo = new THREE.BufferGeometry();
 const particleCount = 150;
 const posArray = new Float32Array(particleCount * 3);
@@ -352,58 +286,59 @@ posArray[i+1] = (Math.random() - 0.5) * 0.4;
 posArray[i+2] = Math.random() * 6;
 }
 particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-const trailParticles = new THREE.Points(particlesGeo, new THREE.PointsMaterial({ size: 0.1, color: 0xa855f7, transparent: true, opacity: 0.8 }));
+const trailParticles = new THREE.Points(particlesGeo, new THREE.PointsMaterial({ size: 0.12, color: 0x38bdf8, transparent: true, opacity: 0.8 }));
 playerGroup.add(trailParticles);
 
-// Linh Quả Đỏ
-const redFruitGroup = new THREE.Group();
-const fruitMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x991b1b, roughness: 0.1, metalness: 0.8 });
-const fruitMesh = new THREE.Mesh(new THREE.SphereGeometry(0.7, 16, 16), fruitMat);
-redFruitGroup.add(fruitMesh);
-scene.add(redFruitGroup);
-redFruitGroup.visible = false;
+// TẠO HÌNH TỘI PHẠM XUYÊN THỜI KHÔNG (KHÁC MÀU NÓN & KHÓI BỤI ĐỎ/TÍM PHÍA SAU)
+const criminalGroup = new THREE.Group();
+const crimHelmetMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x7f1d1d, roughness: 0.2 });
+const crimHead = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 16), crimHelmetMat);
+crimHead.position.set(0, 1.5, 0);
+criminalGroup.add(crimHead);
 
-function spawnRedFruit() {
-let tZ = playerGroup.position.z - 80;
-let tRoadY = getRoadHeightAtZ(tZ);
-redFruitGroup.position.set(getRoadCurveAtZ(tZ), tRoadY + 3.5, tZ);
-redFruitGroup.visible = true;
-redFruitActive = true;
+const crimBody = new THREE.Mesh(new THREE.ConeGeometry(0.8, 1.8, 16), new THREE.MeshStandardMaterial({ color: 0x991b1b }));
+crimBody.position.set(0, 0.6, 0);
+criminalGroup.add(crimBody);
+
+const crimWheel = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.5, 16), new THREE.MeshStandardMaterial({ color: 0x000 }));
+crimWheel.rotation.z = Math.PI / 2;
+crimWheel.position.set(0, 0.2, 0.8);
+criminalGroup.add(crimWheel);
+
+// Bụi phía sau xe tội phạm (Màu đỏ tím khác với nhân vật)
+const crimParticlesGeo = new THREE.BufferGeometry();
+const crimPosArray = new Float32Array(90);
+for(let i=0; i<90; i+=3) {
+crimPosArray[i] = (Math.random() - 0.5) * 0.5;
+crimPosArray[i+1] = (Math.random() - 0.5) * 0.5;
+crimPosArray[i+2] = -Math.random() * 5;
 }
+crimParticlesGeo.setAttribute('position', new THREE.BufferAttribute(crimPosArray, 3));
+const crimTrail = new THREE.Points(crimParticlesGeo, new THREE.PointsMaterial({ size: 0.15, color: 0xec4899, transparent: true, opacity: 0.9 }));
+criminalGroup.add(crimTrail);
 
-// Viên Ngọc Rồng
-const dragonGroup = new THREE.Group();
-const gemMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xca8a04, roughness: 0.1, metalness: 0.9 });
-const dragonBody = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 24), gemMat);
-dragonGroup.add(dragonBody);
+scene.add(criminalGroup);
 
-const subGem = new THREE.Mesh(new THREE.DodecahedronGeometry(0.3), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff }));
-subGem.position.set(1.2, 0, 0);
-dragonGroup.add(subGem);
-scene.add(dragonGroup);
-
-function respawnNewDragon() {
-let targetZ = playerGroup.position.z - 300 - Math.random() * 100;
+function respawnCriminal() {
+let targetZ = playerGroup.position.z - 350 - Math.random() * 100;
 let targetRoadY = getRoadHeightAtZ(targetZ);
-dragonGroup.position.set(
+criminalGroup.position.set(
 getRoadCurveAtZ(targetZ) + (Math.random() - 0.5) * 30,
 targetRoadY + 3.5,
 targetZ
 );
-newDragonTarget();
 }
-
-let dragonTarget = new THREE.Vector3();
-function newDragonTarget() {
-let tZ = playerGroup.position.z - 250 + (Math.random() - 0.5) * 100;
+let criminalTarget = new THREE.Vector3();
+function newCriminalTarget() {
+let tZ = playerGroup.position.z - 280 + (Math.random() - 0.5) * 100;
 let tRoadY = getRoadHeightAtZ(tZ);
-dragonTarget.set(
+criminalTarget.set(
 getRoadCurveAtZ(tZ) + (Math.random() - 0.5) * 35,
 tRoadY + 3.5,
 tZ
 );
 }
-respawnNewDragon();
+respawnCriminal();
 
 const obstacles = [];
 const mountainMat = new THREE.MeshStandardMaterial({ color: 0x1b4d3e, roughness: 0.8 });
@@ -413,7 +348,6 @@ function getRoadHeightAtZ(z) {
 let progress = Math.abs(z) / 2400;
 return THREE.MathUtils.lerp(65, 5, progress % 1);
 }
-
 function getRoadCurveAtZ(z) {
 return Math.sin(z * 0.003) * 20;
 }
@@ -427,62 +361,11 @@ waterMesh.position.set(0, -1, -800);
 scene.add(waterMesh);
 
 textureLoader.load('anhtp.png', (texture) => {
-texture.wrapS = THREE.RepeatWrapping;
-texture.wrapT = THREE.RepeatWrapping;
-texture.repeat.set(4, 0.5);
-texture.offset.set(0, 0.0);
-texture.needsUpdate = true;
-
-const wallMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide });
-const wallGeo = new THREE.BoxGeometry(2000, 1200, 3000);
-const skyBox = new THREE.Mesh(wallGeo, wallMat);
+texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
+texture.repeat.set(4, 0.5); texture.needsUpdate = true;
+const skyBox = new THREE.Mesh(new THREE.BoxGeometry(2000, 1200, 3000), new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide }));
 skyBox.position.set(0, 400, -800);
 scene.add(skyBox);
-});
-
-textureLoader.load('anhtp.png', (buildingTex) => {
-buildingTex.wrapS = THREE.RepeatWrapping;
-buildingTex.wrapT = THREE.RepeatWrapping;
-const colWidth = 1 / 8;
-
-for(let i = 0; i < 35; i++) {
-let mHeight = 65 + Math.random() * 55;
-let mRadius = 30 + Math.random() * 25;
-const mountain = new THREE.Mesh(new THREE.ConeGeometry(mRadius, mHeight, 6), mountainMat);
-
-let sideSign = (i % 2 === 0) ? 1 : -1;
-let mX = sideSign * (55 + Math.random() * 60);
-let mZ = -i * 80 - 50;
-
-mountain.position.set(mX, mHeight / 2, mZ);
-scene.add(mountain);
-obstacles.push({ type: 'mountain', mesh: mountain, radius: mRadius * 0.8, pos: mountain.position });
-
-let buildingCount = 2 + Math.floor(Math.random() * 2);
-for (let b = 0; b < buildingCount; b++) {
-let bIndex = Math.floor(Math.random() * 8);
-
-let matTex = buildingTex.clone();
-matTex.wrapS = THREE.RepeatWrapping;
-matTex.wrapT = THREE.RepeatWrapping;
-matTex.repeat.set(colWidth, 0.5);
-matTex.offset.set(bIndex * colWidth, 0.5);
-matTex.needsUpdate = true;
-
-let bHeight = (mHeight * 0.4);
-let bGeo = new THREE.BoxGeometry(12, bHeight, 12);
-let bMat = new THREE.MeshStandardMaterial({ map: matTex, roughness: 0.5 });
-let building = new THREE.Mesh(bGeo, bMat);
-
-let bX = mX + (sideSign > 0 ? -15 : 15);
-let bZ = mZ + (b - 1) * 15;
-let bY = bHeight / 2;
-
-building.position.set(bX, bY, bZ);
-scene.add(building);
-obstacles.push({ type: 'building', pos: building.position, radius: 8, size: bHeight });
-}
-}
 });
 
 const roadSegments = 100;
@@ -490,16 +373,12 @@ for(let j = 0; j < roadSegments; j++) {
 let zCoord = -20 - (j * 25);
 let roadY = getRoadHeightAtZ(zCoord);
 let roadX = getRoadCurveAtZ(zCoord);
-
 const roadGroup = new THREE.Group();
-const roadSlab = new THREE.Mesh(new THREE.BoxGeometry(45, 3, 26), mountainMat);
-roadGroup.add(roadSlab);
-
+roadGroup.add(new THREE.Mesh(new THREE.BoxGeometry(45, 3, 26), mountainMat));
 const pillarGeo = new THREE.CylinderGeometry(4, 6, roadY + 10, 8);
-const p1 = new THREE.Mesh(pillarGeo, mountainMat); p1.position.set(-18, -roadY/2, 0);
-const p2 = new THREE.Mesh(pillarGeo, mountainMat); p2.position.set(18, -roadY/2, 0);
+let p1 = new THREE.Mesh(pillarGeo, mountainMat); p1.position.set(-18, -roadY/2, 0);
+let p2 = new THREE.Mesh(pillarGeo, mountainMat); p2.position.set(18, -roadY/2, 0);
 roadGroup.add(p1); roadGroup.add(p2);
-
 roadGroup.position.set(roadX, roadY, zCoord);
 scene.add(roadGroup);
 }
@@ -507,11 +386,9 @@ scene.add(roadGroup);
 createEnvironment();
 
 let initialZ = 0;
-let initialRoadY = getRoadHeightAtZ(initialZ);
-let initialRoadX = getRoadCurveAtZ(initialZ);
-playerGroup.position.set(initialRoadX, initialRoadY + hoverOffset, initialZ);
+playerGroup.position.set(getRoadCurveAtZ(initialZ), getRoadHeightAtZ(initialZ) + hoverOffset, initialZ);
 
-// TƯƠNG TÁC CẢM ỨNG GA VÀ SỐ MÔ TÔ
+// TƯƠNG TÁC GA VÀ SỐ MÔ TÔ
 const rightZone = document.getElementById('right-zone');
 const leftZone = document.getElementById('left-zone');
 let startYRight = 0, startYLeft = 0;
@@ -527,108 +404,22 @@ leftZone.addEventListener('touchstart', e => { initAudio(); startYLeft = e.touch
 leftZone.addEventListener('touchend', e => {
 let deltaY = e.changedTouches[0].clientY - startYLeft;
 if (deltaY > 30) {
-if (throttle < 0.15 && gear < 5) {
-gear++;
-playShiftSound();
-} else if (gear < 5) {
-let sb = document.getElementById('val-gear');
-sb.style.color = '#38bdf8'; setTimeout(() => sb.style.color = '#ef4444', 300);
-}
-} else if (deltaY < -30 && gear > 0) {
-gear--;
-playShiftSound();
-}
+if (throttle < 0.15 && gear < 5) { gear++; playShiftSound(); }
+} else if (deltaY < -30 && gear > 0) { gear--; playShiftSound(); }
 document.getElementById('val-gear').innerText = gear === 0 ? 'N' : gear;
 });
 
 const keys = {};
-window.addEventListener('keydown', e => {
-if (isGamePaused) return;
-initAudio();
-keys[e.code] = true;
-});
+window.addEventListener('keydown', e => { if (!isGamePaused) { initAudio(); keys[e.code] = true; } });
 window.addEventListener('keyup', e => keys[e.code] = false);
 
-const btnHapThu = document.getElementById('btnHapThu');
-
-function triggerHapThu() {
-if (isGamePaused || !redFruitActive) return;
-initAudio();
-playSound('absorb');
-
-let startPos = redFruitGroup.position.clone();
-let startTime = performance.now();
-function animateFruitFly() {
-let elapsed = (performance.now() - startTime) / 400;
-if (elapsed < 1) {
-redFruitGroup.position.lerpVectors(startPos, playerGroup.position, elapsed);
-requestAnimationFrame(animateFruitFly);
-} else {
-redFruitGroup.visible = false;
-redFruitActive = false;
-}
-}
-animateFruitFly();
-
-const flash = document.getElementById('flash-screen');
-flash.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.6), rgba(56, 189, 248, 0.6), rgba(250, 204, 21, 0.6))';
-setTimeout(() => flash.style.background = 'rgba(255,0,0,0)', 300);
-
-if (speedStage === 1) {
-speedStage = 2;
-fruitTimer = runTimeTimer;
-} else if (speedStage === 3) {
-speedStage = 4;
-fruitTimer = runTimeTimer;
-}
-}
-
-btnHapThu.addEventListener('touchstart', (e) => { e.preventDefault(); triggerHapThu(); });
-btnHapThu.addEventListener('click', () => { triggerHapThu(); });
-
-let joystickMove = { x: 0, y: 0 };
-const joystick = document.getElementById('joystick');
-const stick = document.getElementById('stick');
-let isDragging = false, centerPos = { x: 0, y: 0 };
-
-joystick.addEventListener('touchstart', e => {
-if (isGamePaused) return;
-initAudio(); isDragging = true;
-const rect = joystick.getBoundingClientRect();
-centerPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-});
-window.addEventListener('touchmove', e => {
-if (isGamePaused || !isDragging) return;
-const touch = e.touches[0];
-let dx = touch.clientX - centerPos.x, dy = touch.clientY - centerPos.y;
-const dist = Math.hypot(dx, dy), maxDist = 40;
-if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
-stick.style.transform = `translate(${dx}px, ${dy}px)`;
-joystickMove.x = dx / maxDist; joystickMove.y = -dy / maxDist;
-});
-window.addEventListener('touchend', () => {
-isDragging = false; stick.style.transform = `translate(0px, 0px)`; joystickMove = { x: 0, y: 0 };
-});
-
-let gameTime = 0;
-let rollAngle = 0;
 let hitCooldown = 0;
-
 function triggerHitEffect() {
 playSound('hit');
 const flash = document.getElementById('flash-screen');
 flash.style.background = 'rgba(255, 0, 0, 0.4)';
 setTimeout(() => flash.style.background = 'rgba(255,0,0,0)', 150);
-
-if (currentSpeedKmh > 80) {
-currentSpeedKmh = 80;
-speedStage = 2;
-} else if (currentSpeedKmh > 50) {
-currentSpeedKmh = 50;
-speedStage = 0;
-} else {
-currentSpeedKmh = Math.max(0, currentSpeedKmh - 10);
-}
+currentSpeedKmh = Math.max(0, currentSpeedKmh - 25);
 }
 
 function closeOrNext() {
@@ -637,30 +428,20 @@ if (targetPage) {
 window.location.href = targetPage;
 } else {
 let curZ = playerGroup.position.z;
-let rY = getRoadHeightAtZ(curZ);
-let rX = getRoadCurveAtZ(curZ);
-playerGroup.position.set(rX, rY + hoverOffset, curZ);
-respawnNewDragon();
-runTimeTimer = 0;
+playerGroup.position.set(getRoadCurveAtZ(curZ), getRoadHeightAtZ(curZ) + hoverOffset, curZ);
+respawnCriminal();
 currentSpeedKmh = 0;
-speedStage = 0;
-redFruitActive = false;
-redFruitGroup.visible = false;
+highSpeedTimer = 0;
 isGamePaused = false;
 }
 }
 
 function animate() {
 requestAnimationFrame(animate);
-
 if (isGamePaused) return;
 
-gameTime += 0.016;
-runTimeTimer += 0.016;
-
-// VẬT LÝ XE MÔ TÔ & HỘP SỐ REALTIME
-let maxSpeedForGear = [0, 80, 120, 150, 180, 220][gear];
-let accelerationRate = [0, 1.2, 0.8, 0.6, 0.4, 0.3][gear];
+let maxSpeedForGear = [0, 80, 120, 150, 190, 230][gear];
+let accelerationRate = [0, 1.2, 0.9, 0.7, 0.5, 0.4][gear];
 
 if (gear === 0) {
 currentSpeedKmh *= 0.95;
@@ -681,118 +462,83 @@ document.getElementById('val-speed').innerText = Math.round(currentSpeedKmh);
 document.getElementById('val-rpm').innerText = Math.round(rpm);
 document.getElementById('speed-display').innerText = `Tốc độ: ${Math.floor(currentSpeedKmh)} km/h`;
 
+// CƠ CHẾ BẮT KỊP KHI TỐC ĐỘ DUY TRÌ > 180 KM/H TRONG 10 GIÂY
+let distanceToCriminalZ = Math.abs(playerGroup.position.z - criminalGroup.position.z);
+if (currentSpeedKmh > 180) {
+highSpeedTimer += 0.016;
+if (highSpeedTimer >= 10 || distanceToCriminalZ < 35) {
+  triggerCatchCriminal();
+}
+} else {
+highSpeedTimer = Math.max(0, highSpeedTimer - 0.05); // Giảm dần nếu tụt tốc độ
+}
+
+let progressPercent = Math.min(100, (highSpeedTimer / 10) * 100);
+document.getElementById('distance-bar').style.width = progressPercent + '%';
+
 let playerSpeed = (currentSpeedKmh / 60) * 1.4;
 playerGroup.position.z -= playerSpeed;
 
 if (playerGroup.position.z < -2400) {
 playerGroup.position.z = 0;
-runTimeTimer = 0;
+highSpeedTimer = 0;
 currentSpeedKmh = 0;
-speedStage = 0;
 }
 
 let targetRoadY = getRoadHeightAtZ(playerGroup.position.z);
 let targetRoadX = getRoadCurveAtZ(playerGroup.position.z);
 
-const oldDragonPos = dragonGroup.position.clone();
-let gemLerpSpeed = 0.035;
-dragonGroup.position.lerp(dragonTarget, gemLerpSpeed);
+criminalGroup.position.z -= playerSpeed * 0.85; // Tội phạm di chuyển phía trước
+if (criminalGroup.position.z > playerGroup.position.z - 100) respawnCriminal();
 
-if (dragonGroup.position.distanceTo(dragonTarget) < 15) {
-newDragonTarget();
-}
-
-const moveDir = dragonGroup.position.clone().sub(oldDragonPos);
-if (moveDir.length() > 0.001) {
-dragonGroup.lookAt(dragonGroup.position.clone().add(moveDir));
-}
-dragonGroup.rotation.y += 0.08;
-
-// TÍNH TOÁN HƯỚNG LÁI (KẾT HỢP GYRO + JOYSTICK + PHÍM PHÍM)
 let moveX = 0;
 if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
 if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
-moveX += joystickMove.x + steerAngle * 1.5; // Tích hợp Gyro nghiêng máy vào hệ thống lái 3D
+moveX += steerAngle * 1.5;
 
-let desiredX = targetRoadX + (playerGroup.position.x - targetRoadX) + moveX * 0.6;
-
+let desiredX = targetRoadX + moveX * 0.6;
 let roadHalfWidth = 21.5;
 if (Math.abs(desiredX - targetRoadX) > roadHalfWidth) {
 triggerHitEffect();
 desiredX = targetRoadX + Math.sign(desiredX - targetRoadX) * roadHalfWidth;
-playerGroup.position.z += 10;
 }
 
 playerGroup.position.x = desiredX;
 playerGroup.position.y = targetRoadY + hoverOffset;
+playerGroup.rotation.z = THREE.MathUtils.lerp(playerGroup.rotation.z, moveX * -0.25, 0.1);
 
-dragonTarget.y = getRoadHeightAtZ(dragonTarget.z) + 3.5;
-dragonGroup.position.y = THREE.MathUtils.lerp(dragonGroup.position.y, getRoadHeightAtZ(dragonGroup.position.z) + 3.5, 0.1);
+const targetCamPos = new THREE.Vector3(playerGroup.position.x * 0.4, playerGroup.position.y + 3.5, playerGroup.position.z + 12);
+camera.position.lerp(targetCamPos, 0.1);
+camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z - 12);
 
-rollAngle = moveX * -0.25;
-playerGroup.rotation.z = THREE.MathUtils.lerp(playerGroup.rotation.z, rollAngle, 0.1);
-
-if (hitCooldown > 0) hitCooldown--;
-if (hitCooldown === 0) {
-for (let obs of obstacles) {
-if (playerGroup.position.distanceTo(obs.pos) < (obs.size || obs.radius || 30)) {
-triggerHitEffect();
-playerGroup.position.z += 12;
-hitCooldown = 60;
-break;
-}
-}
+renderer.render(scene, camera);
 }
 
-let distanceToDragonZ = Math.abs(playerGroup.position.z - dragonGroup.position.z);
-let progressPercent = Math.max(0, Math.min(100, (1 - distanceToDragonZ / 300) * 100));
-const barEl = document.getElementById('distance-bar');
-if (barEl) barEl.style.width = progressPercent + '%';
-
-let diffX = Math.abs(playerGroup.position.x - dragonGroup.position.x);
-let catchCondition = (currentSpeedKmh > 100) && (distanceToDragonZ < 40);
-
-if (diffX < 20 && catchCondition) {
+function triggerCatchCriminal() {
+isGamePaused = true;
 playSound('catch');
 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-isGamePaused = true;
 
-playRandomMusic();
-
-collectedGemCount++;
-document.getElementById('hunt-count-text').innerText = `Đã thu: ${collectedGemCount}/7 viên`;
+collectedCriminalCount++;
+document.getElementById('hunt-count-text').innerText = `Đã bắt: ${collectedCriminalCount}/7 tên`;
 
 const modalTitle = document.getElementById('modal-title');
 const modalDesc = document.getElementById('modal-desc');
 const modalBtn = document.getElementById('modal-btn');
 
-if (collectedGemCount >= 7) {
-modalTitle.innerText = "🐉 Tụ Hội Đủ 7 Viên Ngọc Rồng!";
-modalDesc.innerHTML = "Thần Long hiển linh! Ngài đã vượt ải thành công!";
-modalBtn.innerText = "✨ Sang trang luyện kiếm";
-targetPage = 'sanrong2.html';
+if (collectedCriminalCount >= 7) {
+modalTitle.innerText = "🏆 Triệt Phá Thành Công Băng Đảng!";
+modalDesc.innerHTML = "Đã tóm gọn toàn bộ 7 tên tội phạm xuyên thời không!";
+modalBtn.innerText = "✨ Hoàn thành nhiệm vụ";
+targetPage = 'hoanthanh.html';
 } else {
-modalTitle.innerText = "🌟 Kỳ Ngộ Viên Ngọc";
-modalDesc.innerHTML = `Đã thu thập ${collectedGemCount}/7 viên ngọc rồng.<br>Tay lái mô tô cực bốc!`;
-modalBtn.innerText = "⚡ Tiếp tục lướt xe";
+modalTitle.innerText = "🚨 Bắt Giữ Tội Phạm Thành Công!";
+modalDesc.innerHTML = `Đã bắt ${collectedCriminalCount}/7 tên tội phạm.<br>Tốc độ truy đuổi quá đỉnh!`;
+modalBtn.innerText = "⚡ Tiếp tục tuần tra";
 targetPage = '';
 }
 
 document.getElementById('dragon-modal').style.display = 'flex';
-}
-
-const targetCamPos = new THREE.Vector3(playerGroup.position.x * 0.4, playerGroup.position.y + 4, playerGroup.position.z + 14);
-camera.position.lerp(targetCamPos, 0.1);
-camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z - 12);
-
-const positions = trailParticles.geometry.attributes.position.array;
-for (let i = 2; i < particleCount * 3; i += 3) {
-positions[i] += 0.35;
-if (positions[i] > 6) positions[i] = 0;
-}
-trailParticles.geometry.attributes.position.needsUpdate = true;
-
-renderer.render(scene, camera);
 }
 
 window.addEventListener('resize', () => {
