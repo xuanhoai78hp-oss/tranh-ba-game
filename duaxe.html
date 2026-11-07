@@ -27,7 +27,7 @@ body { margin: 0; overflow: hidden; background: #0b1329; font-family: -apple-sys
 
 #flash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 0, 0, 0); z-index: 99; pointer-events: none; transition: background 0.15s; }
 
-/* ANIMATION SPRITE 5 KHUNG HÌNH TỪ FILE duaxe.png (200x400px mỗi khung) */
+/* SPRITE SHEET 5 KHUNG HÌNH (200x400px mỗi khung) */
 #character-sprite {
 position: absolute; bottom: 15vh; left: 50%; transform: translateX(-50%);
 width: 200px; height: 35vh; max-height: 380px;
@@ -90,7 +90,6 @@ font-size: 18px; font-family: 'Ma Shan Zheng', cursive; font-weight: bold; lette
 <div id="flash-screen"></div>
 <div id="canvas-container"></div>
 
-<!-- NHÂN VẬT SPRITE SHEET 5 KHUNG HÌNH -->
 <div id="character-sprite"></div>
 
 <div id="cockpit">
@@ -100,7 +99,7 @@ font-size: 18px; font-family: 'Ma Shan Zheng', cursive; font-weight: bold; lette
 <div class="gear-box" id="val-gear">N</div>
 <div class="gauge"><span>KM/H</span><span class="gauge-val" id="val-speed">0</span></div>
 </div>
-<div style="color: #94a3b8; font-size: 11px; text-align: right;">✊ Vuốt Phải: Kéo Ga<br>Nghiêng điện thoại lái</div>
+<div style="color: #94a3b8; font-size: 11px; text-align: right;">✊ Vuốt Phải: Kéo Ga<br>Nghiêng điện thoại lái (Gyro)</div>
 </div>
 
 <div class="touch-zone" id="left-zone"></div>
@@ -126,7 +125,6 @@ let collectedCriminalCount = 0;
 let targetPage = '';
 
 let currentSpeedKmh = 0;
-let runTimeTimer = 0;
 let highSpeedTimer = 0;
 
 let throttle = 0;
@@ -134,7 +132,6 @@ let gear = 0;
 let rpm = 1000;
 let steerAngle = 0; 
 
-// Biến quản lý chuyển đổi 5 khung hình sprite
 let spriteFrameTimer = 0;
 let currentFrame = 0;
 
@@ -168,11 +165,13 @@ initGyro();
 }
 }
 
+// CƠ CHẾ CẢM BIẾN GYRO (NGHIÊNG ĐIỆN THOẠI LÁI XE)
 function initGyro() {
 const handleGyro = (e) => {
-let gamma = e.gamma || 0;
+let gamma = e.gamma || 0; // Góc nghiêng trái/phải (-90 đến 90)
 steerAngle = Math.max(-1, Math.min(1, gamma / 25));
 };
+
 if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
 DeviceOrientationEvent.requestPermission().then(res => {
 if (res === 'granted') window.addEventListener('deviceorientation', handleGyro);
@@ -250,15 +249,12 @@ const sunLight = new THREE.DirectionalLight(0xff7733, 1.8);
 sunLight.position.set(150, 200, 100);
 scene.add(sunLight);
 
-// Dùng ẩn playerGroup tọa độ không gian 3D
 const playerGroup = new THREE.Group();
 scene.add(playerGroup);
 const hoverOffset = 2.4;
 
-// ================= TẠO HÌNH KẺ TRỐN XUYÊN KHÔNG GIAN (ĐƠN GIẢN NHƯNG CÓ ĐỘ LỒI LÕM, LỐP CĂNG) =================
+// TỘI PHẠM XUYÊN KHÔNG GIAN (LỒI LÕM KHÍ ĐỘNG HỌC, LỐP CĂNG)
 const criminalGroup = new THREE.Group();
-
-// Lốp xe căng tròn phía sau
 const crimWheel = new THREE.Mesh(
   new THREE.CylinderGeometry(1.2, 1.2, 0.6, 24),
   new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3, metalness: 0.6 })
@@ -267,7 +263,6 @@ crimWheel.rotation.z = Math.PI / 2;
 crimWheel.position.set(0, 1.0, 0.5);
 criminalGroup.add(crimWheel);
 
-// Thân xe lồi lõm khí động học
 const crimBody = new THREE.Mesh(
   new THREE.ConeGeometry(0.85, 1.6, 16),
   new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.2, metalness: 0.8 })
@@ -275,14 +270,12 @@ const crimBody = new THREE.Mesh(
 crimBody.position.set(0, 1.6, -0.2);
 criminalGroup.add(crimBody);
 
-// Mũ bảo hiểm bóng đỏ nổi bật
 const crimHelmet = new THREE.Mesh(
   new THREE.SphereGeometry(0.7, 16, 16),
   new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.1, metalness: 0.9, emissive: 0x991b1b })
 );
 crimHelmet.position.set(0, 2.6, -0.1);
 criminalGroup.add(crimHelmet);
-
 scene.add(criminalGroup);
 
 function respawnCriminal() {
@@ -295,10 +288,6 @@ targetZ
 );
 }
 respawnCriminal();
-
-const obstacles = [];
-const mountainMat = new THREE.MeshStandardMaterial({ color: 0x1b4d3e, roughness: 0.8 });
-const textureLoader = new THREE.TextureLoader();
 
 function getRoadHeightAtZ(z) {
 let progress = Math.abs(z) / 2400;
@@ -316,14 +305,7 @@ new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.1, metalness: 0.8
 waterMesh.position.set(0, -1, -800);
 scene.add(waterMesh);
 
-textureLoader.load('anhtp.png', (texture) => {
-texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
-texture.repeat.set(4, 0.5); texture.needsUpdate = true;
-const skyBox = new THREE.Mesh(new THREE.BoxGeometry(2000, 1200, 3000), new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide }));
-skyBox.position.set(0, 400, -800);
-scene.add(skyBox);
-});
-
+const mountainMat = new THREE.MeshStandardMaterial({ color: 0x1b4d3e, roughness: 0.8 });
 const roadSegments = 100;
 for(let j = 0; j < roadSegments; j++) {
 let zCoord = -20 - (j * 25);
@@ -369,7 +351,6 @@ const keys = {};
 window.addEventListener('keydown', e => { if (!isGamePaused) { initAudio(); keys[e.code] = true; } });
 window.addEventListener('keyup', e => keys[e.code] = false);
 
-let hitCooldown = 0;
 function triggerHitEffect() {
 playSound('hit');
 const flash = document.getElementById('flash-screen');
@@ -418,7 +399,7 @@ document.getElementById('val-speed').innerText = Math.round(currentSpeedKmh);
 document.getElementById('val-rpm').innerText = Math.round(rpm);
 document.getElementById('speed-display').innerText = `Tốc độ: ${Math.floor(currentSpeedKmh)} km/h`;
 
-// QUẢN LÝ SPRITE ANIMATION 5 KHUNG HÌNH (ĐỔI KHUNG THEO TỐC ĐỘ XE)
+// ĐỔI KHUNG HÌNH SPRITE 5 KHUNG THEO TỐC ĐỘ
 if (currentSpeedKmh > 10) {
 spriteFrameTimer += currentSpeedKmh;
 if (spriteFrameTimer > 250) {
@@ -444,10 +425,9 @@ document.getElementById('distance-bar').style.width = progressPercent + '%';
 let playerSpeed = (currentSpeedKmh / 60) * 1.4;
 playerGroup.position.z -= playerSpeed;
 
+// VÒNG LẶP MAP VÔ TẬN (INFINITE LOOP MAP) GIÚP GAME CHẠY KHÔNG GIỚI HẠN
 if (playerGroup.position.z < -2400) {
-playerGroup.position.z = 0;
-highSpeedTimer = 0;
-currentSpeedKmh = 0;
+playerGroup.position.z += 2400;
 }
 
 let targetRoadY = getRoadHeightAtZ(playerGroup.position.z);
@@ -456,10 +436,11 @@ let targetRoadX = getRoadCurveAtZ(playerGroup.position.z);
 criminalGroup.position.z -= playerSpeed * 0.85;
 if (criminalGroup.position.z > playerGroup.position.z - 100) respawnCriminal();
 
+// ĐIỀU KHIỂN HƯỚNG LÁI KẾT HỢP GYRO & PHÍM A/D
 let moveX = 0;
 if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
 if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
-moveX += steerAngle * 1.8;
+moveX += steerAngle * 1.8; // Tích hợp Gyro nghiêng máy
 
 let desiredX = targetRoadX + moveX * 0.6;
 let roadHalfWidth = 21.5;
@@ -471,7 +452,7 @@ desiredX = targetRoadX + Math.sign(desiredX - targetRoadX) * roadHalfWidth;
 playerGroup.position.x = desiredX;
 playerGroup.position.y = targetRoadY + hoverOffset;
 
-// HIỆU ỨNG NGHIÊNG SPRITE THEO GYRO
+// HIỆU ỨNG NGHIÊNG SPRITE THEO GÓC LÁI GYRO
 let spriteRot = moveX * 12;
 document.getElementById('character-sprite').style.transform = `translateX(-50%) rotate(${spriteRot}deg)`;
 
