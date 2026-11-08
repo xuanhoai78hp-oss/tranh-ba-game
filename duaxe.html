@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Moto GP 3D - Bắt Ngọc Rồng 160 km/h</title>
+<title>Moto GP 3D - Bắt Ngọc Rồng 200 km/h</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&display=swap');
@@ -108,7 +108,7 @@ font-size: 18px; font-family: 'Ma Shan Zheng', cursive; font-weight: bold; lette
 <div id="start-screen">
 <div class="start-card">
 <h1>🏍️ MOTO GP 3D - BẮT NGỌC</h1>
-<p>Bứt tốc >160 km/h để săn lùng ngọc rồng huyền thoại!</p>
+<p>Bứt tốc >200 km/h để săn lùng ngọc rồng huyền thoại!</p>
 <div class="guide-box">
 👉 <b>Bên Phải:</b> Kéo giữ để tăng ga.<br>
 ⚙️ <b>Bên Trái:</b> Vuốt xuống để lên số / Vuốt lên để giảm số (N ➔ 1 ➔ 2 ➔ 3 ➔ 4 ➔ 5).<br>
@@ -153,7 +153,7 @@ font-size: 18px; font-family: 'Ma Shan Zheng', cursive; font-weight: bold; lette
 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
 <div class="info-panel">
 <h1>🏍️ Đua Xe Mô Tô GP</h1>
-<p><span id="speed-display" style="color: #facc15; font-weight: bold;">Tốc độ: 0 km/h</span> | Đạt >160 km/h để bắt ngọc!</p>
+<p><span id="speed-display" style="color: #facc15; font-weight: bold;">Tốc độ: 0 km/h</span> | Đạt >200 km/h để bắt ngọc!</p>
 <div class="progress-container"><div id="distance-bar" class="progress-bar"></div></div>
 </div>
 <div class="status-badge">
@@ -186,7 +186,7 @@ function playRandomMusic() {
 let randomTrack = Math.floor(Math.random() * 9) + 1;
 bgMusic.src = `${randomTrack}.mp3`;
 // GIẢM 50% ÂM LƯỢNG NHẠC MP3 (TỪ 0.5 XUỐNG 0.25) ĐỂ KHÔNG ÁT TIẾNG MÁY XE
-bgMusic.volume = 0.25;
+bgMusic.volume = 0.15;
 bgMusic.play().catch(e => console.log("Audio autoplay waiting for interaction"));
 }
 
@@ -643,7 +643,7 @@ break;
 
 let distanceToDragonZ = Math.abs(playerGroup.position.z - dragonGroup.position.z);
 let diffX = Math.abs(playerGroup.position.x - dragonGroup.position.x);
-let catchCondition = (currentSpeedKmh > 160) && (distanceToDragonZ < 40);
+let catchCondition = (currentSpeedKmh > 203) && (distanceToDragonZ < 40);
 
 if (diffX < 20 && catchCondition) {
 playSound('catch');
@@ -666,7 +666,7 @@ modalBtn.innerText = "✨ Sang trang luyện kiếm";
 targetPage = 'sanrong2.html';
 } else {
 modalTitle.innerText = "🌟 Kỳ Ngộ Viên Ngọc";
-modalDesc.innerHTML = `Đã thu thập ${collectedGemCount}/7 viên ngọc rồng.<br>Tay lái bứt tốc >160 km/h cực ngầu!`;
+modalDesc.innerHTML = `Đã thu thập ${collectedGemCount}/7 viên ngọc rồng.<br>Tay lái bứt tốc >200 km/h cực ngầu!`;
 modalBtn.innerText = "⚡ Tiếp tục lướt xe";
 targetPage = '';
 }
