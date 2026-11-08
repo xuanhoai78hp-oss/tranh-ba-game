@@ -27,6 +27,26 @@ body { margin: 0; overflow: hidden; background: #0b1329; font-family: -apple-sys
 
 #flash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 0, 0, 0); z-index: 99; pointer-events: none; transition: background 0.15s; }
 
+/* MÀN HÌNH BẮT ĐẦU (START SCREEN) ĐỂ KÍCH HOẠT GYRO VÀ ÂM THANH */
+#start-screen {
+position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+background: radial-gradient(circle, #1e293b 0%, #0b1329 100%);
+z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center;
+padding: 20px; text-align: center; color: #fff;
+}
+.start-card {
+background: rgba(15, 23, 42, 0.9); border: 3px solid #d4af37; border-radius: 24px;
+padding: 30px; max-width: 420px; width: 100%; box-shadow: 0 0 40px rgba(212, 175, 55, 0.4);
+}
+.start-card h1 { font-size: 26px; color: #facc15; font-family: 'Ma Shan Zheng', cursive; margin-bottom: 10px; }
+.start-card p { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-bottom: 20px; font-family: 'ZCOOL KuaiLe', cursive; }
+.guide-box { background: rgba(0,0,0,0.5); border: 1px solid #38bdf8; border-radius: 12px; padding: 12px; margin-bottom: 20px; text-align: left; font-size: 11px; color: #cbd5e1; line-height: 1.5; }
+.btn-start {
+background: linear-gradient(135deg, #d4af37, #b45309); color: #fff; border: 2px solid #fef08a;
+padding: 14px 28px; font-size: 18px; font-family: 'Ma Shan Zheng', cursive; font-weight: bold;
+border-radius: 14px; cursor: pointer; width: 100%; box-shadow: 0 4px 20px rgba(212, 175, 55, 0.5);
+}
+
 /* SPRITE NHÂN VẬT MÔ TÔ 5 KHUNG HÌNH (200x400px) */
 #character-sprite {
 position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
@@ -84,6 +104,20 @@ font-size: 18px; font-family: 'Ma Shan Zheng', cursive; font-weight: bold; lette
 </head>
 <body>
 
+<!-- MÀN HÌNH BẮT ĐẦU XIN QUYỀN GYRO & ÂM THANH -->
+<div id="start-screen">
+<div class="start-card">
+<h1>🏍️ MOTO GP 3D - BẮT NGỌC</h1>
+<p>Bứt tốc >160 km/h để săn lùng ngọc rồng huyền thoại!</p>
+<div class="guide-box">
+👉 <b>Bên Phải:</b> Kéo giữ để tăng ga.<br>
+⚙️ <b>Bên Trái:</b> Vuốt lên/xuống để sang số (N ➔ 1 ➔ 2 ➔ 3 ➔ 4 ➔ 5).<br>
+📱 <b>Lái xe:</b> Nghiêng điện thoại sang trái/phải (Gyroscope).
+</div>
+<button class="btn-start interactive" onclick="startGameEngine()">KHỞI ĐỘNG & BẬT GYRO</button>
+</div>
+</div>
+
 <div id="dragon-modal">
 <div class="modal-content">
 <h2 id="modal-title">🌟 Kỳ Ngộ Viên Ngọc</h2>
@@ -119,8 +153,7 @@ font-size: 18px; font-family: 'Ma Shan Zheng', cursive; font-weight: bold; lette
 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
 <div class="info-panel">
 <h1>🏍️ Đua Xe Mô Tô GP</h1>
-<!-- CHỖ ĐỔI 1: SỬA 100 km/h THÀNH 160 km/h -->
-<p><span id="speed-display" style="color: #facc15; font-weight: bold;">Tốc độ: 0 km/h</span> | Đạt >200 km/h để bắt ngọc!</p>
+<p><span id="speed-display" style="color: #facc15; font-weight: bold;">Tốc độ: 0 km/h</span> | Đạt >160 km/h để bắt ngọc!</p>
 <div class="progress-container"><div id="distance-bar" class="progress-bar"></div></div>
 </div>
 <div class="status-badge">
@@ -140,7 +173,6 @@ let speedStage = 0;
 let fruitTimer = 0;
 let redFruitActive = false;
 
-// BIẾN ĐIỀU KHIỂN MÔ TÔ
 let throttle = 0;
 let gear = 0; // 0: N, 1-5
 let rpm = 1000;
@@ -161,10 +193,13 @@ bgMusic.play().catch(e => console.log("Audio autoplay waiting for interaction"))
 let audioCtx = null;
 let oscBass, oscTreble, engineGain;
 
-function initAudio() {
+function startGameEngine() {
+// Ẩn màn hình bắt đầu
+document.getElementById('start-screen').style.display = 'none';
+
+// 1. Kích hoạt Web Audio API & Nhạc nền
 if (!audioCtx) {
 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
 playRandomMusic();
 
 oscBass = audioCtx.createOscillator();
@@ -188,7 +223,26 @@ engineGain.gain.setValueAtTime(0.25, audioCtx.currentTime);
 
 oscBass.start();
 oscTreble.start();
-initGyro();
+}
+
+// 2. Xin quyền Gyroscope (Cực kỳ quan trọng trên iOS Safari / HTTPS)
+if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+DeviceOrientationEvent.requestPermission().then(response => {
+if (response === 'granted') {
+window.addEventListener('deviceorientation', handleGyro);
+}
+}).catch(console.error);
+} else {
+window.addEventListener('deviceorientation', handleGyro);
+}
+}
+
+function handleGyro(e) {
+let gamma = e.gamma || 0; // Góc nghiêng trái phải (-90 đến 90)
+steerAngle = Math.max(-1, Math.min(1, gamma / 25));
+const sprite = document.getElementById('character-sprite');
+if (sprite) {
+sprite.style.transform = `translateX(-50%) rotate(${steerAngle * 18}deg) translateX(${steerAngle * 35}px)`;
 }
 }
 
@@ -243,33 +297,12 @@ osc.start(); osc.stop(audioCtx.currentTime + 0.3);
 }
 }
 
-// CẢM BIẾN GYROSCOPE (NGHIÊNG MÁY LÁI)
-function initGyro() {
-const handleGyro = (e) => {
-let gamma = e.gamma || 0;
-steerAngle = Math.max(-1, Math.min(1, gamma / 25));
-const sprite = document.getElementById('character-sprite');
-if (sprite) {
-sprite.style.transform = `translateX(-50%) rotate(${steerAngle * 18}deg) translateX(${steerAngle * 35}px)`;
-}
-};
-
-if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-DeviceOrientationEvent.requestPermission().then(res => {
-if (res === 'granted') window.addEventListener('deviceorientation', handleGyro);
-}).catch(console.log);
-} else {
-window.addEventListener('deviceorientation', handleGyro);
-}
-}
-
 // SỰ KIỆN CẢM ỨNG GA (PHẢI) VÀ SỐ (TRÁI)
 const rightZone = document.getElementById('right-zone');
 const leftZone = document.getElementById('left-zone');
 let startYRight = 0, startYLeft = 0;
 
 rightZone.addEventListener('touchstart', e => {
-initAudio();
 startYRight = e.touches[0].clientY;
 }, {passive: true});
 
@@ -281,7 +314,6 @@ if (deltaY > 5) throttle = Math.min(1, deltaY / 40);
 rightZone.addEventListener('touchend', () => { throttle = 0; });
 
 leftZone.addEventListener('touchstart', e => {
-initAudio();
 startYLeft = e.touches[0].clientY;
 }, {passive: true});
 
@@ -332,14 +364,6 @@ const fruitMesh = new THREE.Mesh(new THREE.SphereGeometry(0.7, 16, 16), fruitMat
 redFruitGroup.add(fruitMesh);
 scene.add(redFruitGroup);
 redFruitGroup.visible = false;
-
-function spawnRedFruit() {
-let tZ = playerGroup.position.z - 80;
-let tRoadY = getRoadHeightAtZ(tZ);
-redFruitGroup.position.set(getRoadCurveAtZ(tZ), tRoadY + 3.5, tZ);
-redFruitGroup.visible = true;
-redFruitActive = true;
-}
 
 // Viên Ngọc Rồng
 const dragonGroup = new THREE.Group();
@@ -612,11 +636,8 @@ break;
 }
 
 let distanceToDragonZ = Math.abs(playerGroup.position.z - dragonGroup.position.z);
-
 let diffX = Math.abs(playerGroup.position.x - dragonGroup.position.x);
-
-// CHỖ ĐỔI 2: ĐỔI ĐIỀU KIỆN TỐC ĐỘ TỪ 100 SANG 160 KM/H
-let catchCondition = (currentSpeedKmh > 203) && (distanceToDragonZ < 40);
+let catchCondition = (currentSpeedKmh > 160) && (distanceToDragonZ < 40);
 
 if (diffX < 20 && catchCondition) {
 playSound('catch');
